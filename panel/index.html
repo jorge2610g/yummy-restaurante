@@ -30,7 +30,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .admin-version{padding:24px 12px;text-align:center;color:var(--mut);font-size:12px;opacity:.75}
 
-/* Ajuste móvil v1.1.7: contenido centrado y tarjetas sin desbordes */
+/* Ajuste móvil v1.1.8: contenido centrado y tarjetas sin desbordes */
 @media(max-width:600px){
   body{overflow-x:hidden!important}
   main,.wrap,.container,.content,.panel{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
@@ -42,7 +42,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 #orderEditModal{display:none}
 .order-track{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.order-track span{padding:6px 9px;border-radius:999px;background:var(--ghost);font-size:12px}.order-track span.done,.order-track span.current{background:var(--a);color:#171000}.order-track span.current{font-weight:900}.order-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-/* Vista móvil del resumen de contenido v1.1.7 */
+/* Vista móvil del resumen de contenido v1.1.8 */
 @media(max-width:600px){
  #restaurants .card.span12{padding:16px!important;width:100%!important;overflow:hidden!important}
  #restaurants .card.span12>.row.between{display:block!important}
@@ -121,6 +121,36 @@ img,svg,video{max-width:100%;height:auto}
 @media(max-width:380px){
  .top .row{grid-template-columns:1fr}.card{padding:13px!important}
  .tabs{gap:7px}.tab{padding-left:13px!important;padding-right:13px!important}
+}
+/* Mobile polish v1.1.8 */
+@media(max-width:600px){
+ .wrap{padding:16px!important;width:100%!important}
+ .top{display:block!important;margin-bottom:18px!important}
+ .top>div:first-child{margin-bottom:14px!important}
+ .top .row{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;width:100%!important}
+ .top .row>a{width:100%!important}
+ .top .row>a button,.top .row>button{width:100%!important;margin:0!important}
+ .top .row>button:last-child{grid-column:1/-1!important}
+ .tabs{margin:0 -16px 18px!important;padding:0 16px 8px!important;gap:8px!important}
+ .tabs .tab{min-height:48px!important;padding:10px 16px!important;font-size:14px!important}
+ #orders .card{padding:18px!important}
+ #orders .card>.row.between{display:grid!important;grid-template-columns:1fr!important;gap:12px!important}
+ #orders .card>.row.between>button{width:100%!important}
+ #orders .card>.row:nth-of-type(2){display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;width:100%!important}
+ #orders .card>.row:nth-of-type(2)>button{width:100%!important;margin:0!important}
+ #orders .card>.row:nth-of-type(2)>label{grid-column:1/-1!important;width:100%!important;display:flex!important;justify-content:flex-start!important;align-items:center!important;gap:10px!important;padding:12px 14px!important;background:var(--ghost)!important;border:1px solid var(--line)!important;border-radius:11px!important}
+ #orders .card>.row:nth-of-type(2)>label input{flex:0 0 auto!important;width:20px!important;height:20px!important;margin:0!important}
+ #orders .card>.row:nth-of-type(3){display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;width:100%!important}
+ #orders .card>.row:nth-of-type(3)>button{width:100%!important;padding:10px 6px!important;font-size:13px!important;margin:0!important}
+ #orders h2{font-size:25px!important;line-height:1.15!important}
+ #orders p{line-height:1.45!important}
+}
+@media(max-width:390px){
+ .top .row{grid-template-columns:1fr!important}
+ .top .row>button:last-child{grid-column:auto!important}
+ #orders .card>.row:nth-of-type(2){grid-template-columns:1fr!important}
+ #orders .card>.row:nth-of-type(2)>label{grid-column:auto!important}
+ #orders .card>.row:nth-of-type(3){grid-template-columns:1fr!important}
 }
 </style><script>window.initAdminGoogleMaps=function(){window.__adminGoogleMapsReady=true;window.dispatchEvent(new Event("admin-google-maps-ready"));};</script><script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDYPUksIeTAdBu5yU85VjOzy3ILx9NmTgc&loading=async&libraries=places&callback=initAdminGoogleMaps"></script></head>
 <body class="auth-loading">
@@ -470,7 +500,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.1.7</footer><script>
+</script><footer class="admin-version">Versión v1.1.8</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -512,4 +542,4 @@ async function saveSubscriptionMercadoPago(){
  }catch(e){toast("No se pudieron guardar las credenciales.");}
 }
 </script>
-<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.1.7</div></body></html>
+<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.1.8</div></body></html>
