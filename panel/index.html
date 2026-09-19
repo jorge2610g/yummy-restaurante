@@ -30,7 +30,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .admin-version{padding:24px 12px;text-align:center;color:var(--mut);font-size:12px;opacity:.75}
 
-/* Ajuste móvil v1.2.2: contenido centrado y tarjetas sin desbordes */
+/* Ajuste móvil v1.2.3: contenido centrado y tarjetas sin desbordes */
 @media(max-width:600px){
   body{overflow-x:hidden!important}
   main,.wrap,.container,.content,.panel{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
@@ -42,7 +42,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 #orderEditModal{display:none}
 .order-track{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.order-track span{padding:6px 9px;border-radius:999px;background:var(--ghost);font-size:12px}.order-track span.done,.order-track span.current{background:var(--a);color:#171000}.order-track span.current{font-weight:900}.order-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-/* Vista móvil del resumen de contenido v1.2.2 */
+/* Vista móvil del resumen de contenido v1.2.3 */
 @media(max-width:600px){
  #restaurants .card.span12{padding:16px!important;width:100%!important;overflow:hidden!important}
  #restaurants .card.span12>.row.between{display:block!important}
@@ -122,7 +122,7 @@ img,svg,video{max-width:100%;height:auto}
  .top .row{grid-template-columns:1fr}.card{padding:13px!important}
  .tabs{gap:7px}.tab{padding-left:13px!important;padding-right:13px!important}
 }
-/* Mobile polish v1.2.2 */
+/* Mobile polish v1.2.3 */
 @media(max-width:600px){
  .wrap{padding:16px!important;width:100%!important}
  .top{display:block!important;margin-bottom:18px!important}
@@ -276,7 +276,8 @@ img,svg,video{max-width:100%;height:auto}
 <div class="row product-checks" style="margin-top:12px"><label style="margin:0"><input id="pfeatured" type="checkbox" style="width:auto"> Destacado</label><label style="margin:0"><input id="pavailable" type="checkbox" style="width:auto" checked> Disponible</label></div>
 <div class="row product-modal-actions" style="margin-top:15px"><button class="primary" onclick="saveProduct()">Guardar producto</button><button class="ghost" type="button" onclick="closeProductModal()">Cancelar</button></div></div></div>
 
-<section id="categories" class="section"><div class="grid"><div class="card span5"><h2>Nueva categoría</h2><input id="cid" type="hidden"><label>Nombre</label><input id="cname"><label>Slug</label><input id="cslug" placeholder="hamburguesas"><label>Orden</label><input id="csort" type="number" value="0"><label><input id="cactive" type="checkbox" style="width:auto" checked> Activa</label><div class="row" style="margin-top:15px"><button class="primary" onclick="saveCategory()">Guardar</button><button class="ghost" onclick="clearCategory()">Limpiar</button></div></div><div class="card span7"><h2>Categorías</h2><div id="categoryList" class="list"></div></div></div></section>
+<section id="categories" class="section"><div class="card"><div class="row between"><div><h2>Categorías</h2><p class="mut">Organiza las secciones de tu menú.</p></div><div class="actions"><button class="primary" onclick="openCategoryModal()">＋ Agregar categoría</button><button class="ghost" onclick="loadCategories()">Actualizar</button></div></div><div id="categoryList" class="list" style="margin-top:14px"></div></div></section>
+<div id="categoryModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closeCategoryModal()"></div><div class="card product-modal-card"><div class="row between"><h2 id="categoryTitle">Nueva categoría</h2><button class="ghost modal-close" type="button" onclick="closeCategoryModal()">✕</button></div><input id="cid" type="hidden"><label>Nombre</label><input id="cname"><label>Slug</label><input id="cslug" placeholder="hamburguesas"><label>Orden</label><input id="csort" type="number" value="0"><label><input id="cactive" type="checkbox" style="width:auto" checked> Activa</label><div class="row product-modal-actions" style="margin-top:15px"><button class="primary" onclick="saveCategory()">Guardar categoría</button><button class="ghost" type="button" onclick="closeCategoryModal()">Cancelar</button></div></div></div>
 
 
 
@@ -377,7 +378,7 @@ async function enter(user){
 async function restoreSession(){try{const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){await enter(data.session.user)}else{document.getElementById("login").classList.remove("hidden")}}catch(e){document.getElementById("login").classList.remove("hidden");document.getElementById("loginMsg").textContent=e.message||"No se pudo validar la sesión."}finally{document.body.classList.remove("auth-loading")}}restoreSession();
 function toggleSideMenu(){document.getElementById("sideMenu")?.classList.toggle("open")}
 function closeSideMenuMobile(){if(window.matchMedia("(max-width:800px)").matches)document.getElementById("sideMenu")?.classList.remove("open")}
-document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.tab)?.classList.add("active");closeSideMenuMobile();if(!currentRestaurant)return;try{if(b.dataset.tab==="orders")await loadOrders();else if(b.dataset.tab==="products")await loadProducts();else if(b.dataset.tab==="categories")await loadCategories();else if(b.dataset.tab==="qr"){await loadRestaurants();renderQrPanel()}else if(b.dataset.tab==="plans")await loadSubscriptionPlans();else if(b.dataset.tab==="settings"){await loadSettings();await loadRestaurantMercadoPago()}}catch(e){console.error("Error actualizando sección",b.dataset.tab,e);toast("No se pudo actualizar esta sección")}});
+document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.tab)?.classList.add("active");closeSideMenuMobile();if(!currentRestaurant)return;try{if(b.dataset.tab==="orders")await loadOrders();else if(b.dataset.tab==="products")await loadProducts();else if(b.dataset.tab==="categories")await loadCategories();else if(b.dataset.tab==="qr"){renderQrPanel()}else if(b.dataset.tab==="plans")await loadSubscriptionPlans();else if(b.dataset.tab==="settings"){await loadSettings();await loadRestaurantMercadoPago()}}catch(e){console.error("Error actualizando sección",b.dataset.tab,e);toast("No se pudo actualizar esta sección")}});
 async function refreshAll(){
  bindRestaurantMpButtons();
  const core=[loadRestaurants(),loadSubscriptionPlans(),loadCategories(),loadProducts(),loadSettings(),loadOrders()];
@@ -399,8 +400,10 @@ async function loadRestaurants(){
   if(r)renderSubscriptionBanner(r);
 }
 async function loadCategories(){const {data,error}=await sb.from("restaurant_categories").select("*").eq("restaurant_id",currentRestaurant).order("sort_order");if(error)return toast(error.message);categories=data||[];const categoryListEl=document.getElementById("categoryList");if(!categoryListEl)return;categoryListEl.innerHTML=categories.map(c=>`<div class="item row between"><div><h3>${esc(c.name)}</h3><span class="pill">${esc(c.slug)}</span> ${c.active?"":"<span class='pill'>Inactiva</span>"}</div><div class="actions"><button class="ghost" onclick="editCategory(${c.id})">Editar</button><button class="danger" onclick="deleteCategory(${c.id})">Eliminar</button></div></div>`).join("")||"<p class='mut'>Sin categorías.</p>";pcat.innerHTML='<option value="">Sin categoría</option>'+categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")}
-async function saveCategory(){const row={restaurant_id:currentRestaurant,name:cname.value.trim(),slug:cslug.value.trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""),sort_order:+csort.value||0,active:cactive.checked};if(!row.name||!row.slug)return toast("Completa nombre y slug");let q=cid.value?sb.from("restaurant_categories").update(row).eq("id",cid.value):sb.from("restaurant_categories").insert(row);const {error}=await q;if(error)return toast(error.message);clearCategory();await loadCategories();toast("Categoría guardada")}
-function editCategory(id){const c=categories.find(x=>x.id===id);cid.value=c.id;cname.value=c.name;cslug.value=c.slug;csort.value=c.sort_order;cactive.checked=c.active}
+function openCategoryModal(){clearCategory();document.getElementById("categoryTitle").textContent="Nueva categoría";document.getElementById("categoryModal")?.classList.add("open");document.getElementById("categoryModal")?.setAttribute("aria-hidden","false");setTimeout(()=>cname?.focus(),80)}
+function closeCategoryModal(){document.getElementById("categoryModal")?.classList.remove("open");document.getElementById("categoryModal")?.setAttribute("aria-hidden","true")}
+async function saveCategory(){const row={restaurant_id:currentRestaurant,name:cname.value.trim(),slug:cslug.value.trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""),sort_order:+csort.value||0,active:cactive.checked};if(!row.name||!row.slug)return toast("Completa nombre y slug");let q=cid.value?sb.from("restaurant_categories").update(row).eq("id",cid.value):sb.from("restaurant_categories").insert(row);const {error}=await q;if(error)return toast(error.message);clearCategory();closeCategoryModal();await loadCategories();toast("Categoría guardada")}
+function editCategory(id){const c=categories.find(x=>x.id===id);if(!c)return toast("Categoría no encontrada");cid.value=c.id;cname.value=c.name;cslug.value=c.slug;csort.value=c.sort_order;cactive.checked=c.active;document.getElementById("categoryTitle").textContent="Editar categoría";document.getElementById("categoryModal")?.classList.add("open");document.getElementById("categoryModal")?.setAttribute("aria-hidden","false")}
 function clearCategory(){cid.value="";cname.value="";cslug.value="";csort.value=0;cactive.checked=true}
 async function deleteCategory(id){if(!confirm("¿Eliminar esta categoría?"))return;const {error}=await sb.from("restaurant_categories").delete().eq("id",id);if(error)return toast(error.message);await loadCategories();toast("Categoría eliminada")}
 async function loadProducts(){const {data,error}=await sb.from("restaurant_products").select("*").eq("restaurant_id",currentRestaurant).order("sort_order");if(error)return toast(error.message);products=data||[];const productListEl=document.getElementById("productList");if(!productListEl)return;productListEl.innerHTML=products.map(p=>`<div class="item"><div class="row between"><div><h3>${esc(p.name)}</h3><div class="mut">${esc(p.description||"")}</div><div class="price">${money(p.price)}</div></div><div class="actions"><button class="ghost" onclick="editProduct(${p.id})">Editar</button><button class="ghost" onclick="toggleProduct(${p.id},${!p.available})">${p.available?"Desactivar":"Activar"}</button><button class="danger" onclick="deleteProduct(${p.id})">Eliminar</button></div></div></div>`).join("")||"<p class='mut'>Sin productos.</p>"}
@@ -600,7 +603,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v1.2.2</footer><script>
+</script></main></div><footer class="admin-version">Versión v1.2.3</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -642,4 +645,4 @@ async function saveSubscriptionMercadoPago(){
  }catch(e){toast("No se pudieron guardar las credenciales.");}
 }
 </script>
-<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.2.2</div></body></html>
+<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.2.3</div></body></html>
