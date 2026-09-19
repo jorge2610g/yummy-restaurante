@@ -30,7 +30,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .admin-version{padding:24px 12px;text-align:center;color:var(--mut);font-size:12px;opacity:.75}
 
-/* Ajuste móvil v1.1.6: contenido centrado y tarjetas sin desbordes */
+/* Ajuste móvil v1.1.7: contenido centrado y tarjetas sin desbordes */
 @media(max-width:600px){
   body{overflow-x:hidden!important}
   main,.wrap,.container,.content,.panel{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
@@ -42,7 +42,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 #orderEditModal{display:none}
 .order-track{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.order-track span{padding:6px 9px;border-radius:999px;background:var(--ghost);font-size:12px}.order-track span.done,.order-track span.current{background:var(--a);color:#171000}.order-track span.current{font-weight:900}.order-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-/* Vista móvil del resumen de contenido v1.1.6 */
+/* Vista móvil del resumen de contenido v1.1.7 */
 @media(max-width:600px){
  #restaurants .card.span12{padding:16px!important;width:100%!important;overflow:hidden!important}
  #restaurants .card.span12>.row.between{display:block!important}
@@ -137,7 +137,7 @@ img,svg,video{max-width:100%;height:auto}
 <button class="tab active" data-tab="orders">📦 Pedidos Mercado Pago</button><button class="tab" data-tab="products">🍔 Productos</button><button class="tab" data-tab="categories">📚 Categorías</button><button class="tab" data-tab="qr">▦ Código QR</button><button class="tab" data-tab="plans">💳 Planes</button><button class="tab" data-tab="settings">⚙️ Configuración</button>
 </div>
 
-<section id="orders" class="section active"><div class="grid"><div class="card span12"><div class="row between"><div><h2>Pedidos Mercado Pago</h2><p class="mut">Gestiona los pedidos pagados en línea y actualiza el estado que verá el cliente.</p></div><button class="ghost" onclick="loadOrders()">Actualizar</button></div><div class="row" style="margin-top:14px;flex-wrap:wrap"><button class="ghost" onclick="filterOrdersStatus('all')">Todos <b id="countAll">0</b></button><button class="ghost" onclick="filterOrdersStatus('entregado')">Entregados <b id="countDelivered">0</b></button><button class="ghost" onclick="filterOrdersStatus('cancelado')">Cancelados <b id="countCancelled">0</b></button></div><div id="orderList" class="list" style="margin-top:16px"></div></div></div></section>
+<section id="orders" class="section active"><div class="grid"><div class="card span12"><div class="row between"><div><h2>Pedidos Mercado Pago</h2><p class="mut">Gestiona los pedidos pagados en línea y actualiza el estado que verá el cliente.</p></div><button class="ghost" onclick="loadOrders()">Actualizar</button></div><div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="ghost" onclick="testRestaurantNotification()">🔔 Probar notificación</button><button class="ghost" onclick="testRestaurantOrder()">📦 Probar pedido</button><button class="ghost" onclick="testRestaurantPrint()">🖨️ Probar impresión</button><label style="margin:0;display:flex;align-items:center;gap:7px"><input id="autoPrintOrders" type="checkbox" style="width:auto" onchange="setAutoPrintOrders(this.checked)"> Imprimir automáticamente al aceptar</label></div><div class="row" style="margin-top:14px;flex-wrap:wrap"><button class="ghost" onclick="filterOrdersStatus('all')">Todos <b id="countAll">0</b></button><button class="ghost" onclick="filterOrdersStatus('entregado')">Entregados <b id="countDelivered">0</b></button><button class="ghost" onclick="filterOrdersStatus('cancelado')">Cancelados <b id="countCancelled">0</b></button></div><div id="orderList" class="list" style="margin-top:16px"></div></div></div></section>
 
 <section id="products" class="section"><div class="grid">
 <div class="card span5"><h2 id="productTitle">Nuevo producto</h2><input id="pid" type="hidden">
@@ -240,7 +240,7 @@ async function enter(user){
     const {data:menuRestaurant}=await sb.from("restaurants").select("slug").eq("id",currentRestaurant).single();
     const menuLink=document.getElementById("viewMenuLink");
     if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(menuRestaurant?.slug||currentRestaurant);menuLink.style.display=""}
-    enableRestaurantNotifications();setTimeout(startRestaurantOrderRealtime,0);
+    enableRestaurantNotifications();restoreAutoPrintOrders();setTimeout(startRestaurantOrderRealtime,0);
     await refreshAll();
     msg.textContent="";
   }catch(e){
@@ -307,6 +307,26 @@ function playNewOrderSound(){
   });
  }catch(e){console.error("No se pudo reproducir sonido",e)}
 }
+function setAutoPrintOrders(v){localStorage.setItem("restaurant_auto_print",v?"1":"0");toast(v?"Impresión automática activada":"Impresión automática desactivada")}
+function restoreAutoPrintOrders(){const el=document.getElementById("autoPrintOrders");if(el)el.checked=localStorage.getItem("restaurant_auto_print")==="1"}
+function testRestaurantNotification(){
+ unlockRestaurantSound();
+ const row={id:"test",order_code:"PRUEBA",total:1000};
+ restaurantOrderAlert(row);
+}
+function testRestaurantOrder(){
+ const demo={id:"test-"+Date.now(),order_code:"PRUEBA-"+String(Date.now()).slice(-4),customer_name:"Cliente de prueba",customer_phone:"",order_type:"Retiro",payment_method:"Mercado Pago",payment_status:"approved",status:"recibido",total:5000,created_at:new Date().toISOString(),items:[{qty:1,name:"Producto de prueba",unit_price:5000}],notes:"Este pedido es solo una prueba y no se guarda en la base de datos."};
+ orders=[demo,...orders.filter(x=>!String(x.id).startsWith("test-"))];loadOrdersTestRender(demo);restaurantOrderAlert(demo);toast("Pedido de prueba mostrado. No se guardó en Supabase.");
+}
+function loadOrdersTestRender(demo){
+ const box=document.getElementById("orderList");if(!box)return;
+ const e=esc;const html=`<div class="item" id="testOrderCard" data-status="recibido"><div class="row between"><div><h3>#${e(demo.order_code)} · ${e(demo.customer_name)}</h3><div class="mut">PEDIDO DE PRUEBA · No se guarda en la base de datos</div><div class="price">${money(demo.total)}</div></div></div><div class="order-detail"><b>📍 Retiro:</b> Prueba de funcionamiento<br><span class="mut">1 × Producto de prueba</span></div><div class="actions" style="margin-top:12px"><button class="ghost" onclick="printOrderCommand('${demo.id}')">🖨️ Imprimir comanda de prueba</button><button class="ghost" onclick="document.getElementById('testOrderCard')?.remove()">Quitar prueba</button></div></div>`;
+ box.insertAdjacentHTML("afterbegin",html);
+}
+function testRestaurantPrint(){
+ const demo={id:"print-test",order_code:"IMPRESION-PRUEBA",customer_name:"Cliente de prueba",order_type:"Retiro",payment_method:"Mercado Pago",status:"recibido",total:5000,created_at:new Date().toISOString(),items:[{qty:1,name:"Producto de prueba",unit_price:5000}],notes:"PRUEBA DE IMPRESIÓN"};
+ const prev=orders;orders=[demo,...orders];printOrderCommand(demo.id);orders=prev;
+}
 function restaurantOrderAlert(row){
  try{
   if("Notification" in window&&Notification.permission==="granted")new Notification("🔔 Nuevo pedido Mercado Pago",{body:"#"+(row.order_code||row.id)+" · "+money(row.total||0),tag:"restaurant-order-"+row.id,renotify:true,requireInteraction:true});
@@ -357,6 +377,7 @@ function printOrderCommand(id){
 }
 async function setOrderStatus(id,status){
  const order=orders.find(o=>o.id===id);if(!order)return;
+ const previousStatus=order.status;
  if(status==="cancelado"){
   if(!confirm("Al cancelar este pedido se solicitará la devolución total del pago al cliente mediante Mercado Pago. ¿Continuar?"))return loadOrders();
   toast("Procesando devolución en Mercado Pago…");
@@ -372,6 +393,9 @@ async function setOrderStatus(id,status){
   toast("Estado actualizado. El cliente ya puede verlo.");
  }
  await loadOrders();
+ if(status!=="cancelado"&&status!=="recibido"&&previousStatus==="recibido"&&localStorage.getItem("restaurant_auto_print")==="1"){
+  setTimeout(()=>printOrderCommand(id),250);
+ }
 }
 async function searchRestaurantAddress(){
  const input=document.getElementById("smapaddress"),st=document.getElementById("smapstatus");
@@ -446,7 +470,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.1.6</footer><script>
+</script><footer class="admin-version">Versión v1.1.7</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -488,4 +512,4 @@ async function saveSubscriptionMercadoPago(){
  }catch(e){toast("No se pudieron guardar las credenciales.");}
 }
 </script>
-<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.1.6</div></body></html>
+<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.1.7</div></body></html>
