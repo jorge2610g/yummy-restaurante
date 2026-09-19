@@ -30,7 +30,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .admin-version{padding:24px 12px;text-align:center;color:var(--mut);font-size:12px;opacity:.75}
 
-/* Ajuste móvil v1.1.5: contenido centrado y tarjetas sin desbordes */
+/* Ajuste móvil v1.1.6: contenido centrado y tarjetas sin desbordes */
 @media(max-width:600px){
   body{overflow-x:hidden!important}
   main,.wrap,.container,.content,.panel{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
@@ -42,7 +42,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 #orderEditModal{display:none}
 .order-track{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.order-track span{padding:6px 9px;border-radius:999px;background:var(--ghost);font-size:12px}.order-track span.done,.order-track span.current{background:var(--a);color:#171000}.order-track span.current{font-weight:900}.order-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-/* Vista móvil del resumen de contenido v1.1.5 */
+/* Vista móvil del resumen de contenido v1.1.6 */
 @media(max-width:600px){
  #restaurants .card.span12{padding:16px!important;width:100%!important;overflow:hidden!important}
  #restaurants .card.span12>.row.between{display:block!important}
@@ -200,7 +200,7 @@ async function login(){
   }catch(e){msg.textContent=e.message||"Error de conexión. Intenta nuevamente."}
 }
 function bindRestaurantMpButtons(){const s=document.getElementById("saveRestaurantMpBtn"),v=document.getElementById("verifyRestaurantMpBtn");if(s)s.onclick=saveRestaurantMercadoPago;if(v)v.onclick=verifyRestaurantMercadoPago}
-async function loadRestaurantMercadoPago(){if(!currentRestaurant||isSuperAdmin)return;const {data,error}=await sb.from("restaurants").select("mercadopago_public_key").eq("id",currentRestaurant).single();if(error)return;restaurantMpPublicKey.value=data?.mercadopago_public_key||"";restaurantMpStatus.textContent=data?.mercadopago_public_key?"✅ Public Key guardada. El Access Token se administra de forma privada en Supabase.":"Mercado Pago aún no configurado."}
+async function loadRestaurantMercadoPago(){if(!currentRestaurant)return;const {data,error}=await sb.from("restaurants").select("mercadopago_public_key").eq("id",currentRestaurant).single();if(error)return;restaurantMpPublicKey.value=data?.mercadopago_public_key||"";restaurantMpStatus.textContent=data?.mercadopago_public_key?"✅ Public Key guardada. El Access Token se administra de forma privada en Supabase.":"Mercado Pago aún no configurado."}
 async function saveRestaurantMercadoPago(){if(!currentRestaurant)return toast("No hay restaurante seleccionado");const key=restaurantMpPublicKey.value.trim(),token=restaurantMpAccessToken.value.trim();if(!key||!token)return toast("Ingresa Public Key y Access Token");restaurantMpStatus.textContent="Verificando credenciales…";const {error:ke}=await sb.from("restaurants").update({mercadopago_public_key:key}).eq("id",currentRestaurant);if(ke)return toast(ke.message);const {data,error}=await sb.functions.invoke("restaurant-save-mp-token",{body:{restaurant_id:currentRestaurant,access_token:token}});if(error||data?.error){restaurantMpStatus.textContent="❌ "+(data?.error||error.message);return}restaurantMpAccessToken.value="";restaurantMpStatus.textContent="✅ Mercado Pago configurado correctamente.";toast("Credenciales guardadas")}
 async function verifyRestaurantMercadoPago(){if(!currentRestaurant)return toast("No hay restaurante seleccionado");const box=document.getElementById("restaurantMpStatus");if(box)box.textContent="Verificando tus credenciales con Mercado Pago…";try{const {data:{session}}=await sb.auth.getSession();if(!session?.access_token){if(box)box.textContent="❌ Sesión vencida.";return}const res=await fetch(SB_URL+"/functions/v1/verify-restaurant-mercadopago",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({restaurant_id:currentRestaurant})});const data=await res.json();if(box)box.textContent=data.ok?"✅ Tus credenciales de Mercado Pago están funcionando correctamente.":"❌ "+(data.error||"Las credenciales no son válidas.");}catch(e){if(box)box.textContent="❌ No se pudo verificar Mercado Pago."}}
 async function logout(){await sb.auth.signOut();window.location.replace("https://web.yummypro.online/")}
@@ -281,15 +281,38 @@ function editProduct(id){const p=products.find(x=>x.id===id);pid.value=p.id;pnam
 function clearProduct(){pid.value="";pname.value="";pdesc.value="";pprice.value="";pcat.value="";pimage.value="";pimagePreview.hidden=true;pimageFile.value="";pbadge.value="";pfeatured.checked=false;pavailable.checked=true;psort.value=0;productTitle.textContent="Nuevo producto"}
 async function toggleProduct(id,v){const {error}=await sb.from("restaurant_products").update({available:v,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toast(error.message);await loadProducts()}
 async function deleteProduct(id){if(!confirm("¿Eliminar este producto?"))return;const {error}=await sb.from("restaurant_products").delete().eq("id",id);if(error)return toast(error.message);await loadProducts();toast("Producto eliminado")}
+let restaurantAudioContext=null;
+function unlockRestaurantSound(){
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  if(!restaurantAudioContext)restaurantAudioContext=new AC();
+  if(restaurantAudioContext.state==="suspended")restaurantAudioContext.resume();
+ }catch(e){}
+}
+document.addEventListener("pointerdown",unlockRestaurantSound,{once:true});
+document.addEventListener("keydown",unlockRestaurantSound,{once:true});
 async function enableRestaurantNotifications(){
- if(!("Notification" in window))return;
- if(Notification.permission==="default")await Notification.requestPermission();
+ if("Notification" in window&&Notification.permission==="default"){
+  try{await Notification.requestPermission()}catch(e){}
+ }
+}
+function playNewOrderSound(){
+ try{
+  unlockRestaurantSound();const ac=restaurantAudioContext;if(!ac)return;
+  const now=ac.currentTime;
+  [880,1175,880,1175].forEach((freq,i)=>{
+   const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);
+   o.frequency.value=freq;g.gain.setValueAtTime(.0001,now+i*.22);g.gain.exponentialRampToValueAtTime(.18,now+i*.22+.02);g.gain.exponentialRampToValueAtTime(.0001,now+i*.22+.18);
+   o.start(now+i*.22);o.stop(now+i*.22+.2);
+  });
+ }catch(e){console.error("No se pudo reproducir sonido",e)}
 }
 function restaurantOrderAlert(row){
  try{
-  if(Notification.permission==="granted")new Notification("🔔 Nuevo pedido Mercado Pago",{body:"#"+row.order_code+" · "+money(row.total),tag:"restaurant-order-"+row.id,renotify:true});
-  const ac=new (window.AudioContext||window.webkitAudioContext)(),o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.value=.08;o.start();setTimeout(()=>{o.stop();ac.close()},350);
+  if("Notification" in window&&Notification.permission==="granted")new Notification("🔔 Nuevo pedido Mercado Pago",{body:"#"+(row.order_code||row.id)+" · "+money(row.total||0),tag:"restaurant-order-"+row.id,renotify:true,requireInteraction:true});
  }catch(e){}
+ playNewOrderSound();
+ toast("🔔 Nuevo pedido recibido");
 }
 let restaurantOrdersChannel=null;
 function startRestaurantOrderRealtime(){
@@ -423,7 +446,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.1.5</footer><script>
+</script><footer class="admin-version">Versión v1.1.6</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -465,4 +488,4 @@ async function saveSubscriptionMercadoPago(){
  }catch(e){toast("No se pudieron guardar las credenciales.");}
 }
 </script>
-<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.1.5</div></body></html>
+<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.1.6</div></body></html>
