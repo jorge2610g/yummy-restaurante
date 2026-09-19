@@ -30,7 +30,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .admin-version{padding:24px 12px;text-align:center;color:var(--mut);font-size:12px;opacity:.75}
 
-/* Ajuste móvil v1.1.9: contenido centrado y tarjetas sin desbordes */
+/* Ajuste móvil v1.2.0: contenido centrado y tarjetas sin desbordes */
 @media(max-width:600px){
   body{overflow-x:hidden!important}
   main,.wrap,.container,.content,.panel{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
@@ -42,7 +42,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 #orderEditModal{display:none}
 .order-track{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.order-track span{padding:6px 9px;border-radius:999px;background:var(--ghost);font-size:12px}.order-track span.done,.order-track span.current{background:var(--a);color:#171000}.order-track span.current{font-weight:900}.order-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-/* Vista móvil del resumen de contenido v1.1.9 */
+/* Vista móvil del resumen de contenido v1.2.0 */
 @media(max-width:600px){
  #restaurants .card.span12{padding:16px!important;width:100%!important;overflow:hidden!important}
  #restaurants .card.span12>.row.between{display:block!important}
@@ -122,7 +122,7 @@ img,svg,video{max-width:100%;height:auto}
  .top .row{grid-template-columns:1fr}.card{padding:13px!important}
  .tabs{gap:7px}.tab{padding-left:13px!important;padding-right:13px!important}
 }
-/* Mobile polish v1.1.9 */
+/* Mobile polish v1.2.0 */
 @media(max-width:600px){
  .wrap{padding:16px!important;width:100%!important}
  .top{display:block!important;margin-bottom:18px!important}
@@ -152,7 +152,66 @@ img,svg,video{max-width:100%;height:auto}
  #orders .card>.row:nth-of-type(2)>label{grid-column:auto!important}
  #orders .card>.row:nth-of-type(3){grid-template-columns:1fr!important}
 }
-</style><script>window.initAdminGoogleMaps=function(){window.__adminGoogleMapsReady=true;window.dispatchEvent(new Event("admin-google-maps-ready"));};</script><script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDYPUksIeTAdBu5yU85VjOzy3ILx9NmTgc&loading=async&libraries=places&callback=initAdminGoogleMaps"></script><style id="sidebar-v119">.panel-layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:18px;align-items:start}.side-menu{position:sticky;top:16px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;box-shadow:0 18px 50px var(--shadow)}.side-menu-title{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);padding:7px 10px 10px}.side-menu .tabs{display:grid!important;gap:7px!important;overflow:visible!important;margin:0!important;padding:0!important}.side-menu .tab{width:100%;display:flex;align-items:center;gap:9px;text-align:left;white-space:normal!important;min-height:46px}.panel-content{min-width:0}.side-menu-toggle{display:none}@media(max-width:800px){.side-menu-toggle{display:block;width:100%;margin:0 0 12px;min-height:48px}.panel-layout{display:block}.side-menu{display:none;position:static;margin-bottom:14px;padding:10px}.side-menu.open{display:block}.side-menu .tabs{margin:0!important;padding:0!important}.side-menu .tab{min-height:46px!important}}</style></head>
+</style><script>window.initAdminGoogleMaps=function(){window.__adminGoogleMapsReady=true;window.dispatchEvent(new Event("admin-google-maps-ready"));};</script><script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDYPUksIeTAdBu5yU85VjOzy3ILx9NmTgc&loading=async&libraries=places&callback=initAdminGoogleMaps"></script><style id="sidebar-v119">.panel-layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:18px;align-items:start}.side-menu{position:sticky;top:16px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;box-shadow:0 18px 50px var(--shadow)}.side-menu-title{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);padding:7px 10px 10px}.side-menu .tabs{display:grid!important;gap:7px!important;overflow:visible!important;margin:0!important;padding:0!important}.side-menu .tab{width:100%;display:flex;align-items:center;gap:9px;text-align:left;white-space:normal!important;min-height:46px}.panel-content{min-width:0}.side-menu-toggle{display:none}@media(max-width:800px){.side-menu-toggle{display:block;width:100%;margin:0 0 12px;min-height:48px}.panel-layout{display:block}.side-menu{display:none;position:static;margin-bottom:14px;padding:10px}.side-menu.open{display:block}.side-menu .tabs{margin:0!important;padding:0!important}.side-menu .tab{min-height:46px!important}}</style><style id="compact-app-v120">
+/* Rediseño compacto inspirado en la referencia, sin cambiar lógica */
+:root{--compact-radius:14px}
+@media(min-width:801px){
+ .wrap{max-width:1500px!important;padding:18px 22px!important}
+ .top{margin-bottom:14px!important}.top h1{font-size:21px!important}.top .mut{font-size:13px}
+ .top button{padding:9px 12px!important;font-size:13px!important;min-height:38px!important}
+ .panel-layout{grid-template-columns:218px minmax(0,1fr)!important;gap:14px!important}
+ .side-menu{padding:9px!important;border-radius:15px!important}
+ .side-menu .tab{min-height:40px!important;padding:8px 10px!important;font-size:13px!important;border-radius:10px!important}
+ .card{padding:16px!important;border-radius:15px!important}
+ .grid{gap:12px!important}.item{padding:10px!important;border-radius:11px!important}.list{gap:8px!important}
+ h2{font-size:20px!important;margin-top:0}h3{font-size:15px!important}
+ label{margin:9px 0 5px!important;font-size:12px!important}
+ input,textarea,select{padding:9px 10px!important;border-radius:9px!important;font-size:13px!important}
+ textarea{min-height:72px!important}
+ button{padding:9px 12px!important;font-size:13px!important;border-radius:9px!important}
+ .actions button{padding:6px 9px!important;font-size:11px!important}
+}
+@media(max-width:800px){
+ body{padding-bottom:78px!important}
+ .wrap{padding:12px!important}
+ .top{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;margin-bottom:12px!important}
+ .top h1{font-size:21px!important}.top .mut{font-size:13px!important}
+ .top .row{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}
+ .top .row>a,.top .row>button{width:100%!important}
+ .top .row button{min-height:39px!important;padding:7px 5px!important;font-size:12px!important}
+ .side-menu-toggle{display:none!important}
+ .panel-layout{display:block!important}
+ .side-menu{display:block!important;position:fixed!important;z-index:50!important;left:8px!important;right:8px!important;bottom:8px!important;top:auto!important;margin:0!important;padding:6px!important;border-radius:16px!important;background:var(--card)!important;box-shadow:0 8px 30px #0008!important}
+ .side-menu-title{display:none!important}
+ .side-menu .tabs{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:3px!important}
+ .side-menu .tab{display:flex!important;flex-direction:column!important;justify-content:center!important;gap:2px!important;min-height:52px!important;padding:5px 2px!important;font-size:16px!important;text-align:center!important;border-radius:10px!important}
+ .side-menu .tab span{display:block!important;font-size:8px!important;line-height:1.05!important;white-space:normal!important}
+ .panel-content{width:100%!important}
+ .card{padding:13px!important;border-radius:14px!important}
+ .grid{gap:10px!important}.item{padding:10px!important;border-radius:11px!important}.list{gap:7px!important}
+ h2{font-size:19px!important;margin:0 0 6px!important}h3{font-size:14px!important}
+ .mut{font-size:12px!important}
+ label{margin:8px 0 4px!important;font-size:11px!important}
+ input,textarea,select{padding:9px!important;font-size:13px!important;border-radius:9px!important}
+ textarea{min-height:68px!important}
+ button{min-height:38px!important;padding:8px 10px!important;font-size:12px!important;border-radius:9px!important}
+ .actions{gap:5px!important}.actions button{min-height:34px!important;padding:6px 8px!important;font-size:10px!important}
+ #orders .card{padding:13px!important}
+ #orders h2{font-size:20px!important}
+ #orders .card>.row:nth-of-type(2){grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+ #orders .card>.row:nth-of-type(2)>label{grid-column:1/-1!important;padding:8px 10px!important;font-size:11px!important}
+ #orders .card>.row:nth-of-type(3){gap:6px!important}
+ #orders .card>.row:nth-of-type(3)>button{min-height:36px!important;font-size:11px!important}
+ .admin-version{padding:12px 8px 86px!important;font-size:10px!important}
+}
+@media(max-width:430px){
+ .top .row{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ .side-menu{left:5px!important;right:5px!important;bottom:5px!important}
+ .side-menu .tab span{font-size:7.5px!important}
+ #orders .card>.row:nth-of-type(2){grid-template-columns:1fr 1fr!important}
+ #orders .card>.row:nth-of-type(2)>button:first-child{grid-column:1/-1!important}
+}
+</style></head>
 <body class="auth-loading">
 <style>.auth-loading #login,.auth-loading #app{display:none!important}</style>
 <div id="login" class="wrap login hidden"><div class="card"><h1>Panel de administración</h1><p class="mut">Gestiona menú, precios, disponibilidad y datos del negocio.</p>
@@ -503,7 +562,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v1.1.9</footer><script>
+</script></main></div><footer class="admin-version">Versión v1.2.0</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -545,4 +604,4 @@ async function saveSubscriptionMercadoPago(){
  }catch(e){toast("No se pudieron guardar las credenciales.");}
 }
 </script>
-<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.1.9</div></body></html>
+<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.2.0</div></body></html>
