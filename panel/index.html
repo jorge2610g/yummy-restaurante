@@ -30,7 +30,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .admin-version{padding:24px 12px;text-align:center;color:var(--mut);font-size:12px;opacity:.75}
 
-/* Ajuste móvil v1.2.1: contenido centrado y tarjetas sin desbordes */
+/* Ajuste móvil v1.2.2: contenido centrado y tarjetas sin desbordes */
 @media(max-width:600px){
   body{overflow-x:hidden!important}
   main,.wrap,.container,.content,.panel{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
@@ -42,7 +42,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 #orderEditModal{display:none}
 .order-track{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.order-track span{padding:6px 9px;border-radius:999px;background:var(--ghost);font-size:12px}.order-track span.done,.order-track span.current{background:var(--a);color:#171000}.order-track span.current{font-weight:900}.order-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-/* Vista móvil del resumen de contenido v1.2.1 */
+/* Vista móvil del resumen de contenido v1.2.2 */
 @media(max-width:600px){
  #restaurants .card.span12{padding:16px!important;width:100%!important;overflow:hidden!important}
  #restaurants .card.span12>.row.between{display:block!important}
@@ -122,7 +122,7 @@ img,svg,video{max-width:100%;height:auto}
  .top .row{grid-template-columns:1fr}.card{padding:13px!important}
  .tabs{gap:7px}.tab{padding-left:13px!important;padding-right:13px!important}
 }
-/* Mobile polish v1.2.1 */
+/* Mobile polish v1.2.2 */
 @media(max-width:600px){
  .wrap{padding:16px!important;width:100%!important}
  .top{display:block!important;margin-bottom:18px!important}
@@ -245,6 +245,9 @@ img,svg,video{max-width:100%;height:auto}
  .top .row>button:last-child{grid-column:1/-1!important}
  .side-menu{width:86vw!important}
 }
+</style><style id="product-modal-v122">
+.product-modal{display:none;position:fixed;inset:0;z-index:2000;align-items:center;justify-content:center;padding:18px}.product-modal.open{display:flex}.product-modal-backdrop{position:absolute;inset:0;background:#000a;backdrop-filter:blur(3px)}.product-modal-card{position:relative;z-index:1;width:min(620px,100%);max-height:92dvh;overflow:auto}.modal-close{min-width:42px}.product-checks{justify-content:flex-start}.product-modal-actions{justify-content:flex-end}
+@media(max-width:600px){.product-modal{padding:10px;align-items:flex-end}.product-modal-card{width:100%;max-height:92dvh;border-radius:18px 18px 8px 8px!important;padding:16px!important}.product-modal-card h2{font-size:21px!important}.product-modal-card .two{grid-template-columns:1fr!important}.product-modal-actions{display:grid!important;grid-template-columns:1fr 1fr!important}.product-modal-actions button{width:100%!important}#products>.card>.row.between{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}#products>.card>.row.between>.actions{display:grid!important;grid-template-columns:1fr auto!important;width:100%!important}#products>.card>.row.between>.actions .primary{width:100%!important}}
 </style></head>
 <body class="auth-loading">
 <style>.auth-loading #login,.auth-loading #app{display:none!important}</style>
@@ -263,16 +266,15 @@ img,svg,video{max-width:100%;height:auto}
 
 <section id="orders" class="section active"><div class="grid"><div class="card span12"><div class="row between"><div><h2>Pedidos Mercado Pago</h2><p class="mut">Gestiona los pedidos pagados en línea y actualiza el estado que verá el cliente.</p></div><button class="ghost" onclick="loadOrders()">Actualizar</button></div><div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="ghost" onclick="testRestaurantNotification()">🔔 Probar notificación</button><button class="ghost" onclick="testRestaurantOrder()">📦 Probar pedido</button><button class="ghost" onclick="testRestaurantPrint()">🖨️ Probar impresión</button><label style="margin:0;display:flex;align-items:center;gap:7px"><input id="autoPrintOrders" type="checkbox" style="width:auto" onchange="setAutoPrintOrders(this.checked)"> Imprimir automáticamente al aceptar</label></div><div class="row" style="margin-top:14px;flex-wrap:wrap"><button class="ghost" onclick="filterOrdersStatus('all')">Todos <b id="countAll">0</b></button><button class="ghost" onclick="filterOrdersStatus('entregado')">Entregados <b id="countDelivered">0</b></button><button class="ghost" onclick="filterOrdersStatus('cancelado')">Cancelados <b id="countCancelled">0</b></button></div><div id="orderList" class="list" style="margin-top:16px"></div></div></div></section>
 
-<section id="products" class="section"><div class="grid">
-<div class="card span5"><h2 id="productTitle">Nuevo producto</h2><input id="pid" type="hidden">
+<section id="products" class="section"><div class="card"><div class="row between"><div><h2>Productos</h2><p class="mut">Administra los productos de tu menú.</p></div><div class="actions"><button class="primary" onclick="openProductModal()">＋ Crear producto</button><button class="ghost" onclick="loadProducts()">Actualizar</button></div></div><div id="productList" class="list" style="margin-top:14px"></div></div></section>
+
+<div id="productModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closeProductModal()"></div><div class="card product-modal-card"><div class="row between"><h2 id="productTitle">Nuevo producto</h2><button class="ghost modal-close" type="button" onclick="closeProductModal()">✕</button></div><input id="pid" type="hidden">
 <label>Nombre</label><input id="pname"><label>Descripción</label><textarea id="pdesc"></textarea>
 <div class="two"><div><label>Precio</label><input id="pprice" type="number" min="0" step=".01"></div><div><label>Categoría</label><select id="pcat"></select></div></div>
 <label>Imagen del producto</label><input id="pimage" placeholder="URL de imagen (opcional)"><div class="uploadBox"><input id="pimageFile" type="file" accept="image/*" onchange="uploadProductImage(this)"><button type="button" class="ghost" onclick="pimageFile.click()">📷 Elegir foto de la galería</button><img id="pimagePreview" class="uploadPreview" hidden></div>
 <div class="two"><div><label>Etiqueta</label><input id="pbadge" placeholder="Popular"></div><div><label>Orden</label><input id="psort" type="number" value="0"></div></div>
-<div class="row" style="margin-top:12px"><label style="margin:0"><input id="pfeatured" type="checkbox" style="width:auto"> Destacado</label><label style="margin:0"><input id="pavailable" type="checkbox" style="width:auto" checked> Disponible</label></div>
-<div class="row" style="margin-top:15px"><button class="primary" onclick="saveProduct()">Guardar producto</button><button class="ghost" onclick="clearProduct()">Limpiar</button></div></div>
-<div class="card span7"><div class="row between"><h2>Productos</h2><div class="actions"><button class="ghost" onclick="loadProducts()">Actualizar</button></div></div><div id="productList" class="list"></div></div>
-</div></section>
+<div class="row product-checks" style="margin-top:12px"><label style="margin:0"><input id="pfeatured" type="checkbox" style="width:auto"> Destacado</label><label style="margin:0"><input id="pavailable" type="checkbox" style="width:auto" checked> Disponible</label></div>
+<div class="row product-modal-actions" style="margin-top:15px"><button class="primary" onclick="saveProduct()">Guardar producto</button><button class="ghost" type="button" onclick="closeProductModal()">Cancelar</button></div></div></div>
 
 <section id="categories" class="section"><div class="grid"><div class="card span5"><h2>Nueva categoría</h2><input id="cid" type="hidden"><label>Nombre</label><input id="cname"><label>Slug</label><input id="cslug" placeholder="hamburguesas"><label>Orden</label><input id="csort" type="number" value="0"><label><input id="cactive" type="checkbox" style="width:auto" checked> Activa</label><div class="row" style="margin-top:15px"><button class="primary" onclick="saveCategory()">Guardar</button><button class="ghost" onclick="clearCategory()">Limpiar</button></div></div><div class="card span7"><h2>Categorías</h2><div id="categoryList" class="list"></div></div></div></section>
 
@@ -402,8 +404,10 @@ function editCategory(id){const c=categories.find(x=>x.id===id);cid.value=c.id;c
 function clearCategory(){cid.value="";cname.value="";cslug.value="";csort.value=0;cactive.checked=true}
 async function deleteCategory(id){if(!confirm("¿Eliminar esta categoría?"))return;const {error}=await sb.from("restaurant_categories").delete().eq("id",id);if(error)return toast(error.message);await loadCategories();toast("Categoría eliminada")}
 async function loadProducts(){const {data,error}=await sb.from("restaurant_products").select("*").eq("restaurant_id",currentRestaurant).order("sort_order");if(error)return toast(error.message);products=data||[];const productListEl=document.getElementById("productList");if(!productListEl)return;productListEl.innerHTML=products.map(p=>`<div class="item"><div class="row between"><div><h3>${esc(p.name)}</h3><div class="mut">${esc(p.description||"")}</div><div class="price">${money(p.price)}</div></div><div class="actions"><button class="ghost" onclick="editProduct(${p.id})">Editar</button><button class="ghost" onclick="toggleProduct(${p.id},${!p.available})">${p.available?"Desactivar":"Activar"}</button><button class="danger" onclick="deleteProduct(${p.id})">Eliminar</button></div></div></div>`).join("")||"<p class='mut'>Sin productos.</p>"}
-async function saveProduct(){let categoryId=pcat.value?+pcat.value:null;if(!categoryId){let general=categories.find(c=>c.slug==="general");if(!general){const {data,error}=await sb.from("restaurant_categories").insert({restaurant_id:currentRestaurant,name:"General",slug:"general",sort_order:0,active:true}).select("id,name,slug,active").single();if(error)return toast(error.message);general=data;categories.push(data)}categoryId=general.id}const row={restaurant_id:currentRestaurant,name:pname.value.trim(),description:pdesc.value.trim(),price:+pprice.value||0,category_id:categoryId,image_url:pimage.value.trim()||null,badge:pbadge.value.trim()||null,featured:pfeatured.checked,available:pavailable.checked,sort_order:+psort.value||0,updated_at:new Date().toISOString()};if(!row.name)return toast("Escribe el nombre");let q=pid.value?sb.from("restaurant_products").update(row).eq("id",pid.value):sb.from("restaurant_products").insert(row);const {error}=await q;if(error)return toast(error.message);clearProduct();await loadProducts();toast("Producto guardado")}
-function editProduct(id){const p=products.find(x=>x.id===id);pid.value=p.id;pname.value=p.name;pdesc.value=p.description||"";pprice.value=p.price;pcat.value=p.category_id||"";pimage.value=p.image_url||"";if(p.image_url){pimagePreview.src=p.image_url;pimagePreview.hidden=false}else pimagePreview.hidden=true;pbadge.value=p.badge||"";pfeatured.checked=p.featured;pavailable.checked=p.available;psort.value=p.sort_order;productTitle.textContent="Editar producto";scrollTo({top:0,behavior:"smooth"})}
+function openProductModal(){clearProduct();document.getElementById("productModal")?.classList.add("open");document.getElementById("productModal")?.setAttribute("aria-hidden","false");setTimeout(()=>pname?.focus(),80)}
+function closeProductModal(){document.getElementById("productModal")?.classList.remove("open");document.getElementById("productModal")?.setAttribute("aria-hidden","true")}
+async function saveProduct(){let categoryId=pcat.value?+pcat.value:null;if(!categoryId){let general=categories.find(c=>c.slug==="general");if(!general){const {data,error}=await sb.from("restaurant_categories").insert({restaurant_id:currentRestaurant,name:"General",slug:"general",sort_order:0,active:true}).select("id,name,slug,active").single();if(error)return toast(error.message);general=data;categories.push(data)}categoryId=general.id}const row={restaurant_id:currentRestaurant,name:pname.value.trim(),description:pdesc.value.trim(),price:+pprice.value||0,category_id:categoryId,image_url:pimage.value.trim()||null,badge:pbadge.value.trim()||null,featured:pfeatured.checked,available:pavailable.checked,sort_order:+psort.value||0,updated_at:new Date().toISOString()};if(!row.name)return toast("Escribe el nombre");let q=pid.value?sb.from("restaurant_products").update(row).eq("id",pid.value):sb.from("restaurant_products").insert(row);const {error}=await q;if(error)return toast(error.message);clearProduct();closeProductModal();await loadProducts();toast("Producto guardado")}
+function editProduct(id){const p=products.find(x=>x.id===id);if(!p)return toast("Producto no encontrado");pid.value=p.id;pname.value=p.name;pdesc.value=p.description||"";pprice.value=p.price;pcat.value=p.category_id||"";pimage.value=p.image_url||"";if(p.image_url){pimagePreview.src=p.image_url;pimagePreview.hidden=false}else pimagePreview.hidden=true;pbadge.value=p.badge||"";pfeatured.checked=p.featured;pavailable.checked=p.available;psort.value=p.sort_order;productTitle.textContent="Editar producto";document.getElementById("productModal")?.classList.add("open");document.getElementById("productModal")?.setAttribute("aria-hidden","false")}
 function clearProduct(){pid.value="";pname.value="";pdesc.value="";pprice.value="";pcat.value="";pimage.value="";pimagePreview.hidden=true;pimageFile.value="";pbadge.value="";pfeatured.checked=false;pavailable.checked=true;psort.value=0;productTitle.textContent="Nuevo producto"}
 async function toggleProduct(id,v){const {error}=await sb.from("restaurant_products").update({available:v,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toast(error.message);await loadProducts()}
 async function deleteProduct(id){if(!confirm("¿Eliminar este producto?"))return;const {error}=await sb.from("restaurant_products").delete().eq("id",id);if(error)return toast(error.message);await loadProducts();toast("Producto eliminado")}
@@ -596,7 +600,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v1.2.1</footer><script>
+</script></main></div><footer class="admin-version">Versión v1.2.2</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -638,4 +642,4 @@ async function saveSubscriptionMercadoPago(){
  }catch(e){toast("No se pudieron guardar las credenciales.");}
 }
 </script>
-<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.2.1</div></body></html>
+<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.2.2</div></body></html>
