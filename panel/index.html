@@ -30,7 +30,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .admin-version{padding:24px 12px;text-align:center;color:var(--mut);font-size:12px;opacity:.75}
 
-/* Ajuste móvil v1.2.4: contenido centrado y tarjetas sin desbordes */
+/* Ajuste móvil v1.2.5: contenido centrado y tarjetas sin desbordes */
 @media(max-width:600px){
   body{overflow-x:hidden!important}
   main,.wrap,.container,.content,.panel{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
@@ -42,7 +42,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 #orderEditModal{display:none}
 .order-track{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.order-track span{padding:6px 9px;border-radius:999px;background:var(--ghost);font-size:12px}.order-track span.done,.order-track span.current{background:var(--a);color:#171000}.order-track span.current{font-weight:900}.order-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-/* Vista móvil del resumen de contenido v1.2.4 */
+/* Vista móvil del resumen de contenido v1.2.5 */
 @media(max-width:600px){
  #restaurants .card.span12{padding:16px!important;width:100%!important;overflow:hidden!important}
  #restaurants .card.span12>.row.between{display:block!important}
@@ -122,7 +122,7 @@ img,svg,video{max-width:100%;height:auto}
  .top .row{grid-template-columns:1fr}.card{padding:13px!important}
  .tabs{gap:7px}.tab{padding-left:13px!important;padding-right:13px!important}
 }
-/* Mobile polish v1.2.4 */
+/* Mobile polish v1.2.5 */
 @media(max-width:600px){
  .wrap{padding:16px!important;width:100%!important}
  .top{display:block!important;margin-bottom:18px!important}
@@ -259,6 +259,17 @@ html[data-theme="light"] .side-menu-toggle{background:#eef3f8!important;color:#1
 html[data-theme="light"] .actions .ghost{background:#eef3f8!important;color:#172033!important}
 html[data-theme="light"] .danger{background:#fdecef!important;color:#9f1239!important;border:1px solid #fecdd3!important}
 html[data-theme="light"] .primary{background:var(--a)!important;color:#171000!important}
+</style><style id="drawer-half-v125">
+@media(max-width:800px){
+ .side-menu{width:50vw!important;max-width:50vw!important;border-radius:0 18px 18px 0!important}
+ .side-menu-backdrop{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.18)}
+ .side-menu-backdrop.open{display:block}
+}
+@media(max-width:430px){
+ .side-menu{left:0!important;right:auto!important;width:50vw!important;max-width:50vw!important}
+ .side-menu .tab{padding:10px 8px!important;gap:7px!important}
+ .side-menu .tab span{font-size:12px!important}
+}
 </style></head>
 <body class="auth-loading">
 <style>.auth-loading #login,.auth-loading #app{display:none!important}</style>
@@ -271,7 +282,7 @@ html[data-theme="light"] .primary{background:var(--a)!important;color:#171000!im
 <div id="subscriptionBanner" class="card" style="margin-bottom:14px;display:none"></div>
 <div class="top"><div><h1 id="panelMainTitle">Panel Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><a id="viewMenuLink" href="#" target="_blank" style="display:none"><button class="ghost">Ver menú</button></a><button class="ghost" id="themeBtn" type="button" onclick="toggleAdminTheme()">☀️ Modo claro</button><button class="ghost" onclick="logout()">Salir</button></div></div>
 <button id="sideMenuToggle" class="ghost side-menu-toggle" type="button" onclick="toggleSideMenu()">☰ Menú del panel</button>
-<div id="panelLayout" class="panel-layout"><aside id="sideMenu" class="side-menu"><div class="side-menu-title">Menú</div><div class="tabs">
+<div id="sideMenuBackdrop" class="side-menu-backdrop" onclick="closeSideMenu()"></div><div id="panelLayout" class="panel-layout"><aside id="sideMenu" class="side-menu"><div class="side-menu-title">Menú</div><div class="tabs">
 <button class="tab active" data-tab="orders">📦 <span>Pedidos Mercado Pago</span></button><button class="tab" data-tab="products">🍔 <span>Productos</span></button><button class="tab" data-tab="categories">📚 <span>Categorías</span></button><button class="tab" data-tab="qr">▦ <span>Código QR</span></button><button class="tab" data-tab="plans">💳 <span>Planes</span></button><button class="tab" data-tab="settings">⚙️ <span>Configuración</span></button>
 </div></aside><main class="panel-content">
 
@@ -387,7 +398,8 @@ async function enter(user){
   }
 }
 async function restoreSession(){try{const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){await enter(data.session.user)}else{document.getElementById("login").classList.remove("hidden")}}catch(e){document.getElementById("login").classList.remove("hidden");document.getElementById("loginMsg").textContent=e.message||"No se pudo validar la sesión."}finally{document.body.classList.remove("auth-loading")}}restoreSession();
-function toggleSideMenu(){document.getElementById("sideMenu")?.classList.toggle("open")}
+function toggleSideMenu(){const m=document.getElementById("sideMenu"),b=document.getElementById("sideMenuBackdrop");if(!m)return;m.classList.toggle("open");if(b)b.classList.toggle("open",m.classList.contains("open"))}
+function closeSideMenu(){const m=document.getElementById("sideMenu"),b=document.getElementById("sideMenuBackdrop");if(m)m.classList.remove("open");if(b)b.classList.remove("open")}
 function closeSideMenuMobile(){if(window.matchMedia("(max-width:800px)").matches)document.getElementById("sideMenu")?.classList.remove("open")}
 document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.tab)?.classList.add("active");closeSideMenuMobile();if(!currentRestaurant)return;try{if(b.dataset.tab==="orders")await loadOrders();else if(b.dataset.tab==="products")await loadProducts();else if(b.dataset.tab==="categories")await loadCategories();else if(b.dataset.tab==="qr"){renderQrPanel()}else if(b.dataset.tab==="plans")await loadSubscriptionPlans();else if(b.dataset.tab==="settings"){await loadSettings();await loadRestaurantMercadoPago()}}catch(e){console.error("Error actualizando sección",b.dataset.tab,e);toast("No se pudo actualizar esta sección")}});
 async function refreshAll(){
@@ -614,7 +626,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v1.2.4</footer><script>
+</script></main></div><footer class="admin-version">Versión v1.2.5</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -656,4 +668,4 @@ async function saveSubscriptionMercadoPago(){
  }catch(e){toast("No se pudieron guardar las credenciales.");}
 }
 </script>
-<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.2.4</div></body></html>
+<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.2.5</div></body></html>
