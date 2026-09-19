@@ -30,7 +30,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .admin-version{padding:24px 12px;text-align:center;color:var(--mut);font-size:12px;opacity:.75}
 
-/* Ajuste móvil v1.0.4: contenido centrado y tarjetas sin desbordes */
+/* Ajuste móvil v1.0.5: contenido centrado y tarjetas sin desbordes */
 @media(max-width:600px){
   body{overflow-x:hidden!important}
   main,.wrap,.container,.content,.panel{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
@@ -42,7 +42,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 #orderEditModal{display:none}
 .order-track{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.order-track span{padding:6px 9px;border-radius:999px;background:var(--ghost);font-size:12px}.order-track span.done,.order-track span.current{background:var(--a);color:#171000}.order-track span.current{font-weight:900}.order-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-/* Vista móvil del resumen de contenido v1.0.4 */
+/* Vista móvil del resumen de contenido v1.0.5 */
 @media(max-width:600px){
  #restaurants .card.span12{padding:16px!important;width:100%!important;overflow:hidden!important}
  #restaurants .card.span12>.row.between{display:block!important}
@@ -217,62 +217,47 @@ async function logout(){await sb.auth.signOut();window.location.replace("https:/
 async function enter(user){
   const msg=document.getElementById("loginMsg");
   try{
-    msg.textContent="Verificando permisos...";
-    const {data,error}=await sb.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle(); isSuperAdmin=!!data; let membership=[];
-    const restaurantParam=Number(new URLSearchParams(location.search).get("restaurant")||0);
-    if(isSuperAdmin&&!restaurantParam){location.replace("./panel.html");return}
-    if(isSuperAdmin&&restaurantParam){currentRestaurant=restaurantParam;adminRestaurantMode=true;currentRole="restaurant";} if(!isSuperAdmin){const mr=await sb.from("restaurant_staff").select("restaurant_id,role,permissions").eq("user_id",user.id).eq("active",true);if(mr.error){msg.textContent="Error al verificar restaurante: "+mr.error.message;return}membership=mr.data||[];
-      if(!membership.length && user.user_metadata?.trial_restaurant_name){
-        const cr=await sb.rpc("create_my_trial_restaurant",{
-          p_name:user.user_metadata.trial_restaurant_name,
-          p_whatsapp:user.user_metadata.trial_whatsapp||"",
-          p_address:user.user_metadata.trial_address||""
-        });
-        if(!cr.error){
-          const retry=await sb.from("restaurant_staff").select("restaurant_id,role,permissions").eq("user_id",user.id).eq("active",true);
-          membership=retry.data||[];
-        }
+    msg.textContent="Cargando restaurante...";
+    isSuperAdmin=false; adminRestaurantMode=false;
+    let {data:membership,error:membershipError}=await sb.from("restaurant_staff")
+      .select("restaurant_id,role,permissions")
+      .eq("user_id",user.id).eq("active",true);
+    if(membershipError)throw membershipError;
+    membership=membership||[];
+    if(!membership.length && user.user_metadata?.trial_restaurant_name){
+      const cr=await sb.rpc("create_my_trial_restaurant",{
+        p_name:user.user_metadata.trial_restaurant_name,
+        p_whatsapp:user.user_metadata.trial_whatsapp||"",
+        p_address:user.user_metadata.trial_address||""
+      });
+      if(!cr.error){
+        const retry=await sb.from("restaurant_staff").select("restaurant_id,role,permissions").eq("user_id",user.id).eq("active",true);
+        membership=retry.data||[];
       }
-      currentRole=membership[0]?.role||"";}
-    if(error){msg.textContent="Error al verificar permisos: "+error.message;return}
-    if(!isSuperAdmin && !membership.length){await sb.auth.signOut();msg.textContent="Esta cuenta no tiene acceso a ningún restaurante.";return} if(!isSuperAdmin&&membership.length){
- currentRestaurant=membership[0].restaurant_id;enableRestaurantNotifications();setTimeout(startRestaurantOrderRealtime,0); const menuLink=document.getElementById("viewMenuLink"); if(menuLink){const {data:menuRestaurant}=await sb.from("restaurants").select("slug").eq("id",currentRestaurant).single();const menuSlug=menuRestaurant?.slug||currentRestaurant;menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(menuSlug);menuLink.style.display="";}
- currentRole=membership[0].role||"restaurant";const rms=document.getElementById("restaurantMpSettings");if(rms)rms.style.display="";
- const p=membership[0].permissions||{};
- document.querySelectorAll(".tab").forEach(x=>x.style.display="");
- if(currentRole==="restaurant"){
-   document.querySelectorAll("[data-tab=restaurants],[data-tab=users],[data-tab=dashboard],[data-tab=subscriptions]").forEach(x=>x.style.display="none");
- }else if(currentRole==="editor"){
-   document.querySelectorAll("[data-tab=users]").forEach(x=>x.style.display="none");
- }
- if(currentRole!=="manager"){
-   if(!p.products) document.querySelector('[data-tab="products"]')?.style.setProperty("display","none");
-   if(!p.categories) document.querySelector('[data-tab="categories"]')?.style.setProperty("display","none");
-   if(!p.business) document.querySelector('[data-tab="business"]')?.style.setProperty("display","none");
- }
- const first=[...document.querySelectorAll(".tab")].find(x=>x.style.display!=="none");
- document.querySelectorAll(".tab,.section").forEach(x=>x.classList.remove("active"));
- if(first){first.classList.add("active");document.getElementById(first.dataset.tab)?.classList.add("active")} setTimeout(()=>{if(currentRestaurant)loadOrders()},0);
-}
+    }
+    if(!membership.length){await sb.auth.signOut();msg.textContent="Esta cuenta no tiene un restaurante asignado.";return}
+    currentRestaurant=Number(membership[0].restaurant_id);
+    currentRole=membership[0].role||"restaurant";
     document.getElementById("login").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
     document.body.classList.remove("auth-loading");
     document.getElementById("who").textContent=user.email;
-    if(isSuperAdmin&&adminRestaurantMode){
-      const rr=(await sb.from("restaurants").select("*").eq("id",currentRestaurant).maybeSingle()).data;
-      if(!rr){location.replace("./panel.html");return}
-      document.getElementById("adminRestaurantBanner").style.display="";
-      document.getElementById("adminRestaurantModeName").textContent="Viendo como: "+rr.name;
-      document.getElementById("panelMainTitle").textContent="Panel · "+rr.name;
-      document.getElementById("viewMenuLink").href="https://menu.yummypro.online/?r="+encodeURIComponent(rr.slug||rr.id);
-      document.getElementById("viewMenuLink").style.display="";
-      const restaurantTabs=["orders","products","categories","qr","plans","settings"];
-      document.querySelectorAll(".tab").forEach(t=>t.style.display=restaurantTabs.includes(t.dataset.tab)?"":"none");
-      document.getElementById("mpCredentialsCard").style.display="none";document.getElementById("planCreatorCard").style.display="none";document.getElementById("demoProductActions").style.display="none";document.getElementById("restaurantMpSettings")?.style.setProperty("display","");
-    }else if(isSuperAdmin){document.querySelector('[data-tab="orders"]')?.style.setProperty("display","none");document.getElementById("orders")?.classList.remove("active");document.getElementById("demoProductActions").style.display="";document.getElementById("viewMenuLink").style.display="none";document.querySelector('[data-tab="settings"]')?.style.setProperty("display","none");document.getElementById("settings")?.classList.remove("active");document.getElementById("subscriptionBanner").style.display="none";document.querySelector('[data-tab="plans"]').style.display="none";document.getElementById("mpCredentialsCard").style.display="block";document.getElementById("planCreatorCard").style.display="block";}else{document.getElementById("demoProductActions").style.display="none";document.getElementById("mpCredentialsCard").style.display="none";document.getElementById("planCreatorCard").style.display="none";document.querySelector('[data-tab="plans"]').style.display="";}
-    msg.textContent="";
+    document.getElementById("demoProductActions").style.display="none";
+    document.getElementById("mpCredentialsCard").style.display="none";
+    document.getElementById("planCreatorCard").style.display="none";
+    document.querySelectorAll("[data-tab=restaurants],[data-tab=users],[data-tab=dashboard],[data-tab=subscriptions]").forEach(x=>x.style.display="none");
+    document.querySelector('[data-tab="plans"]')?.style.setProperty("display","");
+    document.getElementById("restaurantMpSettings")?.style.setProperty("display","");
+    const {data:menuRestaurant}=await sb.from("restaurants").select("slug").eq("id",currentRestaurant).single();
+    const menuLink=document.getElementById("viewMenuLink");
+    if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(menuRestaurant?.slug||currentRestaurant);menuLink.style.display=""}
+    enableRestaurantNotifications();setTimeout(startRestaurantOrderRealtime,0);
     await refreshAll();
-  }catch(e){msg.textContent=e.message||"No se pudo abrir el panel."}
+    msg.textContent="";
+  }catch(e){
+    console.error("Restaurant panel load error",e);
+    msg.textContent=e.message||"No se pudo cargar la información del restaurante.";
+  }
 }
 async function restoreSession(){try{const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){await enter(data.session.user)}else{document.getElementById("login").classList.remove("hidden")}}catch(e){document.getElementById("login").classList.remove("hidden");document.getElementById("loginMsg").textContent=e.message||"No se pudo validar la sesión."}finally{document.body.classList.remove("auth-loading")}}restoreSession();
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.tab).classList.add("active");if(b.dataset.tab==="orders"&&currentRestaurant)loadOrders()});
@@ -558,7 +543,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.0.4</footer><script>
+</script><footer class="admin-version">Versión v1.0.5</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -600,4 +585,4 @@ async function saveSubscriptionMercadoPago(){
  }catch(e){toast("No se pudieron guardar las credenciales.");}
 }
 </script>
-<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.0.4</div></body></html>
+<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.0.5</div></body></html>
