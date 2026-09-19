@@ -30,7 +30,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .admin-version{padding:24px 12px;text-align:center;color:var(--mut);font-size:12px;opacity:.75}
 
-/* Ajuste móvil v1.1.2: contenido centrado y tarjetas sin desbordes */
+/* Ajuste móvil v1.1.3: contenido centrado y tarjetas sin desbordes */
 @media(max-width:600px){
   body{overflow-x:hidden!important}
   main,.wrap,.container,.content,.panel{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
@@ -42,7 +42,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 #orderEditModal{display:none}
 .order-track{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.order-track span{padding:6px 9px;border-radius:999px;background:var(--ghost);font-size:12px}.order-track span.done,.order-track span.current{background:var(--a);color:#171000}.order-track span.current{font-weight:900}.order-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-/* Vista móvil del resumen de contenido v1.1.2 */
+/* Vista móvil del resumen de contenido v1.1.3 */
 @media(max-width:600px){
  #restaurants .card.span12{padding:16px!important;width:100%!important;overflow:hidden!important}
  #restaurants .card.span12>.row.between{display:block!important}
@@ -147,12 +147,16 @@ img,svg,video{max-width:100%;height:auto}
 <div class="two"><div><label>Etiqueta</label><input id="pbadge" placeholder="Popular"></div><div><label>Orden</label><input id="psort" type="number" value="0"></div></div>
 <div class="row" style="margin-top:12px"><label style="margin:0"><input id="pfeatured" type="checkbox" style="width:auto"> Destacado</label><label style="margin:0"><input id="pavailable" type="checkbox" style="width:auto" checked> Disponible</label></div>
 <div class="row" style="margin-top:15px"><button class="primary" onclick="saveProduct()">Guardar producto</button><button class="ghost" onclick="clearProduct()">Limpiar</button></div></div>
-<div class="card span7"><div class="row between"><h2>Productos</h2><div class="actions"><span id="demoProductActions"><button class="primary" onclick="addDemoProducts()">Agregar productos demo</button><button class="danger" onclick="removeDemoProducts()">Quitar productos demo</button></span><button class="ghost" onclick="loadProducts()">Actualizar</button></div></div><div id="productList" class="list"></div></div>
+<div class="card span7"><div class="row between"><h2>Productos</h2><div class="actions"><button class="ghost" onclick="loadProducts()">Actualizar</button></div></div><div id="productList" class="list"></div></div>
 </div></section>
 
 <section id="categories" class="section"><div class="grid"><div class="card span5"><h2>Nueva categoría</h2><input id="cid" type="hidden"><label>Nombre</label><input id="cname"><label>Slug</label><input id="cslug" placeholder="hamburguesas"><label>Orden</label><input id="csort" type="number" value="0"><label><input id="cactive" type="checkbox" style="width:auto" checked> Activa</label><div class="row" style="margin-top:15px"><button class="primary" onclick="saveCategory()">Guardar</button><button class="ghost" onclick="clearCategory()">Limpiar</button></div></div><div class="card span7"><h2>Categorías</h2><div id="categoryList" class="list"></div></div></div></section>
 
 
+
+<section id="qr" class="section"><div class="card"><h2>Código QR del restaurante</h2><p class="mut">Enlace directo para compartir el menú de tu restaurante.</p><div id="qrPanel"></div></div></section>
+
+<section id="plans" class="section"><div class="card"><h2>Planes disponibles</h2><p class="mut">Elige un plan para mantener activo tu restaurante.</p><div id="restaurantPlans" class="list"></div></div></section>
 
 <section id="settings" class="section"><div class="card"><h2>Datos del negocio</h2><div class="grid">
 <div class="span4"><label>Nombre</label><input id="sname"></div><div class="span4"><label>WhatsApp</label><input id="swhatsapp"></div><div class="span4"><label>Instagram</label><input id="sinstagram"></div>
@@ -275,37 +279,6 @@ async function saveProduct(){let categoryId=pcat.value?+pcat.value:null;if(!cate
 function editProduct(id){const p=products.find(x=>x.id===id);pid.value=p.id;pname.value=p.name;pdesc.value=p.description||"";pprice.value=p.price;pcat.value=p.category_id||"";pimage.value=p.image_url||"";if(p.image_url){pimagePreview.src=p.image_url;pimagePreview.hidden=false}else pimagePreview.hidden=true;pbadge.value=p.badge||"";pfeatured.checked=p.featured;pavailable.checked=p.available;psort.value=p.sort_order;productTitle.textContent="Editar producto";scrollTo({top:0,behavior:"smooth"})}
 function clearProduct(){pid.value="";pname.value="";pdesc.value="";pprice.value="";pcat.value="";pimage.value="";pimagePreview.hidden=true;pimageFile.value="";pbadge.value="";pfeatured.checked=false;pavailable.checked=true;psort.value=0;productTitle.textContent="Nuevo producto"}
 async function toggleProduct(id,v){const {error}=await sb.from("restaurant_products").update({available:v,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toast(error.message);await loadProducts()}
-async function addDemoProducts(){
- if(!currentRestaurant)return toast("Selecciona un restaurante");
- const demoCats=[["Combos","combos",1],["Hamburguesas","hamburguesas",2],["Papas y más","acompanamientos",3],["Bebidas","bebidas",4],["Postres","postres",5]];
- const {data:existing}=await sb.from("restaurant_categories").select("id,slug").eq("restaurant_id",currentRestaurant);
- const map={};(existing||[]).forEach(x=>map[x.slug]=x.id);
- for(const [name,slug,sort_order] of demoCats){if(!map[slug]){const {data,error}=await sb.from("restaurant_categories").insert({restaurant_id:currentRestaurant,name,slug,sort_order,active:true,is_demo:true}).select("id").single();if(error)return toast(error.message);map[slug]=data.id}}
- const demo=[
- ["combos","Combo Clásica","La Clásica simple con papas fritas y gaseosa 500 ml.",2900,3200,"Ahorrás",true],
- ["combos","Combo Doble","La Clásica doble con papas fritas y gaseosa 500 ml.",3200,3500,"",false],
- ["combos","Combo Bacon","Bacon Crocante doble, papas con cheddar y panceta y una cerveza artesanal.",4400,4930,"",false],
- ["combos","Combo Pareja","Dos Clásicas dobles, papas fritas para compartir y dos gaseosas.",5400,6100,"",false],
- ["hamburguesas","La Clásica","Medallón blend 120g, cheddar, lechuga, tomate, pepinillos y salsa de la casa en pan de papa.",1600,null,"Más pedida",true],
- ["hamburguesas","Cheddar Total","Medallón blend 120g, cheddar fundido en abundancia y salsa secreta en pan de papa.",1650,null,"",false],
- ["hamburguesas","Bacon Crocante","Medallón blend 120g, cheddar, panceta crocante y alioli de la casa.",1730,null,"",true],
- ["hamburguesas","Crispy Onion","Medallón blend 120g, cheddar, cebolla crispy y salsa barbacoa.",1700,null,"Nuevo",false],
- ["hamburguesas","La Ahumada","Medallón blend 120g, cheddar ahumado, cebolla caramelizada y salsa ahumada.",1750,null,"",false],
- ["acompanamientos","Papas fritas","Porción individual, bien crocantes.",900,null,"",false],
- ["acompanamientos","Papas con cheddar y panceta","Papas fritas bañadas en cheddar caliente con panceta crocante.",1500,null,"Favorita",true],
- ["acompanamientos","Aros de cebolla","Rebozados y fritos al momento. Vienen con salsa barbacoa.",1100,null,"",false],
- ["bebidas","Gaseosa 500 ml","Línea Coca-Cola. Consultá sabores por WhatsApp.",700,null,"",false],
- ["bebidas","Limonada con menta","Exprimida en el día, con menta y jengibre.",900,null,"",false],
- ["bebidas","Cerveza artesanal 473 ml","Rubia, roja o IPA, según disponibilidad.",1400,null,"",false],
- ["bebidas","Agua sin gas 500 ml","Botella individual.",500,null,"",false],
- ["postres","Brownie con helado","Brownie tibio de chocolate con bocha de crema americana.",1600,null,"",false],
- ["postres","Flan casero","Con dulce de leche y crema.",1200,null,"",false]];
- const {data:existingP}=await sb.from("restaurant_products").select("name").eq("restaurant_id",currentRestaurant).eq("is_demo",true);const names=new Set((existingP||[]).map(x=>x.name));
- const rows=demo.filter(x=>!names.has(x[1])).map((x,i)=>({restaurant_id:currentRestaurant,category_id:map[x[0]],name:x[1],description:x[2],price:x[3],compare_price:x[4],badge:x[5]||null,featured:x[6],available:x[1]!=="La Ahumada",sort_order:i+1,is_demo:true}));
- if(rows.length){const {error}=await sb.from("restaurant_products").insert(rows);if(error)return toast(error.message)}
- await Promise.all([loadCategories(),loadProducts()]);toast("Productos demo agregados")
-}
-async function removeDemoProducts(){if(!currentRestaurant)return toast("Selecciona un restaurante");if(!confirm("¿Quitar todos los productos y categorías demo de este restaurante?"))return;const {error:e1}=await sb.from("restaurant_products").delete().eq("restaurant_id",currentRestaurant).eq("is_demo",true);if(e1)return toast(e1.message);const {error:e2}=await sb.from("restaurant_categories").delete().eq("restaurant_id",currentRestaurant).eq("is_demo",true);if(e2)return toast(e2.message);await Promise.all([loadCategories(),loadProducts()]);toast("Productos demo eliminados")}
 async function deleteProduct(id){if(!confirm("¿Eliminar este producto?"))return;const {error}=await sb.from("restaurant_products").delete().eq("id",id);if(error)return toast(error.message);await loadProducts();toast("Producto eliminado")}
 async function enableRestaurantNotifications(){
  if(!("Notification" in window))return;
@@ -400,8 +373,20 @@ async function searchRestaurantAddress(){
   if(st)st.textContent="❌ No se pudo verificar la dirección. Revisa lo escrito e intenta nuevamente.";
  }
 }
+function renderQrPanel(){
+ const qrPanel=document.getElementById("qrPanel");if(!qrPanel||!currentRestaurant)return;
+ const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));if(!r){qrPanel.innerHTML="<p class='mut'>No se pudo cargar el restaurante.</p>";return}
+ const menuUrl="https://menu.yummypro.online/?r="+encodeURIComponent(r.slug||r.id);
+ const qrUrl="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data="+encodeURIComponent(menuUrl);
+ qrPanel.innerHTML=`<div class="grid"><div class="span4"><img src="${qrUrl}" alt="Código QR" style="width:280px;max-width:100%;background:#fff;padding:10px;border-radius:14px"></div><div class="span8"><label>Enlace del menú</label><input value="${esc(menuUrl)}" readonly><div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="primary" onclick="navigator.clipboard.writeText('${menuUrl}').then(()=>toast('Enlace copiado'))">Copiar enlace</button><a href="${menuUrl}" target="_blank"><button class="ghost" type="button">Abrir menú</button></a></div></div></div>`;
+}
+function renderRestaurantPlans(){
+ const box=document.getElementById("restaurantPlans");if(!box)return;
+ box.innerHTML=(subscriptionPlans||[]).map(p=>`<div class="item"><div class="row between"><div><h3>${esc(p.name||"Plan")}</h3><div class="mut">${Number(p.days||0)} días</div><div class="price">${money(p.amount||0)}</div></div></div></div>`).join("")||"<p class='mut'>No hay planes disponibles en este momento.</p>";
+}
+function renderRestaurantContent(){renderQrPanel();renderRestaurantPlans();}
 async function loadSettings(){if(!currentRestaurant)return;const {data,error}=await sb.from("restaurants").select("*").eq("id",currentRestaurant).single();if(error)return toast(error.message);sname.value=data.name||"";swhatsapp.value=data.whatsapp||"";saddress.value=data.address||"";const sma=document.getElementById("smapaddress");if(sma)sma.value=data.address||"";sopen.value=(data.open_time||"").slice(0,5);sclose.value=(data.close_time||"").slice(0,5);sinstagram.value=data.instagram||"";spickup.value=data.pickup_eta||"";sdelivery.value=data.delivery_eta||"";sdeliverynote.value=data.delivery_note||"";const scp=document.getElementById("scolorPrimary"),scs=document.getElementById("scolorSecondary"),sct=document.getElementById("scolorText"),sl=document.getElementById("slogo"),slp=document.getElementById("slogoPreview");if(scp)scp.value=data.theme_primary_color||"#ffc21a";if(scs)scs.value=data.theme_secondary_color||"#1e1f24";if(sct)sct.value=data.theme_text_color||"#1e1f24";if(sl)sl.value=data.logo_url||"";if(slp){if(data.logo_url){slp.src=data.logo_url;slp.hidden=false}else{slp.removeAttribute("src");slp.hidden=true}}sdeliverymode.value=data.delivery_pricing_mode||"fixed";sdeliveryprice.value=Number(data.delivery_fixed_price||0);slat.value=data.latitude??"";slng.value=data.longitude??"";sdeliveryzones.value=(Array.isArray(data.delivery_zones)?data.delivery_zones:[]).map(z=>String(z.max_km)+"="+String(z.price)).join("\n");const mst=document.getElementById("manualOpenStatusText");if(mst)mst.textContent=data.manual_open_status==="open"?"🟢 Forzado ABIERTO":data.manual_open_status==="closed"?"🔴 Forzado CERRADO":"🕒 Usando horario predeterminado"}
-async function saveSettings(){if(!currentRestaurant)return toast("No hay restaurante seleccionado");const row={name:sname.value.trim(),whatsapp:swhatsapp.value.trim(),address:saddress.value.trim(),open_time:sopen.value,close_time:sclose.value,instagram:sinstagram.value.trim(),pickup_eta:spickup.value.trim(),delivery_eta:sdelivery.value.trim(),delivery_note:sdeliverynote.value.trim(),theme_primary_color:document.getElementById("scolorPrimary")?.value||"#ffc21a",theme_secondary_color:document.getElementById("scolorSecondary")?.value||"#1e1f24",theme_text_color:document.getElementById("scolorText")?.value||"#1e1f24",logo_url:document.getElementById("slogo")?.value||null,delivery_pricing_mode:sdeliverymode.value,delivery_fixed_price:Number(sdeliveryprice.value||0),latitude:slat.value===""?null:Number(slat.value),longitude:slng.value===""?null:Number(slng.value),delivery_zones:sdeliveryzones.value.split(/\n+/).map(x=>x.trim()).filter(Boolean).map(x=>{const p=x.split("=");return {max_km:Number(p[0]),price:Number(p[1])}}).filter(z=>Number.isFinite(z.max_km)&&z.max_km>0&&Number.isFinite(z.price)&&z.price>=0).sort((x,y)=>x.max_km-y.max_km),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurants").update(row).eq("id",currentRestaurant);if(error)return toast(error.message);await loadRestaurants();if(adminRestaurantMode){await loadSettings();renderRestaurantContent();renderQrPanel()}toast("Datos del restaurante actualizados")}
+async function saveSettings(){if(!currentRestaurant)return toast("No hay restaurante seleccionado");const row={name:sname.value.trim(),whatsapp:swhatsapp.value.trim(),address:saddress.value.trim(),open_time:sopen.value,close_time:sclose.value,instagram:sinstagram.value.trim(),pickup_eta:spickup.value.trim(),delivery_eta:sdelivery.value.trim(),delivery_note:sdeliverynote.value.trim(),theme_primary_color:document.getElementById("scolorPrimary")?.value||"#ffc21a",theme_secondary_color:document.getElementById("scolorSecondary")?.value||"#1e1f24",theme_text_color:document.getElementById("scolorText")?.value||"#1e1f24",logo_url:document.getElementById("slogo")?.value||null,delivery_pricing_mode:sdeliverymode.value,delivery_fixed_price:Number(sdeliveryprice.value||0),latitude:slat.value===""?null:Number(slat.value),longitude:slng.value===""?null:Number(slng.value),delivery_zones:sdeliveryzones.value.split(/\n+/).map(x=>x.trim()).filter(Boolean).map(x=>{const p=x.split("=");return {max_km:Number(p[0]),price:Number(p[1])}}).filter(z=>Number.isFinite(z.max_km)&&z.max_km>0&&Number.isFinite(z.price)&&z.price>=0).sort((x,y)=>x.max_km-y.max_km),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurants").update(row).eq("id",currentRestaurant);if(error)return toast(error.message);await loadRestaurants();await loadSettings();renderRestaurantContent();renderQrPanel();toast("Datos del restaurante actualizados")}
 async function setManualOpenStatus(status){if(!currentRestaurant)return;const {error}=await sb.from("restaurants").update({manual_open_status:status,updated_at:new Date().toISOString()}).eq("id",currentRestaurant);if(error)return toast(error.message);await loadSettings();toast(status==="open"?"Local forzado como ABIERTO":status==="closed"?"Local forzado como CERRADO":"Se volvió al horario predeterminado")}
 function renderStats(){const valid=orders.filter(o=>o.status!=="cancelado"),sales=valid.reduce((a,o)=>a+Number(o.total||0),0);statProducts.textContent=products.filter(p=>p.available).length;statOrders.textContent=orders.length;statSales.textContent=money(sales);const av=document.getElementById("statAverage");if(av)av.textContent=money(valid.length?sales/valid.length:0);renderAnalytics(valid)}
 function renderAnalytics(valid){const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);days.push(d)}const vals=days.map(d=>valid.filter(o=>{const x=new Date(o.created_at);return x.toDateString()===d.toDateString()}).reduce((a,o)=>a+Number(o.total||0),0));const max=Math.max(...vals,1);const sc=document.getElementById("salesChart");if(sc)sc.innerHTML='<div style="display:flex;align-items:end;gap:10px;height:190px;padding-top:12px">'+vals.map((v,i)=>'<div style="flex:1;text-align:center;min-width:0"><div class="mut" style="font-size:11px">'+money(v)+'</div><div style="height:'+Math.max(5,Math.round(v/max*125))+'px;background:var(--accent);border-radius:8px 8px 3px 3px;margin:5px auto;width:70%"></div><small class="mut">'+days[i].toLocaleDateString("es",{weekday:"short"})+'</small></div>').join("")+'</div>';const counts={};orders.forEach(o=>counts[o.status||"nuevo"]=(counts[o.status||"nuevo"]||0)+1);const st=document.getElementById("statusChart");if(st)st.innerHTML=Object.entries(counts).map(([k,v])=>'<div class="item"><div class="row between"><b>'+esc(k)+'</b><span>'+v+'</span></div><div style="height:8px;background:#ffffff12;border-radius:10px;margin-top:8px"><div style="height:100%;width:'+Math.round(v/Math.max(orders.length,1)*100)+'%;background:var(--accent);border-radius:10px"></div></div></div>').join("")||'<p class="mut">Sin pedidos.</p>';const names={};valid.forEach(o=>{let raw=o.items||o.order_items||[];if(typeof raw==="string"){try{raw=JSON.parse(raw)}catch{raw=[]}}if(Array.isArray(raw))raw.forEach(it=>{const n=it.name||it.product_name||"Producto";names[n]=(names[n]||0)+Number(it.qty||it.quantity||1)})});const tp=document.getElementById("topProducts");if(tp)tp.innerHTML=Object.entries(names).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,q],i)=>'<div class="item"><div class="row between"><b>'+(i+1)+'. '+esc(n)+'</b><span class="badge">'+q+' vendidos</span></div></div>').join("")||'<p class="mut">Aún no hay datos suficientes de productos vendidos.</p>'}
@@ -427,7 +412,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.1.2</footer><script>
+</script><footer class="admin-version">Versión v1.1.3</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -469,4 +454,4 @@ async function saveSubscriptionMercadoPago(){
  }catch(e){toast("No se pudieron guardar las credenciales.");}
 }
 </script>
-<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.1.2</div></body></html>
+<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.1.3</div></body></html>
