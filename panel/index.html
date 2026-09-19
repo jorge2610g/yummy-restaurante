@@ -30,7 +30,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .admin-version{padding:24px 12px;text-align:center;color:var(--mut);font-size:12px;opacity:.75}
 
-/* Ajuste móvil v1.1.4: contenido centrado y tarjetas sin desbordes */
+/* Ajuste móvil v1.1.5: contenido centrado y tarjetas sin desbordes */
 @media(max-width:600px){
   body{overflow-x:hidden!important}
   main,.wrap,.container,.content,.panel{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
@@ -42,7 +42,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 #orderEditModal{display:none}
 .order-track{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.order-track span{padding:6px 9px;border-radius:999px;background:var(--ghost);font-size:12px}.order-track span.done,.order-track span.current{background:var(--a);color:#171000}.order-track span.current{font-weight:900}.order-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-/* Vista móvil del resumen de contenido v1.1.4 */
+/* Vista móvil del resumen de contenido v1.1.5 */
 @media(max-width:600px){
  #restaurants .card.span12{padding:16px!important;width:100%!important;overflow:hidden!important}
  #restaurants .card.span12>.row.between{display:block!important}
@@ -383,7 +383,17 @@ function renderQrPanel(){
 }
 function renderRestaurantPlans(){
  const box=document.getElementById("restaurantPlans");if(!box)return;
- box.innerHTML=(subscriptionPlans||[]).map(p=>`<div class="item"><div class="row between"><div><h3>${esc(p.name||"Plan")}</h3><div class="mut">${Number(p.days||0)} días</div><div class="price">${money(p.amount||0)}</div></div></div></div>`).join("")||"<p class='mut'>No hay planes disponibles en este momento.</p>";
+ box.innerHTML=(subscriptionPlans||[]).map(p=>`<div class="item"><div class="row between"><div><h3>${esc(p.name||"Plan")}</h3><div class="mut">${Number(p.days||0)} días</div><div class="price">${money(p.amount||0)}</div></div><button class="primary" onclick="paySubscriptionPlan(${p.id})">Pagar suscripción</button></div></div>`).join("")||"<p class='mut'>No hay planes disponibles en este momento.</p>";
+}
+async function paySubscriptionPlan(id){
+ const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
+ try{
+  const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return toast("Tu sesión venció. Vuelve a iniciar sesión.");
+  toast("Preparando pago con Mercado Pago…");
+  const res=await fetch(SB_URL+"/functions/v1/create-subscription-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({plan_id:p.id,restaurant_id:currentRestaurant})});
+  const data=await res.json();if(!res.ok||!data?.init_point)return toast(data?.error||"No se pudo iniciar el pago");
+  window.location.assign(data.init_point);
+ }catch(e){console.error(e);toast("No se pudo conectar con Mercado Pago");}
 }
 function renderRestaurantContent(){renderQrPanel();renderRestaurantPlans();}
 async function loadSettings(){if(!currentRestaurant)return;const {data,error}=await sb.from("restaurants").select("*").eq("id",currentRestaurant).single();if(error)return toast(error.message);sname.value=data.name||"";swhatsapp.value=data.whatsapp||"";saddress.value=data.address||"";const sma=document.getElementById("smapaddress");if(sma)sma.value=data.address||"";sopen.value=(data.open_time||"").slice(0,5);sclose.value=(data.close_time||"").slice(0,5);sinstagram.value=data.instagram||"";spickup.value=data.pickup_eta||"";sdelivery.value=data.delivery_eta||"";sdeliverynote.value=data.delivery_note||"";const scp=document.getElementById("scolorPrimary"),scs=document.getElementById("scolorSecondary"),sct=document.getElementById("scolorText"),sl=document.getElementById("slogo"),slp=document.getElementById("slogoPreview");if(scp)scp.value=data.theme_primary_color||"#ffc21a";if(scs)scs.value=data.theme_secondary_color||"#1e1f24";if(sct)sct.value=data.theme_text_color||"#1e1f24";if(sl)sl.value=data.logo_url||"";if(slp){if(data.logo_url){slp.src=data.logo_url;slp.hidden=false}else{slp.removeAttribute("src");slp.hidden=true}}sdeliverymode.value=data.delivery_pricing_mode||"fixed";sdeliveryprice.value=Number(data.delivery_fixed_price||0);slat.value=data.latitude??"";slng.value=data.longitude??"";sdeliveryzones.value=(Array.isArray(data.delivery_zones)?data.delivery_zones:[]).map(z=>String(z.max_km)+"="+String(z.price)).join("\n");const mst=document.getElementById("manualOpenStatusText");if(mst)mst.textContent=data.manual_open_status==="open"?"🟢 Forzado ABIERTO":data.manual_open_status==="closed"?"🔴 Forzado CERRADO":"🕒 Usando horario predeterminado"}
@@ -413,7 +423,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v1.1.4</footer><script>
+</script><footer class="admin-version">Versión v1.1.5</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -455,4 +465,4 @@ async function saveSubscriptionMercadoPago(){
  }catch(e){toast("No se pudieron guardar las credenciales.");}
 }
 </script>
-<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.1.4</div></body></html>
+<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.1.5</div></body></html>
