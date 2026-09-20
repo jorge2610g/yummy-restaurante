@@ -304,6 +304,19 @@ button{transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
 @media(max-width:480px){.restaurant-metrics,.health-grid{grid-template-columns:1fr}.restaurant-metric{min-height:104px}}
 @media(max-width:600px){.top>.row{display:grid!important;grid-template-columns:1fr 1fr!important}.top>.row>a{grid-column:1/-1}.top>.row button{width:100%}.card{padding:15px!important;border-radius:18px!important}.order-tools{display:grid;grid-template-columns:1fr 1fr}.order-tools label{grid-column:1/-1}.order-tools button{width:100%}.order-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.order-filters button{width:100%;padding:9px 5px!important;font-size:11px!important}.product-card{grid-template-columns:64px minmax(0,1fr);gap:11px}.product-thumb{width:64px;height:64px}.product-card .actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px!important}.product-card .actions button{width:100%;font-size:10px!important;padding:7px 4px!important}.actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px!important}.actions button,.actions a,.actions a button{width:100%}.delivery-zone-row{grid-template-columns:1fr 1fr}.delivery-zone-row button{grid-column:1/-1;width:100%}.settings-group{padding:14px}.toast{left:12px;right:12px;bottom:12px;text-align:center}}
 @media(max-width:390px){.top>.row,.order-tools,.order-filters{grid-template-columns:1fr!important}.top>.row>a,.order-tools label{grid-column:auto}.product-card .actions,.actions{grid-template-columns:1fr!important}}
+</style><style id="mobile-icon-actions-v223">
+.header-action{display:inline-flex;align-items:center;justify-content:center;gap:7px}.header-action-icon{font-size:17px;line-height:1}
+@media(max-width:800px){
+ .top{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:10px!important}
+ .top>div:first-child{min-width:0}.top>.row{width:auto!important;display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:flex-end!important;gap:6px!important}
+ .top>.row>a{display:block!important;width:44px!important;flex:0 0 44px!important}.top>.row>a[style*="display: none"],.top>.row>a[style*="display:none"]{display:none!important}
+ .top>.row>button,.top>.row>a button,.top .side-menu-toggle{width:44px!important;min-width:44px!important;max-width:44px!important;height:44px!important;min-height:44px!important;margin:0!important;padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;border-radius:12px!important}
+ .top .action-label{display:none!important}.top .header-action-icon{font-size:19px}
+ #subscriptionBanner .subscription-banner-row{display:grid!important;grid-template-columns:minmax(0,1fr) 46px!important;align-items:start!important;gap:10px!important}
+ #subscriptionBannerPlansBtn{width:46px!important;min-width:46px!important;height:46px!important;min-height:46px!important;padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;border-radius:13px!important;position:relative;z-index:2}
+ #subscriptionBannerPlansBtn .action-label{display:none!important}#subscriptionBannerPlansBtn .header-action-icon{font-size:20px}
+}
+@media(max-width:390px){.top{grid-template-columns:minmax(0,1fr) auto!important}.top h1{font-size:21px!important}.top>.row{gap:4px!important}.top>.row>button,.top>.row>a,.top>.row>a button,.top .side-menu-toggle{width:40px!important;min-width:40px!important;max-width:40px!important;height:40px!important;min-height:40px!important}}
 </style></head>
 <body class="auth-loading">
 <style>.auth-loading #login,.auth-loading #app{display:none!important}</style>
@@ -314,8 +327,7 @@ button{transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
 
 <div id="app" class="wrap hidden">
 <div id="subscriptionBanner" class="card" style="margin-bottom:14px;display:none"></div>
-<div class="top"><div><h1 id="panelMainTitle">Panel Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><a id="viewMenuLink" href="#" target="_blank" style="display:none"><button class="ghost">Ver menú</button></a><button class="ghost" id="themeBtn" type="button" onclick="toggleAdminTheme()">☀️ Modo claro</button><button class="ghost" onclick="logout()">Salir</button></div></div>
-<button id="sideMenuToggle" class="ghost side-menu-toggle" type="button" onclick="toggleSideMenu()">☰ Menú del panel</button>
+<div class="top"><div><h1 id="panelMainTitle">Panel Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><a id="viewMenuLink" href="#" target="_blank" style="display:none"><button class="ghost header-action" type="button" aria-label="Ver menú" title="Ver menú"><span class="header-action-icon" aria-hidden="true">👁️</span><span class="action-label">Ver menú</span></button></a><button class="ghost header-action" id="themeBtn" type="button" onclick="toggleAdminTheme()" aria-label="Cambiar tema" title="Cambiar tema"><span class="header-action-icon" aria-hidden="true">☀️</span><span class="action-label">Modo claro</span></button><button class="ghost header-action" type="button" onclick="logout()" aria-label="Salir" title="Salir"><span class="header-action-icon" aria-hidden="true">↪</span><span class="action-label">Salir</span></button><button id="sideMenuToggle" class="ghost side-menu-toggle header-action" type="button" onclick="toggleSideMenu()" aria-label="Abrir menú del panel" title="Menú del panel"><span class="header-action-icon" aria-hidden="true">☰</span><span class="action-label">Menú</span></button></div></div>
 <div id="sideMenuBackdrop" class="side-menu-backdrop" onclick="closeSideMenu()"></div><div id="panelLayout" class="panel-layout"><aside id="sideMenu" class="side-menu"><div class="side-menu-title">Menú</div><div class="tabs">
 <button class="tab active" data-tab="dashboard">📊 <span>Dashboard</span></button><button class="tab" data-tab="orders">📦 <span>Pedidos</span></button><button class="tab" data-tab="products">🍔 <span>Productos</span></button><button class="tab" data-tab="categories">📚 <span>Categorías</span></button><button class="tab" data-tab="inventory">📋 <span>Inventario</span></button><button class="tab" data-tab="health">🛡️ <span>Salud del sistema</span></button><button class="tab" data-tab="qr">▦ <span>Código QR</span></button><button class="tab" data-tab="plans">💳 <span>Planes</span></button><button class="tab" data-tab="settings">⚙️ <span>Configuración</span></button>
 </div></aside><main class="panel-content">
@@ -371,7 +383,7 @@ button{transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
 const SB_URL="https://gulctljitzlwokqydigx.supabase.co";
 const SB_KEY="sb_publishable__moppTxObowifx6rJbW_tw_3GiCkqhG";
 const sb=supabase.createClient(SB_URL,SB_KEY);
-function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b)b.textContent=theme==="dark"?"☀️ Modo claro":"🌙 Modo oscuro"}
+function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b){const next=theme==="dark"?"claro":"oscuro",icon=theme==="dark"?"☀️":"🌙";b.innerHTML='<span class="header-action-icon" aria-hidden="true">'+icon+'</span><span class="action-label">Modo '+next+'</span>';b.setAttribute("aria-label","Activar modo "+next);b.title="Activar modo "+next}}
 function toggleAdminTheme(){applyAdminTheme(document.documentElement.dataset.theme==="light"?"dark":"light")}
 applyAdminTheme(localStorage.getItem("admin_theme")||"dark");setTimeout(bindRestaurantMpButtons,0);
 let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],currentRestaurant=null,currentRole="restaurant";
@@ -479,7 +491,7 @@ function renderSubscriptionBanner(r){
  const expiry=expires?expires.toLocaleDateString("es-CL",{day:"2-digit",month:"2-digit",year:"numeric"}):"Sin fecha de vencimiento";
  const remaining=daysLeft==null?"Sin vencimiento":daysLeft===0?"Vence hoy":daysLeft===1?"1 día restante":daysLeft+" días restantes";
  const price=r.subscription_price!=null?" · "+money(r.subscription_price):"";
- el.innerHTML='<div class="row between" style="gap:14px;align-items:center"><div><div class="'+cls+'" style="font-weight:900">'+esc(label)+'</div><div style="font-size:18px;font-weight:900;margin-top:3px">'+esc(plan)+'</div><div class="mut" style="margin-top:4px">'+esc(remaining)+' · Vence: '+esc(expiry)+esc(price)+'</div></div><button class="ghost" type="button" id="subscriptionBannerPlansBtn">Ver planes</button></div>'+(daysLeft!=null?'<div class="sub-progress"><i style="width:'+pct+'%"></i></div>':'');
+ el.innerHTML='<div class="row between subscription-banner-row" style="gap:14px;align-items:center"><div><div class="'+cls+'" style="font-weight:900">'+esc(label)+'</div><div style="font-size:18px;font-weight:900;margin-top:3px">'+esc(plan)+'</div><div class="mut" style="margin-top:4px">'+esc(remaining)+' · Vence: '+esc(expiry)+esc(price)+'</div></div><button class="ghost header-action" type="button" id="subscriptionBannerPlansBtn" aria-label="Ver planes" title="Ver planes"><span class="header-action-icon" aria-hidden="true">💳</span><span class="action-label">Ver planes</span></button></div>'+(daysLeft!=null?'<div class="sub-progress"><i style="width:'+pct+'%"></i></div>':'');
  el.style.display="";
  document.getElementById("subscriptionBannerPlansBtn")?.addEventListener("click",()=>document.querySelector('.tab[data-tab="plans"]')?.click());
 }
@@ -713,7 +725,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.2.0</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.2.1</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
