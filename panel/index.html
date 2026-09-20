@@ -329,14 +329,27 @@ button{transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
  #subscriptionBannerPlansBtn .action-label{display:none!important}#subscriptionBannerPlansBtn .header-action-icon{font-size:20px}
 }
 @media(max-width:390px){.top{grid-template-columns:minmax(0,1fr) auto!important}.top h1{font-size:21px!important}.top>.row{gap:4px!important}.top>.row>button,.top>.row>a,.top>.row>a button,.top .side-menu-toggle{width:40px!important;min-width:40px!important;max-width:40px!important;height:40px!important;min-height:40px!important}}
-</style><style id="panel-layout-v2320">
-html,body{width:100%;min-width:0;overflow-x:hidden}
-#app.wrap{width:100%!important;max-width:none!important;margin:0!important;padding:24px clamp(18px,2.4vw,40px) 50px!important}
-.panel-layout{display:grid!important;width:100%!important;max-width:none!important;grid-template-columns:270px minmax(0,1fr)!important;gap:22px!important;align-items:start}
-.panel-content{display:block!important;width:100%!important;max-width:none!important;min-width:0!important;padding:0!important;margin:0!important}
-.panel-content>.section,.panel-content>.section.active,#orders,#orders>.grid,.orders-center{width:100%!important;max-width:none!important;min-width:0!important}
-@media(max-width:1100px) and (min-width:801px){#app.wrap{padding:18px!important}.panel-layout{grid-template-columns:220px minmax(0,1fr)!important;gap:14px!important}.orders-filter-panel{grid-template-columns:1fr 1fr!important}.status-select-block{grid-column:1/-1!important}}
-@media(max-width:800px){#app.wrap{width:100%!important;max-width:none!important;margin:0!important;padding:12px!important}.panel-layout{display:block!important}.panel-content,#orders,#orders>.grid,.orders-center{display:block!important;width:100%!important;max-width:100%!important;margin:0!important}.orders-center{overflow:hidden!important}.orders-command-bar,.orders-filter-panel,.orders-search,.filter-block,.date-range,.status-select-block{width:100%!important;min-width:0!important}}
+</style><style id="panel-layout-v2321">
+/* Layout base alineado con el panel admin que sí responde correctamente */
+html,body{max-width:100%;overflow-x:hidden}
+#app.wrap{width:min(1480px,100%)!important;max-width:1480px!important;margin-left:auto!important;margin-right:auto!important;padding:30px clamp(16px,3vw,42px) 48px!important}
+.panel-layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:18px;align-items:start;min-width:0}
+.panel-content{min-width:0}
+@media(max-width:900px){
+ #app.wrap{width:min(100% - 24px,1180px)!important;margin-left:auto!important;margin-right:auto!important}
+ .panel-layout{grid-template-columns:220px minmax(0,1fr);gap:14px}
+ .panel-content,.card,.item{min-width:0;max-width:100%}
+}
+@media(max-width:800px){
+ #app.wrap{width:100%!important;max-width:100%!important;padding:16px 14px 34px!important}
+ .panel-layout{display:block!important}
+ .panel-content{width:100%!important;max-width:100%!important}
+}
+@media(max-width:600px){
+ #app.wrap{width:100%!important;max-width:100%!important;padding:12px!important}
+ .panel-layout,.panel-content,#orders,#orders>.grid,.orders-center{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;margin-left:0!important;margin-right:0!important}
+ .orders-command-bar,.orders-filter-panel,.orders-search,.filter-block,.date-range,.status-select-block{width:100%!important;min-width:0!important}
+}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -919,7 +932,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.3.20</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.3.21</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
