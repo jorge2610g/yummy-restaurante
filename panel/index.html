@@ -324,7 +324,17 @@ button{transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
 @media(max-width:390px){.top{grid-template-columns:minmax(0,1fr) auto!important}.top h1{font-size:21px!important}.top>.row{gap:4px!important}.top>.row>button,.top>.row>a,.top>.row>a button,.top .side-menu-toggle{width:40px!important;min-width:40px!important;max-width:40px!important;height:40px!important;min-height:40px!important}}
 </style></head>
 <body class="auth-loading">
-<style>#app{display:none!important}.auth-ready #app:not(.hidden){display:block!important}.auth-loading #login,.auth-loading #app{display:none!important}</style>
+<style>
+#app{display:none!important}.auth-ready #app:not(.hidden){display:block!important}.auth-loading #login,.auth-loading #app{display:none!important}
+#appBootLoader{position:fixed;inset:0;z-index:10000;display:none;place-items:center;padding:24px;background:linear-gradient(135deg,var(--bg),var(--bg2));color:var(--txt)}
+.auth-loading #appBootLoader{display:grid}
+.app-boot-card{width:min(360px,92vw);text-align:center;padding:28px 24px;border:1px solid var(--line);border-radius:20px;background:var(--card);box-shadow:0 18px 50px var(--shadow)}
+.app-boot-mark{width:54px;height:54px;margin:0 auto 16px;border-radius:16px;display:grid;place-items:center;background:var(--a);color:#171000;font-size:27px;font-weight:900}
+.app-boot-card h2{margin:0 0 7px;font-size:20px}.app-boot-card p{margin:0;color:var(--mut);font-size:13px}
+.app-boot-spinner{width:28px;height:28px;margin:18px auto 0;border:3px solid var(--line);border-top-color:var(--a);border-radius:50%;animation:appBootSpin .8s linear infinite}
+@keyframes appBootSpin{to{transform:rotate(360deg)}}
+</style>
+<div id="appBootLoader" role="status" aria-live="polite"><div class="app-boot-card"><div class="app-boot-mark">Y</div><h2>Cargando tu restaurante…</h2><p>Estamos verificando tu sesión y tus accesos.</p><div class="app-boot-spinner" aria-hidden="true"></div></div></div>
 <div id="login" class="wrap login hidden"><div class="card"><h1>Panel de administración</h1><p class="mut">Gestiona menú, precios, disponibilidad y datos del negocio.</p>
 <label>Correo administrador</label><input id="email" type="email" autocomplete="username" placeholder="tu@email.com">
 <label>Contraseña</label><div class="row"><input id="password" type="password" autocomplete="current-password" placeholder="••••••••"><button type="button" class="ghost" aria-label="Mostrar contraseña" onclick="return togglePassword('password',this)">Ver</button></div>
@@ -841,7 +851,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.3.15</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.3.16</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -883,4 +893,4 @@ async function saveSubscriptionMercadoPago(){
  }catch(e){toast("No se pudieron guardar las credenciales.");}
 }
 </script>
-<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v2.3.2</div></body></html>
+</body></html>
