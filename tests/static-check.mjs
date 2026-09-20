@@ -7,5 +7,5 @@ console.log('Landing y panel restaurante validados');
 
 // Subscription module access regression checks
 for (const needle of ["subscriptionModuleAccess","loadSubscriptionModuleAccess","effectiveTabs","subscription_plans"]) {
-  if (!html.includes(needle)) throw new Error(`Missing subscription module access marker: ${needle}`);
+  if (!panel.includes(needle)) throw new Error(`Missing subscription module access marker: ${needle}`);
 }
