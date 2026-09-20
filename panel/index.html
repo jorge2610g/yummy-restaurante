@@ -473,6 +473,14 @@ async function enter(user){
     applyRoleAccess();
     await refreshAll();
     applyRoleAccess();
+    const requestedTab=new URLSearchParams(location.search).get("tab");
+    if(requestedTab&&effectiveTabs().includes(requestedTab)){
+      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+      document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
+      document.querySelector('.tab[data-tab="'+requestedTab+'"]')?.classList.add("active");
+      document.getElementById(requestedTab)?.classList.add("active");
+      if(requestedTab==="plans"){await loadSubscriptionPlans();const requestedPlan=Number(new URLSearchParams(location.search).get("plan")||0);if(requestedPlan)setTimeout(()=>document.querySelector('[data-plan-id="'+requestedPlan+'"]')?.scrollIntoView({behavior:"smooth",block:"center"}),100)}
+    }
     document.getElementById("app").classList.remove("hidden");
     document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
     msg.textContent="";
@@ -777,7 +785,7 @@ function renderQrPanel(){
 function renderRestaurantPlans(){
  const box=document.getElementById("restaurantPlans");if(!box)return;
  const labels={dashboard:"Dashboard",products:"Gestión de productos",categories:"Gestión de categorías",qr:"Código QR del menú",settings:"Configuración del sitio y abrir/cerrar",orders:"Pedidos online",pos:"Meseros / POS",cash:"Caja",kitchen:"Pantalla de cocina",inventory:"Inventario",staff:"Gestión de personal"};
- box.innerHTML=(subscriptionPlans||[]).map(p=>{const modules=Array.isArray(p.modules)?p.modules:[];const detail=modules.length?`<div style="margin-top:12px"><b>Este plan incluye:</b><div style="display:grid;gap:7px;margin-top:9px">${modules.map(m=>`<div>✓ ${esc(labels[m]||m)}</div>`).join("")}</div></div>`:'<div class="mut" style="margin-top:10px">Este plan todavía no tiene módulos configurados.</div>';return `<article class="item plan-card"><div class="row between" style="align-items:flex-start;gap:18px"><div style="flex:1"><span class="pill">${Number(p.days||0)} días</span><h3 style="margin-top:10px">${esc(p.name||"Plan")}</h3><div class="price" style="font-size:24px;margin:7px 0">${money(p.amount||0)}</div>${detail}</div><div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="ghost" onclick="paySubscriptionPlanOnce(${p.id})">Pagar plan</button><button class="primary" onclick="paySubscriptionPlan(${p.id})">Suscripción automática</button></div></div></article>`}).join("")||"<p class='mut'>No hay planes disponibles en este momento.</p>";
+ box.innerHTML=(subscriptionPlans||[]).map(p=>{const modules=Array.isArray(p.modules)?p.modules:[];const detail=modules.length?`<div style="margin-top:12px"><b>Este plan incluye:</b><div style="display:grid;gap:7px;margin-top:9px">${modules.map(m=>`<div>✓ ${esc(labels[m]||m)}</div>`).join("")}</div></div>`:'<div class="mut" style="margin-top:10px">Este plan todavía no tiene módulos configurados.</div>';return `<article class="item plan-card" data-plan-id="${Number(p.id)}"><div class="row between" style="align-items:flex-start;gap:18px"><div style="flex:1"><span class="pill">${Number(p.days||0)} días</span><h3 style="margin-top:10px">${esc(p.name||"Plan")}</h3><div class="price" style="font-size:24px;margin:7px 0">${money(p.amount||0)}</div>${detail}</div><div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="ghost" onclick="paySubscriptionPlanOnce(${p.id})">Pagar plan</button><button class="primary" onclick="paySubscriptionPlan(${p.id})">Suscripción automática</button></div></div></article>`}).join("")||"<p class='mut'>No hay planes disponibles en este momento.</p>";
 }
 async function paySubscriptionPlanOnce(id){
  const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
@@ -833,7 +841,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.3.14</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.3.15</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
