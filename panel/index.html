@@ -30,7 +30,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .admin-version{padding:24px 12px;text-align:center;color:var(--mut);font-size:12px;opacity:.75}
 
-/* Ajuste móvil v1.2.7: contenido centrado y tarjetas sin desbordes */
+/* Ajuste móvil v1.2.8: contenido centrado y tarjetas sin desbordes */
 @media(max-width:600px){
   body{overflow-x:hidden!important}
   main,.wrap,.container,.content,.panel{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
@@ -42,7 +42,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 #orderEditModal{display:none}
 .order-track{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.order-track span{padding:6px 9px;border-radius:999px;background:var(--ghost);font-size:12px}.order-track span.done,.order-track span.current{background:var(--a);color:#171000}.order-track span.current{font-weight:900}.order-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-/* Vista móvil del resumen de contenido v1.2.7 */
+/* Vista móvil del resumen de contenido v1.2.8 */
 @media(max-width:600px){
  #restaurants .card.span12{padding:16px!important;width:100%!important;overflow:hidden!important}
  #restaurants .card.span12>.row.between{display:block!important}
@@ -122,7 +122,7 @@ img,svg,video{max-width:100%;height:auto}
  .top .row{grid-template-columns:1fr}.card{padding:13px!important}
  .tabs{gap:7px}.tab{padding-left:13px!important;padding-right:13px!important}
 }
-/* Mobile polish v1.2.7 */
+/* Mobile polish v1.2.8 */
 @media(max-width:600px){
  .wrap{padding:16px!important;width:100%!important}
  .top{display:block!important;margin-bottom:18px!important}
@@ -432,6 +432,276 @@ async function loadSubscriptionPlans(){
  if(error){console.error("Error cargando planes",error);subscriptionPlans=[];renderRestaurantPlans();return}
  subscriptionPlans=data||[];renderRestaurantPlans();
 }
+function renderSubscriptionBanner(r){
+ const el=document.getElementById("subscriptionBanner");if(!el||!r)return;
+ const status=String(r.subscription_status||"").toLowerCase();
+ const start=r.subscription_started_at?new Date(r.subscription_started_at):null;
+ const expires=r.subscription_expires_at?new Date(r.subscription_expires_at):null;
+ const now=new Date();
+ const totalDays=start&&expires?Math.max(1,Math.ceil((expires-start)/86400000)):null;
+ const daysLeft=expires?Math.max(0,Math.ceil((expires-now)/86400000)):null;
+ const pct=totalDays!=null&&daysLeft!=null?Math.max(0,Math.min(100,(daysLeft/totalDays)*100)):0;
+ const plan=esc(r.subscription_plan|| (status==="trial"?"Prueba":"Plan activo"));
+ const label=status==="trial"?"Periodo de prueba":status==="active"?"Suscripción activa":status==="suspended"?"Suscripción suspendida":"Suscripción vencida";
+ const cls=status==="trial"?"subscription-trial":status==="active"?"subscription-active":"subscription-expired";
+ const expiry=expires?expires.toLocaleDateString("es-CL",{day:"2-digit",month:"2-digit",year:"numeric"}):"Sin fecha";
+ const timeText=daysLeft==null?"Sin vencimiento":daysLeft===0?"Vence hoy":daysLeft===1?"1 día restante":daysLeft+" días restantes";
+ el.innerHTML='<div class="row between" style="gap:14px;align-items:center"><div><div class="'+cls+'" style="font-weight:900">'+label+'</div><div style="font-size:18px;font-weight:900;margin-top:3px">'+plan+'</div><div class="mut" style="margin-top:4px">'+timeText+' · Vence: '+expiry+(r.subscription_price!=null?' · Precio: 
+  const {data,error}=await sb.from("restaurants").select("*").eq("id",currentRestaurant).limit(1);
+  if(error)throw error;
+  restaurants=data||[];
+  const r=restaurants[0];
+  if(r)renderSubscriptionBanner(r);
+}
+async function loadCategories(){const {data,error}=await sb.from("restaurant_categories").select("*").eq("restaurant_id",currentRestaurant).order("sort_order");if(error)return toast(error.message);categories=data||[];const categoryListEl=document.getElementById("categoryList");if(!categoryListEl)return;categoryListEl.innerHTML=categories.map(c=>`<div class="item row between"><div><h3>${esc(c.name)}</h3><span class="pill">${esc(c.slug)}</span> ${c.active?"":"<span class='pill'>Inactiva</span>"}</div><div class="actions"><button class="ghost" onclick="editCategory(${c.id})">Editar</button><button class="danger" onclick="deleteCategory(${c.id})">Eliminar</button></div></div>`).join("")||"<p class='mut'>Sin categorías.</p>";pcat.innerHTML='<option value="">Sin categoría</option>'+categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")}
+function openCategoryModal(){clearCategory();document.getElementById("categoryTitle").textContent="Nueva categoría";document.getElementById("categoryModal")?.classList.add("open");document.getElementById("categoryModal")?.setAttribute("aria-hidden","false");setTimeout(()=>cname?.focus(),80)}
+function closeCategoryModal(){document.getElementById("categoryModal")?.classList.remove("open");document.getElementById("categoryModal")?.setAttribute("aria-hidden","true")}
+async function saveCategory(){const row={restaurant_id:currentRestaurant,name:cname.value.trim(),slug:cslug.value.trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""),sort_order:+csort.value||0,active:cactive.checked};if(!row.name||!row.slug)return toast("Completa nombre y slug");let q=cid.value?sb.from("restaurant_categories").update(row).eq("id",cid.value):sb.from("restaurant_categories").insert(row);const {error}=await q;if(error)return toast(error.message);clearCategory();closeCategoryModal();await loadCategories();toast("Categoría guardada")}
+function editCategory(id){const c=categories.find(x=>x.id===id);if(!c)return toast("Categoría no encontrada");cid.value=c.id;cname.value=c.name;cslug.value=c.slug;csort.value=c.sort_order;cactive.checked=c.active;document.getElementById("categoryTitle").textContent="Editar categoría";document.getElementById("categoryModal")?.classList.add("open");document.getElementById("categoryModal")?.setAttribute("aria-hidden","false")}
+function clearCategory(){cid.value="";cname.value="";cslug.value="";csort.value=0;cactive.checked=true}
+async function deleteCategory(id){if(!confirm("¿Eliminar esta categoría?"))return;const {error}=await sb.from("restaurant_categories").delete().eq("id",id);if(error)return toast(error.message);await loadCategories();toast("Categoría eliminada")}
+async function loadProducts(){const {data,error}=await sb.from("restaurant_products").select("*").eq("restaurant_id",currentRestaurant).order("sort_order");if(error)return toast(error.message);products=data||[];const productListEl=document.getElementById("productList");if(!productListEl)return;productListEl.innerHTML=products.map(p=>`<div class="item"><div class="row between"><div><h3>${esc(p.name)}</h3><div class="mut">${esc(p.description||"")}</div><div class="price">${money(p.price)}</div></div><div class="actions"><button class="ghost" onclick="editProduct(${p.id})">Editar</button><button class="ghost" onclick="toggleProduct(${p.id},${!p.available})">${p.available?"Desactivar":"Activar"}</button><button class="danger" onclick="deleteProduct(${p.id})">Eliminar</button></div></div></div>`).join("")||"<p class='mut'>Sin productos.</p>"}
+function openProductModal(){clearProduct();document.getElementById("productModal")?.classList.add("open");document.getElementById("productModal")?.setAttribute("aria-hidden","false");setTimeout(()=>pname?.focus(),80)}
+function closeProductModal(){document.getElementById("productModal")?.classList.remove("open");document.getElementById("productModal")?.setAttribute("aria-hidden","true")}
+async function saveProduct(){let categoryId=pcat.value?+pcat.value:null;if(!categoryId){let general=categories.find(c=>c.slug==="general");if(!general){const {data,error}=await sb.from("restaurant_categories").insert({restaurant_id:currentRestaurant,name:"General",slug:"general",sort_order:0,active:true}).select("id,name,slug,active").single();if(error)return toast(error.message);general=data;categories.push(data)}categoryId=general.id}const row={restaurant_id:currentRestaurant,name:pname.value.trim(),description:pdesc.value.trim(),price:+pprice.value||0,category_id:categoryId,image_url:pimage.value.trim()||null,badge:pbadge.value.trim()||null,featured:pfeatured.checked,available:pavailable.checked,sort_order:+psort.value||0,updated_at:new Date().toISOString()};if(!row.name)return toast("Escribe el nombre");let q=pid.value?sb.from("restaurant_products").update(row).eq("id",pid.value):sb.from("restaurant_products").insert(row);const {error}=await q;if(error)return toast(error.message);clearProduct();closeProductModal();await loadProducts();toast("Producto guardado")}
+function editProduct(id){const p=products.find(x=>x.id===id);if(!p)return toast("Producto no encontrado");pid.value=p.id;pname.value=p.name;pdesc.value=p.description||"";pprice.value=p.price;pcat.value=p.category_id||"";pimage.value=p.image_url||"";if(p.image_url){pimagePreview.src=p.image_url;pimagePreview.hidden=false}else pimagePreview.hidden=true;pbadge.value=p.badge||"";pfeatured.checked=p.featured;pavailable.checked=p.available;psort.value=p.sort_order;productTitle.textContent="Editar producto";document.getElementById("productModal")?.classList.add("open");document.getElementById("productModal")?.setAttribute("aria-hidden","false")}
+function clearProduct(){pid.value="";pname.value="";pdesc.value="";pprice.value="";pcat.value="";pimage.value="";pimagePreview.hidden=true;pimageFile.value="";pbadge.value="";pfeatured.checked=false;pavailable.checked=true;psort.value=0;productTitle.textContent="Nuevo producto"}
+async function toggleProduct(id,v){const {error}=await sb.from("restaurant_products").update({available:v,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toast(error.message);await loadProducts()}
+async function deleteProduct(id){if(!confirm("¿Eliminar este producto?"))return;const {error}=await sb.from("restaurant_products").delete().eq("id",id);if(error)return toast(error.message);await loadProducts();toast("Producto eliminado")}
+let restaurantAudioContext=null;
+function unlockRestaurantSound(){
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  if(!restaurantAudioContext)restaurantAudioContext=new AC();
+  if(restaurantAudioContext.state==="suspended")restaurantAudioContext.resume();
+ }catch(e){}
+}
+document.addEventListener("pointerdown",unlockRestaurantSound,{once:true});
+document.addEventListener("keydown",unlockRestaurantSound,{once:true});
+async function enableRestaurantNotifications(){
+ if("Notification" in window&&Notification.permission==="default"){
+  try{await Notification.requestPermission()}catch(e){}
+ }
+}
+function playNewOrderSound(){
+ try{
+  unlockRestaurantSound();const ac=restaurantAudioContext;if(!ac)return;
+  const now=ac.currentTime;
+  [880,1175,880,1175].forEach((freq,i)=>{
+   const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);
+   o.frequency.value=freq;g.gain.setValueAtTime(.0001,now+i*.22);g.gain.exponentialRampToValueAtTime(.18,now+i*.22+.02);g.gain.exponentialRampToValueAtTime(.0001,now+i*.22+.18);
+   o.start(now+i*.22);o.stop(now+i*.22+.2);
+  });
+ }catch(e){console.error("No se pudo reproducir sonido",e)}
+}
+function setAutoPrintOrders(v){localStorage.setItem("restaurant_auto_print",v?"1":"0");toast(v?"Impresión automática activada":"Impresión automática desactivada")}
+function restoreAutoPrintOrders(){const el=document.getElementById("autoPrintOrders");if(el)el.checked=localStorage.getItem("restaurant_auto_print")==="1"}
+function testRestaurantNotification(){
+ unlockRestaurantSound();
+ const row={id:"test",order_code:"PRUEBA",total:1000};
+ restaurantOrderAlert(row);
+}
+function testRestaurantOrder(){
+ const demo={id:"test-"+Date.now(),order_code:"PRUEBA-"+String(Date.now()).slice(-4),customer_name:"Cliente de prueba",customer_phone:"",order_type:"Retiro",payment_method:"Mercado Pago",payment_status:"approved",status:"recibido",total:5000,created_at:new Date().toISOString(),items:[{qty:1,name:"Producto de prueba",unit_price:5000}],notes:"Este pedido es solo una prueba y no se guarda en la base de datos."};
+ orders=[demo,...orders.filter(x=>!String(x.id).startsWith("test-"))];loadOrdersTestRender(demo);restaurantOrderAlert(demo);toast("Pedido de prueba mostrado. No se guardó en Supabase.");
+}
+function loadOrdersTestRender(demo){
+ const box=document.getElementById("orderList");if(!box)return;
+ const e=esc;const html=`<div class="item" id="testOrderCard" data-status="recibido"><div class="row between"><div><h3>#${e(demo.order_code)} · ${e(demo.customer_name)}</h3><div class="mut">PEDIDO DE PRUEBA · No se guarda en la base de datos</div><div class="price">${money(demo.total)}</div></div></div><div class="order-detail"><b>📍 Retiro:</b> Prueba de funcionamiento<br><span class="mut">1 × Producto de prueba</span></div><div class="actions" style="margin-top:12px"><button class="ghost" onclick="printOrderCommand('${demo.id}')">🖨️ Imprimir comanda de prueba</button><button class="ghost" onclick="document.getElementById('testOrderCard')?.remove()">Quitar prueba</button></div></div>`;
+ box.insertAdjacentHTML("afterbegin",html);
+}
+function testRestaurantPrint(){
+ const demo={id:"print-test-"+Date.now(),order_code:"PEDIDO-DE-PRUEBA",customer_name:"Cliente de prueba",order_type:"Retiro",payment_method:"Mercado Pago",status:"recibido",total:5000,created_at:new Date().toISOString(),items:[{qty:1,name:"Producto de prueba",unit_price:5000}],notes:"IMPRESIÓN DE PRUEBA · No corresponde a un pedido real"};
+ orders=[demo,...orders.filter(x=>!String(x.id).startsWith("print-test-"))];printOrderCommand(demo.id);setTimeout(()=>{orders=orders.filter(x=>String(x.id)!==String(demo.id))},1500);
+}
+function restaurantOrderAlert(row){
+ try{
+  if("Notification" in window&&Notification.permission==="granted")new Notification("🔔 Nuevo pedido Mercado Pago",{body:"#"+(row.order_code||row.id)+" · "+money(row.total||0),tag:"restaurant-order-"+row.id,renotify:true,requireInteraction:true});
+ }catch(e){}
+ playNewOrderSound();
+ toast("🔔 Nuevo pedido recibido");
+}
+let restaurantOrdersChannel=null;
+function startRestaurantOrderRealtime(){
+ if(restaurantOrdersChannel){sb.removeChannel(restaurantOrdersChannel);restaurantOrdersChannel=null;}
+ if(!currentRestaurant)return;
+ restaurantOrdersChannel=sb.channel("restaurant-orders-"+currentRestaurant)
+  .on("postgres_changes",{event:"*",schema:"public",table:"restaurant_orders",filter:"restaurant_id=eq."+currentRestaurant},async p=>{
+   const row=p.new||{},old=p.old||{};
+   if(row.payment_method==="Mercado Pago"&&row.payment_status==="approved"&&(p.eventType==="INSERT"||old.payment_status!=="approved"))restaurantOrderAlert(row); if(row.payment_method==="Mercado Pago")await loadOrders();
+  }).subscribe();
+}
+function filterOrdersView(f){document.querySelectorAll("#orderList .item").forEach(el=>{const d=new Date(el.dataset.created),n=new Date(),same=d.toDateString()===n.toDateString(),y=new Date(n);y.setDate(n.getDate()-1);let show=f==="all"||(f==="today"&&same)||(f==="yesterday"&&d.toDateString()===y.toDateString())||(f==="week"&&(n-d)<=604800000)||(f==="month"&&d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear());el.style.display=show?"":"none"})}
+function filterOrdersStatus(s){document.querySelectorAll("#orderList .item").forEach(el=>{const st=el.dataset.status;el.style.display=(s==="all"?(st!=="entregado"&&st!=="cancelado"):st===s)?"":"none"})}
+async function loadOrders(){
+ if(!currentRestaurant)return;
+ const {data,error}=await sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).eq("payment_method","Mercado Pago").eq("payment_status","approved").order("created_at",{ascending:false}).limit(100);
+ if(error)return toast(error.message);
+ orders=data||[];
+ const allStates=["recibido","preparacion","listo","entregado","cancelado"];
+ const labels={recibido:"Recibido",preparacion:"Preparación",listo:"Listo",entregado:"Entregado",cancelado:"Cancelado"};
+ orderList.innerHTML=orders.map(o=>{
+  const states=allStates;
+  const idx=states.indexOf(o.status);
+  const flow=["recibido","preparacion","listo","entregado"];
+  const items=Array.isArray(o.items)?o.items:[];
+  return `<div class="item" data-status="${o.status}"><div class="row between"><div><h3>#${esc(o.order_code)} · ${esc(o.customer_name)}</h3><div class="mut">${new Date(o.created_at).toLocaleString("es-CL")} · ${esc(o.order_type)} · Mercado Pago</div><div class="price">${money(o.total)}</div></div><div style="min-width:180px"><label>Estado</label><select onchange="setOrderStatus(${o.id},this.value)">${states.map(s=>`<option value="${s}" ${s===o.status?"selected":""}>${labels[s]}</option>`).join("")}</select></div></div><div class="order-track">${flow.map((s,i)=>`<span class="${o.status==="cancelado"?"":i<(flow.indexOf(o.status))?"done":s===o.status?"current":""}">${labels[s]}</span>`).join("")}${o.status==="cancelado"?'<span class="current">Cancelado</span>':""}</div><div class="order-detail"><b>${o.order_type==="Delivery"?"📍 Entrega":"📍 Retiro"}:</b> ${esc(o.order_type==="Delivery"?(o.delivery_address||"Sin dirección"):(restaurants.find(r=>r.id===currentRestaurant)?.address||"Dirección del restaurante"))}<br><span class="mut">${items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join(" · ")}</span></div><div class="actions" style="margin-top:12px"><button class="ghost" onclick="printOrderCommand(${o.id})">🖨️ Imprimir comanda</button></div></div>`;
+ }).join("")||"<p class='mut'>Todavía no hay pedidos de Mercado Pago.</p>";
+ const ca=document.getElementById("countAll"),cd=document.getElementById("countDelivered"),cc=document.getElementById("countCancelled");if(ca)ca.textContent=orders.filter(o=>o.status!=="entregado"&&o.status!=="cancelado").length;if(cd)cd.textContent=orders.filter(o=>o.status==="entregado").length;if(cc)cc.textContent=orders.filter(o=>o.status==="cancelado").length;filterOrdersStatus("all");
+}
+function printOrderCommand(id){
+ const o=orders.find(x=>String(x.id)===String(id));if(!o)return toast("Pedido no encontrado");
+ const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant))||{name:"Restaurante de prueba",address:"Prueba de impresión",whatsapp:""};
+ let items=o.items||o.order_items||[];if(typeof items==="string"){try{items=JSON.parse(items)}catch{items=[]}}if(!Array.isArray(items))items=[];
+ const e=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+ const itemRows=items.map(x=>{const q=Number(x.qty||x.quantity||1),name=x.name||x.product_name||"Producto",price=Number(x.price||x.unit_price||0);return '<div class="line"><span>'+e(q+" × "+name)+'</span><b>'+(price?e(money(price*q)):"")+'</b></div>'}).join("");
+ const address=o.order_type==="Delivery"?(o.delivery_address||"Sin dirección"):(r.address||"Retiro en el local");
+ const notes=o.notes||o.note||o.customer_notes||o.observations||"";
+ const phone=o.customer_phone||o.phone||"";
+ const payment=o.payment_method||"";
+ const html='<!doctype html><html><head><meta charset="utf-8"><title>Comanda '+e(o.order_code||o.id)+'</title><style>@page{margin:4mm}body{font-family:Arial,sans-serif;width:72mm;max-width:100%;margin:0 auto;color:#000;font-size:12px}h1{text-align:center;font-size:18px;margin:0 0 4px}.center{text-align:center}.sep{border-top:1px dashed #000;margin:8px 0}.line{display:flex;justify-content:space-between;gap:8px;margin:5px 0}.line span{flex:1}.total{font-size:16px;font-weight:700}.label{font-weight:700;margin-top:5px}@media print{button{display:none}body{width:72mm}}button{width:100%;padding:10px;margin:12px 0}</style></head><body><h1>'+e(r.name)+'</h1><div class="center">'+e(r.address||"")+'<br>'+e(r.whatsapp||"")+'</div><div class="sep"></div><b>PEDIDO #'+e(o.order_code||o.id)+'</b><div>'+e(new Date(o.created_at).toLocaleString("es-CL"))+'</div><div class="label">Cliente</div><div>'+e(o.customer_name||"Sin nombre")+(phone?" · "+e(phone):"")+'</div><div class="label">'+e(o.order_type||"Pedido")+'</div><div>'+e(address)+'</div><div class="sep"></div>'+itemRows+'<div class="sep"></div><div class="line total"><span>TOTAL</span><span>'+e(money(o.total||0))+'</span></div>'+(payment?'<div><b>Pago:</b> '+e(payment)+'</div>':"")+(notes?'<div class="sep"></div><div><b>Aclaraciones:</b><br>'+e(notes)+'</div>':"")+'<div class="sep"></div><div class="center">Comanda · '+e(r.name)+'</div><button onclick="window.print()">Imprimir</button><script>setTimeout(()=>window.print(),250)<\/script></body></html>';
+ const w=window.open("","_blank","width=420,height=720");if(!w)return toast("Permite ventanas emergentes para imprimir");w.document.open();w.document.write(html);w.document.close();
+}
+async function setOrderStatus(id,status){
+ const order=orders.find(o=>o.id===id);if(!order)return;
+ const previousStatus=order.status;
+ if(status==="cancelado"){
+  if(!confirm("Al cancelar este pedido se solicitará la devolución total del pago al cliente mediante Mercado Pago. ¿Continuar?"))return loadOrders();
+  toast("Procesando devolución en Mercado Pago…");
+  const {data:{session}}=await sb.auth.getSession();
+  try{
+   const res=await fetch(SB_URL+"/functions/v1/refund-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({order_id:id})});
+   const data=await res.json();if(!res.ok)throw new Error(data.error||"No se pudo devolver el pago");
+   toast("Pedido cancelado y devolución solicitada correctamente.");
+  }catch(e){toast(e.message);return loadOrders();}
+ }else{
+  const {error}=await sb.from("restaurant_orders").update({status,updated_at:new Date().toISOString()}).eq("id",id).eq("restaurant_id",currentRestaurant);
+  if(error)return toast(error.message);
+  toast("Estado actualizado. El cliente ya puede verlo.");
+ }
+ await loadOrders();
+ if(status!=="cancelado"&&status!=="recibido"&&previousStatus==="recibido"&&localStorage.getItem("restaurant_auto_print")==="1"){
+  setTimeout(()=>printOrderCommand(id),250);
+ }
+}
+async function searchRestaurantAddress(){
+ const input=document.getElementById("smapaddress"),st=document.getElementById("smapstatus");
+ const latEl=document.getElementById("slat"),lngEl=document.getElementById("slng"),addressEl=document.getElementById("saddress");
+ const address=input?.value.trim()||"";
+ if(!address){if(st)st.textContent="❌ Escribe una dirección primero.";input?.focus();return}
+ if(!window.google?.maps?.Geocoder){if(st)st.textContent="⏳ El servicio de ubicación todavía está cargando. Intenta nuevamente en unos segundos.";return}
+ if(st)st.textContent="🔎 Verificando dirección…";
+ try{
+  const geocoder=new google.maps.Geocoder();
+  const r=await geocoder.geocode({address});
+  const place=r.results?.[0];
+  if(!place?.geometry?.location){if(st)st.textContent="❌ No pudimos verificar esa dirección. Agrega calle, número, ciudad y vuelve a intentar.";return}
+  const lat=place.geometry.location.lat(),lng=place.geometry.location.lng();
+  const verified=place.formatted_address||address;
+  if(latEl)latEl.value=lat;
+  if(lngEl)lngEl.value=lng;
+  if(input)input.value=verified;
+  if(addressEl)addressEl.value=verified;
+  if(st)st.textContent="✅ Dirección verificada. Latitud y longitud encontradas automáticamente.";
+ }catch(e){
+  console.error("Error verificando dirección",e);
+  if(st)st.textContent="❌ No se pudo verificar la dirección. Revisa lo escrito e intenta nuevamente.";
+ }
+}
+function renderQrPanel(){
+ const qrPanel=document.getElementById("qrPanel");if(!qrPanel||!currentRestaurant)return;
+ const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));if(!r){qrPanel.innerHTML="<p class='mut'>No se pudo cargar el restaurante.</p>";return}
+ const menuUrl="https://menu.yummypro.online/?r="+encodeURIComponent(r.slug||r.id);
+ const qrUrl="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data="+encodeURIComponent(menuUrl);
+ qrPanel.innerHTML=`<div class="grid"><div class="span4"><img src="${qrUrl}" alt="Código QR" style="width:280px;max-width:100%;background:#fff;padding:10px;border-radius:14px"></div><div class="span8"><label>Enlace del menú</label><input value="${esc(menuUrl)}" readonly><div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="primary" onclick="navigator.clipboard.writeText('${menuUrl}').then(()=>toast('Enlace copiado'))">Copiar enlace</button><a href="${menuUrl}" target="_blank"><button class="ghost" type="button">Abrir menú</button></a></div></div></div>`;
+}
+function renderRestaurantPlans(){
+ const box=document.getElementById("restaurantPlans");if(!box)return;
+ box.innerHTML=(subscriptionPlans||[]).map(p=>`<div class="item"><div class="row between"><div><h3>${esc(p.name||"Plan")}</h3><div class="mut">${Number(p.days||0)} días</div><div class="price">${money(p.amount||0)}</div></div><button class="primary" onclick="paySubscriptionPlan(${p.id})">Pagar suscripción</button></div></div>`).join("")||"<p class='mut'>No hay planes disponibles en este momento.</p>";
+}
+async function paySubscriptionPlan(id){
+ const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
+ try{
+  const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return toast("Tu sesión venció. Vuelve a iniciar sesión.");
+  toast("Preparando pago con Mercado Pago…");
+  const res=await fetch(SB_URL+"/functions/v1/create-subscription-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({plan_id:p.id,restaurant_id:currentRestaurant})});
+  const data=await res.json();if(!res.ok||!data?.init_point)return toast(data?.error||"No se pudo iniciar el pago");
+  window.location.assign(data.init_point);
+ }catch(e){console.error(e);toast("No se pudo conectar con Mercado Pago");}
+}
+function renderRestaurantContent(){renderQrPanel();renderRestaurantPlans();}
+async function loadSettings(){if(!currentRestaurant)return;const {data,error}=await sb.from("restaurants").select("*").eq("id",currentRestaurant).single();if(error)return toast(error.message);sname.value=data.name||"";swhatsapp.value=data.whatsapp||"";saddress.value=data.address||"";const sma=document.getElementById("smapaddress");if(sma)sma.value=data.address||"";sopen.value=(data.open_time||"").slice(0,5);sclose.value=(data.close_time||"").slice(0,5);sinstagram.value=data.instagram||"";spickup.value=data.pickup_eta||"";sdelivery.value=data.delivery_eta||"";sdeliverynote.value=data.delivery_note||"";const scp=document.getElementById("scolorPrimary"),scs=document.getElementById("scolorSecondary"),sct=document.getElementById("scolorText"),sl=document.getElementById("slogo"),slp=document.getElementById("slogoPreview");if(scp)scp.value=data.theme_primary_color||"#ffc21a";if(scs)scs.value=data.theme_secondary_color||"#1e1f24";if(sct)sct.value=data.theme_text_color||"#1e1f24";if(sl)sl.value=data.logo_url||"";if(slp){if(data.logo_url){slp.src=data.logo_url;slp.hidden=false}else{slp.removeAttribute("src");slp.hidden=true}}sdeliverymode.value=data.delivery_pricing_mode||"fixed";sdeliveryprice.value=Number(data.delivery_fixed_price||0);slat.value=data.latitude??"";slng.value=data.longitude??"";sdeliveryzones.value=(Array.isArray(data.delivery_zones)?data.delivery_zones:[]).map(z=>String(z.max_km)+"="+String(z.price)).join("\n");const mst=document.getElementById("manualOpenStatusText");if(mst)mst.textContent=data.manual_open_status==="open"?"🟢 Forzado ABIERTO":data.manual_open_status==="closed"?"🔴 Forzado CERRADO":"🕒 Usando horario predeterminado"}
+async function saveSettings(){if(!currentRestaurant)return toast("No hay restaurante seleccionado");const row={name:sname.value.trim(),whatsapp:swhatsapp.value.trim(),address:saddress.value.trim(),open_time:sopen.value,close_time:sclose.value,instagram:sinstagram.value.trim(),pickup_eta:spickup.value.trim(),delivery_eta:sdelivery.value.trim(),delivery_note:sdeliverynote.value.trim(),theme_primary_color:document.getElementById("scolorPrimary")?.value||"#ffc21a",theme_secondary_color:document.getElementById("scolorSecondary")?.value||"#1e1f24",theme_text_color:document.getElementById("scolorText")?.value||"#1e1f24",logo_url:document.getElementById("slogo")?.value||null,delivery_pricing_mode:sdeliverymode.value,delivery_fixed_price:Number(sdeliveryprice.value||0),latitude:slat.value===""?null:Number(slat.value),longitude:slng.value===""?null:Number(slng.value),delivery_zones:sdeliveryzones.value.split(/\n+/).map(x=>x.trim()).filter(Boolean).map(x=>{const p=x.split("=");return {max_km:Number(p[0]),price:Number(p[1])}}).filter(z=>Number.isFinite(z.max_km)&&z.max_km>0&&Number.isFinite(z.price)&&z.price>=0).sort((x,y)=>x.max_km-y.max_km),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurants").update(row).eq("id",currentRestaurant);if(error)return toast(error.message);await loadRestaurants();await loadSettings();renderRestaurantContent();renderQrPanel();toast("Datos del restaurante actualizados")}
+async function setManualOpenStatus(status){if(!currentRestaurant)return;const {error}=await sb.from("restaurants").update({manual_open_status:status,updated_at:new Date().toISOString()}).eq("id",currentRestaurant);if(error)return toast(error.message);await loadSettings();toast(status==="open"?"Local forzado como ABIERTO":status==="closed"?"Local forzado como CERRADO":"Se volvió al horario predeterminado")}
+function renderStats(){const valid=orders.filter(o=>o.status!=="cancelado"),sales=valid.reduce((a,o)=>a+Number(o.total||0),0);statProducts.textContent=products.filter(p=>p.available).length;statOrders.textContent=orders.length;statSales.textContent=money(sales);const av=document.getElementById("statAverage");if(av)av.textContent=money(valid.length?sales/valid.length:0);renderAnalytics(valid)}
+function renderAnalytics(valid){const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);days.push(d)}const vals=days.map(d=>valid.filter(o=>{const x=new Date(o.created_at);return x.toDateString()===d.toDateString()}).reduce((a,o)=>a+Number(o.total||0),0));const max=Math.max(...vals,1);const sc=document.getElementById("salesChart");if(sc)sc.innerHTML='<div style="display:flex;align-items:end;gap:10px;height:190px;padding-top:12px">'+vals.map((v,i)=>'<div style="flex:1;text-align:center;min-width:0"><div class="mut" style="font-size:11px">'+money(v)+'</div><div style="height:'+Math.max(5,Math.round(v/max*125))+'px;background:var(--accent);border-radius:8px 8px 3px 3px;margin:5px auto;width:70%"></div><small class="mut">'+days[i].toLocaleDateString("es",{weekday:"short"})+'</small></div>').join("")+'</div>';const counts={};orders.forEach(o=>counts[o.status||"nuevo"]=(counts[o.status||"nuevo"]||0)+1);const st=document.getElementById("statusChart");if(st)st.innerHTML=Object.entries(counts).map(([k,v])=>'<div class="item"><div class="row between"><b>'+esc(k)+'</b><span>'+v+'</span></div><div style="height:8px;background:#ffffff12;border-radius:10px;margin-top:8px"><div style="height:100%;width:'+Math.round(v/Math.max(orders.length,1)*100)+'%;background:var(--accent);border-radius:10px"></div></div></div>').join("")||'<p class="mut">Sin pedidos.</p>';const names={};valid.forEach(o=>{let raw=o.items||o.order_items||[];if(typeof raw==="string"){try{raw=JSON.parse(raw)}catch{raw=[]}}if(Array.isArray(raw))raw.forEach(it=>{const n=it.name||it.product_name||"Producto";names[n]=(names[n]||0)+Number(it.qty||it.quantity||1)})});const tp=document.getElementById("topProducts");if(tp)tp.innerHTML=Object.entries(names).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,q],i)=>'<div class="item"><div class="row between"><b>'+(i+1)+'. '+esc(n)+'</b><span class="badge">'+q+' vendidos</span></div></div>').join("")||'<p class="mut">Aún no hay datos suficientes de productos vendidos.</p>'}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+
+const rt=sb.channel("admin-live").on("postgres_changes",{event:"*",schema:"public",table:"restaurant_products"},()=>loadProducts()).on("postgres_changes",{event:"*",schema:"public",table:"restaurant_categories"},()=>loadCategories()).on("postgres_changes",{event:"*",schema:"public",table:"restaurants"},()=>loadRestaurants()).subscribe();
+setInterval(()=>{if(!document.getElementById("app").classList.contains("hidden")){loadProducts();loadCategories();}},15000);
+</script><div id="accessModal" class="modal" style="display:none;position:fixed;inset:0;background:#0009;z-index:9999;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(520px,100%);max-height:90vh;overflow:auto"><div class="row between"><h2>Editar acceso</h2><button class="ghost" onclick="closeAccessModal()">Cerrar</button></div><input type="hidden" id="editStaffId"><label>Negocio asignado</label><select id="editStaffRestaurant"></select><p class="mut">Puedes mover esta misma cuenta a otro restaurante para probarlo sin crear un usuario nuevo.</p><label>Tipo de acceso</label><select id="editStaffRole"><option value="restaurant">Solo restaurante</option><option value="editor">Editor</option><option value="manager">Administrador</option></select><p class="mut" id="roleHelp"></p><label>Permisos</label><div class="item"><label><input id="editPermProducts" type="checkbox"> Productos</label><label><input id="editPermCategories" type="checkbox"> Categorías</label><label><input id="editPermOrders" type="checkbox"> Pedidos</label><label><input id="editPermBusiness" type="checkbox"> Datos del negocio</label></div><button class="primary" style="margin-top:15px" onclick="saveAccessModal()">Guardar cambios</button></div></div><div id="orderEditModal" class="modal" style="display:none;position:fixed;inset:0;background:#0009;z-index:999;padding:16px;overflow:auto">
+<div class="card" style="width:min(760px,100%);margin:auto">
+<div class="row between"><h2>Detalle del pedido</h2><button onclick="closeOrderDetail()">✕</button></div>
+<input type="hidden" id="oeId">
+<div class="grid">
+<label>Cliente<input id="oeName"></label><label>Tipo<select id="oeType"><option>Retiro en el local</option><option>Delivery</option></select></label>
+<label class="span6">Dirección<input id="oeAddress"></label><label>Pago<input id="oePayment"></label>
+<label>Estado<select id="oeStatus"><option value="nuevo">Nuevo</option><option value="confirmado">Confirmado</option><option value="preparando">En preparación</option><option value="listo">Listo</option><option value="enviado">En camino</option><option value="entregado">Entregado / Retirado</option><option value="cancelado">Cancelado</option></select></label>
+<label class="span12">Notas<textarea id="oeNotes" rows="3"></textarea></label>
+</div>
+<h3>Productos</h3><div id="oeItems"></div>
+<div class="row between"><b>Total: <span id="oeTotal"></span></b><div class="row"><button onclick="closeOrderDetail()">Cancelar</button><button onclick="saveOrderDetail()">Guardar cambios</button></div></div>
+</div></div>
+<script>
+window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number(id));if(!o)return;oeId.value=o.id;oeName.value=o.customer_name||"";oeType.value=o.order_type||"Retiro en el local";oeAddress.value=o.delivery_address||"";oePayment.value=o.payment_method||"";oeStatus.value=o.status||"nuevo";oeNotes.value=o.notes||"";const its=Array.isArray(o.items)?o.items:[];oeItems.innerHTML=its.map((it,i)=>'<div class="item orderEditItem" data-i="'+i+'"><div class="grid"><label class="span6">Producto<input class="oiName" value="'+esc(it.name||"")+'"></label><label>Cantidad<input class="oiQty" type="number" min="1" value="'+Number(it.qty||1)+'"></label><label>Precio unitario<input class="oiPrice" type="number" min="0" step="0.01" value="'+Number(it.unit_price||0)+'"></label><label class="span12">Nota<input class="oiNote" value="'+esc(it.note||"")+'"></label></div></div>').join("");calcOrderEditTotal();oeItems.querySelectorAll("input").forEach(x=>x.addEventListener("input",calcOrderEditTotal));orderEditModal.style.display="flex"}
+window.closeOrderDetail=function(){orderEditModal.style.display="none"}
+function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
+window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
+</script></main></div><footer class="admin-version">Versión v1.2.8</footer><script>
+async function verifySubscriptionMercadoPago(){
+ const box=document.getElementById("subscriptionMpStatus");
+ if(!box)return;
+ box.innerHTML="<b>Estado:</b> <span class='mut'>Verificando conexión con Mercado Pago…</span>";
+ try{
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session?.access_token){box.innerHTML="<b>Estado:</b> ❌ Sesión vencida. Vuelve a iniciar sesión.";return}
+  const res=await fetch(SB_URL+"/functions/v1/verify-subscription-mercadopago",{headers:{"apikey":SB_KEY,"Authorization":"Bearer "+session.access_token}});
+  const data=await res.json();
+  box.innerHTML=data.ok
+   ? "<b>Estado:</b> ✅ "+esc(data.message)
+   : "<b>Estado:</b> ❌ "+esc(data.message||data.error||"No se pudo verificar Mercado Pago");
+ }catch(e){box.innerHTML="<b>Estado:</b> ❌ No se pudo verificar la conexión."}
+}
+</script>
+<script>
+async function loadSubscriptionMercadoPagoSettings(){
+ if(!isSuperAdmin)return;
+ try{
+  const {data:{session}}=await sb.auth.getSession(); if(!session?.access_token)return;
+  const res=await fetch(SB_URL+"/functions/v1/subscription-mercadopago-settings",{headers:{"apikey":SB_KEY,"Authorization":"Bearer "+session.access_token}});
+  const d=await res.json(); if(!res.ok)return;
+  const pk=document.getElementById("subscriptionMpPublicKey"), hint=document.getElementById("subscriptionMpTokenHint");
+  if(pk)pk.value=d.public_key||"";
+  if(hint)hint.textContent=d.has_access_token?"Access Token guardado de forma segura. Déjalo vacío para conservarlo.":"Todavía no hay Access Token guardado.";
+ }catch(e){}
+}
+async function saveSubscriptionMercadoPago(){
+ try{
+  const {data:{session}}=await sb.auth.getSession(); if(!session?.access_token)return toast("Tu sesión venció.");
+  const public_key=document.getElementById("subscriptionMpPublicKey")?.value.trim()||"";
+  const access_token=document.getElementById("subscriptionMpAccessToken")?.value.trim()||"";
+  if(!public_key)return toast("Ingresa la Public Key de Express.");
+  const res=await fetch(SB_URL+"/functions/v1/subscription-mercadopago-settings",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({public_key,access_token})});
+  const raw=await res.text(); let d={}; try{d=JSON.parse(raw)}catch(_){d={error:raw||"Respuesta inválida del servidor"}} if(!res.ok)return toast(d.error||"No se pudieron guardar las credenciales.");
+  document.getElementById("subscriptionMpAccessToken").value="";
+  toast("Credenciales de Mercado Pago Express guardadas.");
+  await loadSubscriptionMercadoPagoSettings();
+ }catch(e){toast("No se pudieron guardar las credenciales.");}
+}
+</script>
+<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.2.8</div></body></html>+Number(r.subscription_price).toLocaleString("es-CL"):'')+'</div></div><button class="ghost" type="button" onclick="document.querySelector(\'[data-tab=plans]\')?.click()">Ver planes</button></div>'+(daysLeft!=null?'<div class="sub-progress"><i style="width:'+pct+'%"></i></div>':'');
+ el.style.display="block";
+}
 async function loadRestaurants(){
   const {data,error}=await sb.from("restaurants").select("*").eq("id",currentRestaurant).limit(1);
   if(error)throw error;
@@ -643,7 +913,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v1.2.7</footer><script>
+</script></main></div><footer class="admin-version">Versión v1.2.8</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -685,4 +955,4 @@ async function saveSubscriptionMercadoPago(){
  }catch(e){toast("No se pudieron guardar las credenciales.");}
 }
 </script>
-<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.2.7</div></body></html>
+<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.2.8</div></body></html>
