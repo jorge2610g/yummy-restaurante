@@ -324,7 +324,7 @@ button{transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
 @media(max-width:390px){.top{grid-template-columns:minmax(0,1fr) auto!important}.top h1{font-size:21px!important}.top>.row{gap:4px!important}.top>.row>button,.top>.row>a,.top>.row>a button,.top .side-menu-toggle{width:40px!important;min-width:40px!important;max-width:40px!important;height:40px!important;min-height:40px!important}}
 </style></head>
 <body class="auth-loading">
-<style>.auth-loading #login,.auth-loading #app{display:none!important}</style>
+<style>#app{display:none!important}.auth-ready #app:not(.hidden){display:block!important}.auth-loading #login,.auth-loading #app{display:none!important}</style>
 <div id="login" class="wrap login hidden"><div class="card"><h1>Panel de administración</h1><p class="mut">Gestiona menú, precios, disponibilidad y datos del negocio.</p>
 <label>Correo administrador</label><input id="email" type="email" autocomplete="username" placeholder="tu@email.com">
 <label>Contraseña</label><div class="row"><input id="password" type="password" autocomplete="current-password" placeholder="••••••••"><button type="button" class="ghost" aria-label="Mostrar contraseña" onclick="return togglePassword('password',this)">Ver</button></div>
@@ -450,15 +450,16 @@ async function enter(user){
     currentRole=membership[0].role||"restaurant";
     document.getElementById("login").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
-    document.body.classList.remove("auth-loading");
+    document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
     document.getElementById("who").textContent=user.email;
     applyRoleAccess();
     const {data:menuRestaurant}=await sb.from("restaurants").select("slug").eq("id",currentRestaurant).single();
     const menuLink=document.getElementById("viewMenuLink");
     if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(menuRestaurant?.slug||currentRestaurant);menuLink.style.display=currentRole==="restaurant"?"":"none"}
     enableRestaurantNotifications();restoreAutoPrintOrders();setTimeout(startRestaurantOrderRealtime,0);
+    await loadRestaurants();
+    await Promise.allSettled([loadSubscriptionPlans(),loadSubscriptionModuleAccess()]);applyRoleAccess();
     await refreshAll();
-    await loadSubscriptionModuleAccess();applyRoleAccess();
     msg.textContent="";
   }catch(e){
     console.error("Restaurant panel load error",e);
@@ -507,8 +508,8 @@ function renderSubscriptionBanner(r){
  const start=r.subscription_started_at?new Date(r.subscription_started_at):null;
  const expires=r.subscription_expires_at?new Date(r.subscription_expires_at):null;
  const now=new Date();
- const totalDays=start&&expires?Math.max(1,Math.ceil((expires-start)/86400000)):null;
- const daysLeft=expires?Math.max(0,Math.ceil((expires-now)/86400000)):null;
+ const totalDays=start&&expires?Math.max(1,Math.round((expires-start)/86400000)):null;
+ const daysLeft=expires?Math.max(0,Math.ceil((expires.getTime()-now.getTime())/86400000)):null;
  const pct=totalDays&&daysLeft!=null?Math.max(0,Math.min(100,(daysLeft/totalDays)*100)):100;
  const plan=r.subscription_plan||(status==="trial"?"Prueba":"Plan activo");
  const label=status==="trial"?"Periodo de prueba":status==="active"?"Suscripción activa":status==="suspended"?"Suscripción suspendida":"Suscripción vencida";
@@ -805,7 +806,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.3.2</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.3.3</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
