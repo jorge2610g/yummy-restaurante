@@ -425,6 +425,18 @@ async function logout(){await sb.auth.signOut();window.location.replace("https:/
 async function enter(user){
   const msg=document.getElementById("loginMsg");
   try{
+    const previewId=Number(new URLSearchParams(location.search).get("admin_preview")||0);
+    if(previewId){
+      const {data:previewRole}=await sb.rpc("current_account_role");
+      if(previewRole==="admin"){
+        adminPreviewMode=true;adminPreviewTab=new URLSearchParams(location.search).get("tab")||"dashboard";currentRestaurant=previewId;currentRole="restaurant";
+        document.getElementById("login").classList.add("hidden");document.getElementById("who").textContent="Vista administrador · Restaurante #"+previewId;
+        subscriptionModuleAccess=null;await loadRestaurants();await Promise.allSettled([loadSubscriptionPlans()]);applyRoleAccess();await refreshAll();applyRoleAccess();
+        const allowed=effectiveTabs();const tab=allowed.includes(adminPreviewTab)?adminPreviewTab:"dashboard";document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));document.querySelector('.tab[data-tab="'+tab+'"]')?.classList.add("active");document.getElementById(tab)?.classList.add("active");
+        if(tab==="orders")await loadOrders();else if(tab==="products")await loadProducts();else if(tab==="dashboard")await refreshRestaurantDashboard();
+        document.getElementById("app").classList.remove("hidden");document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");msg.textContent="";return;
+      }
+    }
     msg.textContent="Cargando restaurante...";
     const {data:accountRole,error:roleError}=await sb.rpc("current_account_role");
     if(roleError){await sb.auth.signOut();msg.textContent="No se pudo verificar el tipo de cuenta.";return}
@@ -470,10 +482,10 @@ async function enter(user){
   }
 }
 const roleTabs={restaurant:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","qr","plans","settings"],manager:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","qr","settings"],editor:["orders","kitchen","products","categories","inventory"],cashier:["orders","cash"],kitchen:["kitchen"],waiter:["pos"],courier:["orders"]};
-let subscriptionModuleAccess=null;
+let subscriptionModuleAccess=null;let adminPreviewMode=false;let adminPreviewTab="dashboard";
 function subscriptionIsUsable(r){if(!r)return false;const s=String(r.subscription_status||"").toLowerCase();const exp=r.subscription_expires_at?new Date(r.subscription_expires_at).getTime():null;return (s==="active"||s==="trial")&&(!exp||exp>=Date.now())}
 async function loadSubscriptionModuleAccess(){if(currentRole!=="restaurant"&&currentRole!=="manager"){subscriptionModuleAccess=null;return}const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));if(!subscriptionIsUsable(r)){subscriptionModuleAccess=[];return}const isTrial=String(r.subscription_status).toLowerCase()==="trial"||(!r.subscription_plan_id&&String(r.subscription_plan||"").toLowerCase().includes("prueba"));if(isTrial){subscriptionModuleAccess=["products","categories","qr","settings"];return}const planId=Number(r.subscription_plan_id||0),name=String(r.subscription_plan||"").trim();if(!planId&&!name){subscriptionModuleAccess=[];return}let q=sb.from("subscription_plans").select("modules");q=planId?q.eq("id",planId):q.eq("name",name);const {data,error}=await q.limit(1).maybeSingle();if(error){console.error("No se pudieron cargar módulos del plan",error);subscriptionModuleAccess=[];return}subscriptionModuleAccess=Array.isArray(data?.modules)?data.modules:[];const extra=Array.isArray(r.subscription_module_overrides)?r.subscription_module_overrides:[];subscriptionModuleAccess=[...new Set([...subscriptionModuleAccess,...extra])]}
-function effectiveTabs(){const byRole=roleTabs[currentRole]||["dashboard"];if(currentRole!=="restaurant"&&currentRole!=="manager")return byRole;if(subscriptionModuleAccess===null)return byRole;const set=new Set(subscriptionModuleAccess);return byRole.filter(x=>x==="plans"||set.has(x))}
+function effectiveTabs(){if(adminPreviewMode)return roleTabs.restaurant;const byRole=roleTabs[currentRole]||["dashboard"];if(currentRole!=="restaurant"&&currentRole!=="manager")return byRole;if(subscriptionModuleAccess===null)return byRole;const set=new Set(subscriptionModuleAccess);return byRole.filter(x=>x==="plans"||set.has(x))}
 function applyRoleAccess(){
  const allowed=effectiveTabs(),tabs=[...document.querySelectorAll(".tab")];
  tabs.forEach(tab=>{const visible=allowed.includes(tab.dataset.tab);tab.hidden=!visible;tab.classList.toggle("role-hidden",!visible);tab.setAttribute("aria-hidden",visible?"false":"true");tab.style.setProperty("display",visible?"":"none",visible?"":"important");tab.classList.remove("active")});
@@ -482,7 +494,8 @@ function applyRoleAccess(){
  document.getElementById("subscriptionBanner")?.style.setProperty("display",currentRole==="restaurant"?"":"none","important");
  document.getElementById("viewMenuLink")?.style.setProperty("display",currentRole==="restaurant"?"":"none",currentRole==="restaurant"?"":"important");
 }
-async function restoreSession(){try{const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){await enter(data.session.user)}else{document.getElementById("login").classList.remove("hidden")}}catch(e){document.getElementById("login").classList.remove("hidden");document.getElementById("loginMsg").textContent=e.message||"No se pudo validar la sesión."}finally{document.body.classList.remove("auth-loading")}}restoreSession();
+window.addEventListener("message",async e=>{if(e.origin!=="https://admin.yummypro.online"||e.data?.type!=="YUMMY_ADMIN_PREVIEW")return;try{await sb.auth.setSession({access_token:e.data.access_token,refresh_token:e.data.refresh_token});const url=new URL(location.href);url.searchParams.set("admin_preview",e.data.restaurant_id);url.searchParams.set("tab",e.data.tab||"dashboard");history.replaceState(null,"",url);const {data:{user}}=await sb.auth.getUser();if(user)await enter(user)}catch(err){console.error(err)}});
+async function restoreSession(){try{const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){await enter(data.session.user)}else if(new URLSearchParams(location.search).has("admin_preview")){document.getElementById("login").classList.add("hidden");document.getElementById("loginMsg").textContent="Abriendo vista administrativa del restaurante…"}else{document.getElementById("login").classList.remove("hidden")}}catch(e){document.getElementById("login").classList.remove("hidden");document.getElementById("loginMsg").textContent=e.message||"No se pudo validar la sesión."}finally{document.body.classList.remove("auth-loading")}}restoreSession();
 function toggleSideMenu(){const m=document.getElementById("sideMenu"),b=document.getElementById("sideMenuBackdrop");if(!m)return;m.classList.toggle("open");if(b)b.classList.toggle("open",m.classList.contains("open"))}
 function closeSideMenu(){const m=document.getElementById("sideMenu"),b=document.getElementById("sideMenuBackdrop");if(m)m.classList.remove("open");if(b)b.classList.remove("open")}
 function closeSideMenuMobile(){if(window.matchMedia("(max-width:800px)").matches)closeSideMenu()}
@@ -820,7 +833,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.3.13</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.3.14</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
