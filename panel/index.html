@@ -477,7 +477,7 @@ async function enter(user){
     const {data:menuRestaurant}=await sb.from("restaurants").select("slug").eq("id",currentRestaurant).single();
     const menuLink=document.getElementById("viewMenuLink");
     if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(menuRestaurant?.slug||currentRestaurant);menuLink.style.display=currentRole==="restaurant"?"":"none"}
-    enableRestaurantNotifications();restoreAutoPrintOrders();setTimeout(startRestaurantOrderRealtime,0);
+    enableRestaurantNotifications();restoreAutoPrintOrders();setTimeout(startRestaurantOrderRealtime,0);setTimeout(startSubscriptionAccessRealtime,0);
     await loadRestaurants();
     await Promise.allSettled([loadSubscriptionPlans(),loadSubscriptionModuleAccess()]);
     applyRoleAccess();
@@ -502,7 +502,38 @@ async function enter(user){
 const roleTabs={restaurant:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","qr","plans","settings"],manager:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","qr","settings"],editor:["orders","kitchen","products","categories","inventory"],cashier:["orders","cash"],kitchen:["kitchen"],waiter:["pos"],courier:["orders"]};
 let subscriptionModuleAccess=null;let adminPreviewMode=false;let adminPreviewTab="dashboard";
 function subscriptionIsUsable(r){if(!r)return false;const s=String(r.subscription_status||"").toLowerCase();const exp=r.subscription_expires_at?new Date(r.subscription_expires_at).getTime():null;return (s==="active"||s==="trial")&&(!exp||exp>=Date.now())}
-async function loadSubscriptionModuleAccess(){if(currentRole!=="restaurant"&&currentRole!=="manager"){subscriptionModuleAccess=null;return}const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));if(!subscriptionIsUsable(r)){subscriptionModuleAccess=[];return}const isTrial=String(r.subscription_status).toLowerCase()==="trial"||(!r.subscription_plan_id&&String(r.subscription_plan||"").toLowerCase().includes("prueba"));if(isTrial){subscriptionModuleAccess=["products","categories","qr","settings"];return}const planId=Number(r.subscription_plan_id||0),name=String(r.subscription_plan||"").trim();if(!planId&&!name){subscriptionModuleAccess=[];return}let q=sb.from("subscription_plans").select("modules");q=planId?q.eq("id",planId):q.eq("name",name);const {data,error}=await q.limit(1).maybeSingle();if(error){console.error("No se pudieron cargar módulos del plan",error);subscriptionModuleAccess=[];return}subscriptionModuleAccess=Array.isArray(data?.modules)?data.modules:[];const extra=Array.isArray(r.subscription_module_overrides)?r.subscription_module_overrides:[];subscriptionModuleAccess=[...new Set([...subscriptionModuleAccess,...extra])]}
+async function loadSubscriptionModuleAccess(){
+ if(currentRole!=="restaurant"&&currentRole!=="manager"){subscriptionModuleAccess=null;return}
+ const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));
+ if(!subscriptionIsUsable(r)){subscriptionModuleAccess=[];return}
+ const extra=Array.isArray(r.subscription_module_overrides)?r.subscription_module_overrides:[];
+ const isTrial=String(r.subscription_status||"").toLowerCase()==="trial"||(!r.subscription_plan_id&&String(r.subscription_plan||"").toLowerCase().includes("prueba"));
+ let baseModules=[];
+ if(isTrial){
+  baseModules=["products","categories","qr","settings"];
+ }else{
+  const planId=Number(r.subscription_plan_id||0),name=String(r.subscription_plan||"").trim();
+  if(planId||name){
+   let q=sb.from("subscription_plans").select("modules");q=planId?q.eq("id",planId):q.eq("name",name);
+   const {data,error}=await q.limit(1).maybeSingle();
+   if(error)console.error("No se pudieron cargar módulos del plan",error);
+   else baseModules=Array.isArray(data?.modules)?data.modules:[];
+  }
+ }
+ subscriptionModuleAccess=[...new Set([...baseModules,...extra])];
+}
+let subscriptionAccessChannel=null;
+function startSubscriptionAccessRealtime(){
+ if(subscriptionAccessChannel){sb.removeChannel(subscriptionAccessChannel);subscriptionAccessChannel=null}
+ if(!currentRestaurant||adminPreviewMode)return;
+ subscriptionAccessChannel=sb.channel("restaurant-subscription-access-"+currentRestaurant)
+  .on("postgres_changes",{event:"UPDATE",schema:"public",table:"restaurants",filter:"id=eq."+currentRestaurant},async payload=>{
+   const row=payload.new||{};const index=restaurants.findIndex(x=>Number(x.id)===Number(currentRestaurant));
+   if(index>=0)restaurants[index]={...restaurants[index],...row};else restaurants=[row];
+   renderSubscriptionBanner(restaurants[0]);await loadSubscriptionModuleAccess();applyRoleAccess();
+   toast("Tus accesos de suscripción fueron actualizados");
+  }).subscribe();
+}
 function effectiveTabs(){if(adminPreviewMode)return roleTabs.restaurant;const byRole=roleTabs[currentRole]||["dashboard"];if(currentRole!=="restaurant"&&currentRole!=="manager")return byRole;if(subscriptionModuleAccess===null)return byRole;const set=new Set(subscriptionModuleAccess);return byRole.filter(x=>x==="plans"||set.has(x))}
 function applyRoleAccess(){
  const allowed=effectiveTabs(),tabs=[...document.querySelectorAll(".tab")];
