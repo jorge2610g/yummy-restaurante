@@ -30,7 +30,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 .admin-version{padding:24px 12px;text-align:center;color:var(--mut);font-size:12px;opacity:.75}
 
-/* Ajuste móvil v1.2.8: contenido centrado y tarjetas sin desbordes */
+/* Ajuste móvil v1.2.9: contenido centrado y tarjetas sin desbordes */
 @media(max-width:600px){
   body{overflow-x:hidden!important}
   main,.wrap,.container,.content,.panel{width:100%!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}
@@ -42,7 +42,7 @@ button{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:
 }
 #orderEditModal{display:none}
 .order-track{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.order-track span{padding:6px 9px;border-radius:999px;background:var(--ghost);font-size:12px}.order-track span.done,.order-track span.current{background:var(--a);color:#171000}.order-track span.current{font-weight:900}.order-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-/* Vista móvil del resumen de contenido v1.2.8 */
+/* Vista móvil del resumen de contenido v1.2.9 */
 @media(max-width:600px){
  #restaurants .card.span12{padding:16px!important;width:100%!important;overflow:hidden!important}
  #restaurants .card.span12>.row.between{display:block!important}
@@ -122,7 +122,7 @@ img,svg,video{max-width:100%;height:auto}
  .top .row{grid-template-columns:1fr}.card{padding:13px!important}
  .tabs{gap:7px}.tab{padding-left:13px!important;padding-right:13px!important}
 }
-/* Mobile polish v1.2.8 */
+/* Mobile polish v1.2.9 */
 @media(max-width:600px){
  .wrap{padding:16px!important;width:100%!important}
  .top{display:block!important;margin-bottom:18px!important}
@@ -545,7 +545,11 @@ async function loadOrders(){
   const idx=states.indexOf(o.status);
   const flow=["recibido","preparacion","listo","entregado"];
   const items=Array.isArray(o.items)?o.items:[];
-  return `<div class="item" data-status="${o.status}"><div class="row between"><div><h3>#${esc(o.order_code)} · ${esc(o.customer_name)}</h3><div class="mut">${new Date(o.created_at).toLocaleString("es-CL")} · ${esc(o.order_type)} · Mercado Pago</div><div class="price">${money(o.total)}</div></div><div style="min-width:180px"><label>Estado</label><select onchange="setOrderStatus(${o.id},this.value)">${states.map(s=>`<option value="${s}" ${s===o.status?"selected":""}>${labels[s]}</option>`).join("")}</select></div></div><div class="order-track">${flow.map((s,i)=>`<span class="${o.status==="cancelado"?"":i<(flow.indexOf(o.status))?"done":s===o.status?"current":""}">${labels[s]}</span>`).join("")}${o.status==="cancelado"?'<span class="current">Cancelado</span>':""}</div><div class="order-detail"><b>${o.order_type==="Delivery"?"📍 Entrega":"📍 Retiro"}:</b> ${esc(o.order_type==="Delivery"?(o.delivery_address||"Sin dirección"):(restaurants.find(r=>r.id===currentRestaurant)?.address||"Dirección del restaurante"))}<br><span class="mut">${items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join(" · ")}</span></div><div class="actions" style="margin-top:12px"><button class="ghost" onclick="printOrderCommand(${o.id})">🖨️ Imprimir comanda</button></div></div>`;
+  const stateOptions=states.map(s=>'<option value="'+esc(s)+'" '+(s===o.status?"selected":"")+'>'+esc(labels[s])+'</option>').join("");
+  const track=flow.map((s,i)=>'<span class="'+(o.status==="cancelado"?"":i<flow.indexOf(o.status)?"done":s===o.status?"current":"")+'">'+esc(labels[s])+'</span>').join("")+(o.status==="cancelado"?'<span class="current">Cancelado</span>':"");
+  const destination=o.order_type==="Delivery"?(o.delivery_address||"Sin dirección"):(restaurants.find(r=>r.id===currentRestaurant)?.address||"Dirección del restaurante");
+  const itemText=items.map(x=>esc((x.qty||1)+" × "+(x.name||"Producto"))).join(" · ");
+  return '<div class="item" data-status="'+esc(o.status)+'"><div class="row between"><div><h3>#'+esc(o.order_code)+' · '+esc(o.customer_name)+'</h3><div class="mut">'+new Date(o.created_at).toLocaleString("es-CL")+' · '+esc(o.order_type)+' · Mercado Pago</div><div class="price">'+money(o.total)+'</div></div><div style="min-width:180px"><label>Estado</label><select onchange="setOrderStatus('+Number(o.id)+',this.value)">'+stateOptions+'</select></div></div><div class="order-track">'+track+'</div><div class="order-detail"><b>'+(o.order_type==="Delivery"?"📍 Entrega":"📍 Retiro")+':</b> '+esc(destination)+'<br><span class="mut">'+itemText+'</span></div><div class="actions" style="margin-top:12px"><button class="ghost" onclick="printOrderCommand('+Number(o.id)+')">🖨️ Imprimir comanda</button></div></div>';
  }).join("")||"<p class='mut'>Todavía no hay pedidos de Mercado Pago.</p>";
  const ca=document.getElementById("countAll"),cd=document.getElementById("countDelivered"),cc=document.getElementById("countCancelled");if(ca)ca.textContent=orders.filter(o=>o.status!=="entregado"&&o.status!=="cancelado").length;if(cd)cd.textContent=orders.filter(o=>o.status==="entregado").length;if(cc)cc.textContent=orders.filter(o=>o.status==="cancelado").length;filterOrdersStatus("all");
 }
@@ -657,7 +661,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v1.2.8</footer><script>
+</script></main></div><footer class="admin-version">Versión v1.2.9</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -699,7 +703,7 @@ async function saveSubscriptionMercadoPago(){
  }catch(e){toast("No se pudieron guardar las credenciales.");}
 }
 </script>
-<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.2.8</div></body></html>+Number(r.subscription_price).toLocaleString("es-CL"):'')+'</div></div><button class="ghost" type="button" onclick="document.querySelector(\'[data-tab=plans]\')?.click()">Ver planes</button></div>'+(daysLeft!=null?'<div class="sub-progress"><i style="width:'+pct+'%"></i></div>':'');
+<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.2.9</div></body></html>+Number(r.subscription_price).toLocaleString("es-CL"):'')+'</div></div><button class="ghost" type="button" onclick="document.querySelector(\'[data-tab=plans]\')?.click()">Ver planes</button></div>'+(daysLeft!=null?'<div class="sub-progress"><i style="width:'+pct+'%"></i></div>':'');
  el.style.display="block";
 }
 async function loadRestaurants(){
@@ -913,7 +917,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v1.2.8</footer><script>
+</script></main></div><footer class="admin-version">Versión v1.2.9</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -955,4 +959,4 @@ async function saveSubscriptionMercadoPago(){
  }catch(e){toast("No se pudieron guardar las credenciales.");}
 }
 </script>
-<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.2.8</div></body></html>
+<div style="position:fixed;right:10px;bottom:7px;z-index:9999;font:600 11px Arial;color:#7f93ad;opacity:.75;pointer-events:none">v1.2.9</div></body></html>
