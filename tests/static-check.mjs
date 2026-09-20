@@ -4,3 +4,8 @@ const panel=readFileSync('panel/index.html','utf8');
 for(const marker of ['data-tab="inventory"','restaurant_inventory_items','restaurant_inventory_movements','saveInventoryMovement','data-tab="kitchen"','restaurant_cash_sessions','openCashSession','cashHistoryList','data-tab="pos"','create_waiter_order','data-tab="staff"','create-restaurant-user','.eq("payment_method","Mercado Pago").eq("payment_status","approved")','.eq("available",true)','Cargando productos','No se pudieron cargar los productos del POS','.side-menu .tab[hidden]','role-hidden','Tu usuario no tiene permiso','mobile-icon-actions-v223','aria-label="Abrir menú del panel"','subscription-banner-row','optionsModal','restaurant_product_option_groups','createProductOption'])if(!panel.includes(marker))throw new Error(`panel/index.html: falta ${marker}`);
 if(panel.includes('data-tab="health"')||panel.includes('loadRestaurantHealth'))throw new Error('panel/index.html: el monitoreo debe estar eliminado');
 console.log('Landing y panel restaurante validados');
+
+// Subscription module access regression checks
+for (const needle of ["subscriptionModuleAccess","loadSubscriptionModuleAccess","effectiveTabs","subscription_plans"]) {
+  if (!html.includes(needle)) throw new Error(`Missing subscription module access marker: ${needle}`);
+}
