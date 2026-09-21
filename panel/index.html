@@ -545,7 +545,7 @@ async function enter(user){
         subscriptionModuleAccess=null;await loadRestaurants();await Promise.allSettled([loadSubscriptionPlans()]);applyRoleAccess();await refreshAll();applyRoleAccess();
         const allowed=effectiveTabs();const tab=allowed.includes(adminPreviewTab)?adminPreviewTab:"dashboard";document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));document.querySelector('.tab[data-tab="'+tab+'"]')?.classList.add("active");document.getElementById(tab)?.classList.add("active");
         if(tab==="orders")await loadOrders();else if(tab==="products")await loadProducts();else if(tab==="dashboard")await refreshRestaurantDashboard();
-        document.getElementById("app").classList.remove("hidden");document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");msg.textContent="";return;
+        document.getElementById("app").classList.remove("hidden");document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");document.documentElement.classList.remove("yummy-preboot");msg.textContent="";return;
       }
     }
     msg.textContent="Cargando restaurante...";
@@ -604,6 +604,9 @@ async function enter(user){
   }catch(e){
     console.error("Restaurant panel load error",e);
     msg.textContent=e.message||"No se pudo cargar la información del restaurante.";
+    document.body.classList.remove("auth-loading");
+    document.documentElement.classList.remove("yummy-preboot");
+    document.getElementById("login").classList.remove("hidden");
   }
 }
 const roleTabs={restaurant:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","qr","plans","settings"],manager:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","qr","settings"],editor:["orders","kitchen","products","categories","inventory"],cashier:["orders","cash"],kitchen:["kitchen"],waiter:["pos"],courier:["orders"]};
@@ -662,7 +665,7 @@ async function bootAdminPreview(payload){
  return adminPreviewBootPromise;
 }
 window.addEventListener("message",e=>{if(e.origin!=="https://admin.yummypro.online"||e.data?.type!=="YUMMY_ADMIN_PREVIEW")return;bootAdminPreview(e.data)});
-async function restoreSession(){const preview=new URLSearchParams(location.search).has("admin_preview");try{if(preview){document.getElementById("login").classList.add("hidden");document.getElementById("loginMsg").textContent="Abriendo vista administrativa del restaurante…";try{window.opener?.postMessage({type:"YUMMY_ADMIN_PREVIEW_READY"},"https://admin.yummypro.online")}catch(e){}setTimeout(()=>{if(!adminPreviewInitialized&&!adminPreviewBootPromise)bootAdminPreview(null)},1800);return}const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){await enter(data.session.user)}else{document.getElementById("login").classList.remove("hidden")}}catch(e){document.getElementById("login").classList.remove("hidden");document.getElementById("loginMsg").textContent=e.message||"No se pudo validar la sesión."}finally{if(!preview)document.body.classList.remove("auth-loading")}}restoreSession();
+async function restoreSession(){const preview=new URLSearchParams(location.search).has("admin_preview");try{if(preview){document.getElementById("login").classList.add("hidden");document.getElementById("loginMsg").textContent="Abriendo vista administrativa del restaurante…";try{window.opener?.postMessage({type:"YUMMY_ADMIN_PREVIEW_READY"},"https://admin.yummypro.online")}catch(e){}setTimeout(()=>{if(!adminPreviewInitialized&&!adminPreviewBootPromise)bootAdminPreview(null)},1800);return}const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){await enter(data.session.user)}else{document.getElementById("login").classList.remove("hidden")}}catch(e){document.getElementById("login").classList.remove("hidden");document.getElementById("loginMsg").textContent=e.message||"No se pudo validar la sesión."}finally{if(!preview){document.body.classList.remove("auth-loading");document.documentElement.classList.remove("yummy-preboot")}}restoreSession();
 function toggleSideMenu(){const m=document.getElementById("sideMenu"),b=document.getElementById("sideMenuBackdrop");if(!m)return;m.classList.toggle("open");if(b)b.classList.toggle("open",m.classList.contains("open"))}
 function closeSideMenu(){const m=document.getElementById("sideMenu"),b=document.getElementById("sideMenuBackdrop");if(m)m.classList.remove("open");if(b)b.classList.remove("open")}
 function closeSideMenuMobile(){if(window.matchMedia("(max-width:800px)").matches)closeSideMenu()}
@@ -1083,7 +1086,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.29</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.30</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
