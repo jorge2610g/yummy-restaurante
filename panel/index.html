@@ -381,7 +381,12 @@ html,body{max-width:100%;overflow-x:hidden}
  #orders>.grid,.orders-center{width:100%!important;max-width:100%!important;min-width:0!important;margin-left:0!important;margin-right:0!important}
  .orders-command-bar,.orders-filter-panel,.orders-search,.filter-block,.date-range,.status-select-block{width:100%!important;min-width:0!important}
 }
-</style></head>
+</style><style id="critical-boot-v2425">
+/* Evita que el navegador pinte por un instante la interfaz anterior durante una recarga. */
+html.yummy-preboot{background:#071426}
+html.yummy-preboot body{visibility:hidden!important}
+body.auth-loading #app,body.auth-loading #login,body.auth-loading #posCartFab{display:none!important}
+</style><script>document.documentElement.classList.add("yummy-preboot");</script></head>
 <body class="auth-loading">
 <style>
 #app{display:none!important}.auth-ready #app:not(.hidden){display:block!important}.auth-loading #login,.auth-loading #app{display:none!important}
@@ -393,7 +398,7 @@ html,body{max-width:100%;overflow-x:hidden}
 .app-boot-spinner{width:28px;height:28px;margin:18px auto 0;border:3px solid var(--line);border-top-color:var(--a);border-radius:50%;animation:appBootSpin .8s linear infinite}
 @keyframes appBootSpin{to{transform:rotate(360deg)}}
 </style>
-<div id="appBootLoader" role="status" aria-live="polite"><div class="app-boot-card"><div class="app-boot-mark">Y</div><h2>Cargando tu restaurante…</h2><p>Estamos verificando tu sesión y tus accesos.</p><div class="app-boot-spinner" aria-hidden="true"></div></div></div>
+<div id="appBootLoader" role="status" aria-live="polite"><div class="app-boot-card"><div class="app-boot-mark">Y</div><h2>Cargando tu restaurante…</h2><p>Estamos verificando tu sesión y tus accesos.</p><div class="app-boot-spinner" aria-hidden="true"></div></div></div><script>document.documentElement.classList.remove("yummy-preboot");</script>
 <div id="login" class="wrap login hidden"><div class="card"><h1>Panel de administración</h1><p class="mut">Gestiona menú, precios, disponibilidad y datos del negocio.</p>
 <label>Correo administrador</label><input id="email" type="email" autocomplete="username" placeholder="tu@email.com">
 <label>Contraseña</label><div class="row"><input id="password" type="password" autocomplete="current-password" placeholder="••••••••"><button type="button" class="ghost" aria-label="Mostrar contraseña" onclick="return togglePassword('password',this)">Ver</button></div>
@@ -1065,7 +1070,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.24</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.25</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
