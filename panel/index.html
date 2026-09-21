@@ -541,13 +541,18 @@ async function enter(user){
     document.getElementById("app").classList.remove("hidden");
     document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
     setTimeout(()=>refreshAll().then(()=>applyRoleAccess()).catch(e=>console.error("Carga secundaria del panel",e)),0);
-    const requestedTab=new URLSearchParams(location.search).get("tab");
-    if(requestedTab&&effectiveTabs().includes(requestedTab)){
-      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-      document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
-      document.querySelector('.tab[data-tab="'+requestedTab+'"]')?.classList.add("active");
-      document.getElementById(requestedTab)?.classList.add("active");
-      if(requestedTab==="plans"){await loadSubscriptionPlans();const requestedPlan=Number(new URLSearchParams(location.search).get("plan")||0);if(requestedPlan)setTimeout(()=>document.querySelector('[data-plan-id="'+requestedPlan+'"]')?.scrollIntoView({behavior:"smooth",block:"center"}),100)}
+    const urlParams=new URLSearchParams(location.search),requestedTab=urlParams.get("tab"),allowedTabs=effectiveTabs();
+    // En un inicio de sesión normal, Dashboard es la portada de toda suscripción utilizable.
+    // Solo respetamos enlaces directos a otras secciones; un tab=plans antiguo no debe dominar el login.
+    const restaurantRow=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));
+    const homeTab=subscriptionIsUsable(restaurantRow)&&allowedTabs.includes("dashboard")?"dashboard":(allowedTabs[0]||"plans");
+    const initialTab=requestedTab&&requestedTab!=="plans"&&allowedTabs.includes(requestedTab)?requestedTab:homeTab;
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
+    document.querySelector('.tab[data-tab="'+initialTab+'"]')?.classList.add("active");
+    document.getElementById(initialTab)?.classList.add("active");
+    if(urlParams.get("tab")==="plans"&&!urlParams.get("plan")){
+      urlParams.delete("tab");const clean=location.pathname+(urlParams.toString()?"?"+urlParams.toString():"")+location.hash;history.replaceState(null,"",clean);
     }
     msg.textContent="";
   }catch(e){
@@ -998,7 +1003,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.11</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.12</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
