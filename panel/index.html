@@ -372,7 +372,7 @@ html,body{max-width:100%;overflow-x:hidden}
 <div id="subscriptionBanner" class="card" style="margin-bottom:14px;display:none"></div>
 <div class="top"><div><h1 id="panelMainTitle">Panel Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><a id="viewMenuLink" href="#" target="_blank" style="display:none"><button class="ghost header-action" type="button" aria-label="Ver menú" title="Ver menú"><span class="header-action-icon" aria-hidden="true">👁️</span><span class="action-label">Ver menú</span></button></a><button class="ghost header-action" id="themeBtn" type="button" onclick="toggleAdminTheme()" aria-label="Cambiar modo de color" title="Cambiar tema"><span class="header-action-icon" aria-hidden="true">☀️</span><span class="action-label">Modo claro</span></button><button class="ghost header-action" type="button" onclick="logout()" aria-label="Salir" title="Salir"><span class="header-action-icon" aria-hidden="true">↪</span><span class="action-label">Salir</span></button><button id="sideMenuToggle" class="ghost side-menu-toggle header-action" type="button" onclick="toggleSideMenu()" aria-label="Abrir menú del panel" title="Menú del panel"><span class="header-action-icon" aria-hidden="true">☰</span><span class="action-label">Menú</span></button></div></div>
 <div id="sideMenuBackdrop" class="side-menu-backdrop" onclick="closeSideMenu()"></div><div id="panelLayout" class="panel-layout"><aside id="sideMenu" class="side-menu"><div class="side-menu-title">Menú</div><div class="tabs">
-<button class="tab active" data-tab="dashboard">📊 <span>Dashboard</span></button><button class="tab" data-tab="orders">📦 <span>Pedidos</span></button><button class="tab" data-tab="pos">🧾 <span>Meseros / POS</span></button><button class="tab" data-tab="kitchen">👨‍🍳 <span>Cocina</span></button><button class="tab" data-tab="cash">💵 <span>Caja</span></button><button class="tab" data-tab="products">🍔 <span>Productos</span></button><button class="tab" data-tab="categories">📚 <span>Categorías</span></button><button class="tab" data-tab="inventory">📋 <span>Inventario</span></button><button class="tab" data-tab="staff">👥 <span>Personal</span></button><button class="tab" data-tab="qr">▦ <span>Código QR</span></button><button class="tab" data-tab="plans">💳 <span>Planes</span></button><button class="tab" data-tab="settings">⚙️ <span>Configuración</span></button>
+<button class="tab active" data-tab="dashboard">📊 <span>Dashboard</span></button><button class="tab" data-tab="orders">📦 <span>Pedidos</span></button><button class="tab" data-tab="pos">🧾 <span>Meseros / POS</span></button><button class="tab" data-tab="kitchen">👨‍🍳 <span>Cocina</span></button><button class="tab" data-tab="cash">💵 <span>Caja</span></button><button class="tab" data-tab="products">🍔 <span>Productos</span></button><button class="tab" data-tab="categories">📚 <span>Categorías</span></button><button class="tab" data-tab="inventory">📋 <span>Inventario</span></button><button class="tab" data-tab="staff">👥 <span>Personal</span></button><button class="tab" data-tab="qr">▦ <span>Código QR</span></button><button class="tab" data-tab="plans">💳 <span>Planes</span></button><button class="tab" data-tab="whatsapp">💬 <span>WhatsApp Bot</span></button><button class="tab" data-tab="settings">⚙️ <span>Configuración</span></button>
 </div></aside><main class="panel-content">
 
 <section id="dashboard" class="section active"><div class="restaurant-dashboard-hero"><div><span class="eyebrow">RESUMEN DEL NEGOCIO</span><h2>Todo bajo control</h2><p class="mut">Ventas, pedidos, productos y operación en una sola vista.</p></div><button class="ghost" onclick="refreshRestaurantDashboard()">↻ Actualizar resumen</button></div><div class="restaurant-metrics"><article class="restaurant-metric"><span>Ventas de hoy</span><strong id="statSalesToday">$0</strong></article><article class="restaurant-metric"><span>Pedidos de hoy</span><strong id="statOrdersToday">0</strong></article><article class="restaurant-metric"><span>Ticket promedio</span><strong id="statAverage">$0</strong></article><article class="restaurant-metric"><span>Productos disponibles</span><strong id="statProducts">0</strong></article></div><div class="restaurant-analytics"><article class="card"><div class="module-head"><div><h2>Ventas de los últimos 7 días</h2><p class="mut">Evolución diaria de ingresos confirmados.</p></div></div><div id="salesChart"></div></article><article class="card"><h2>Estado de pedidos</h2><div id="statusChart" class="list" style="margin-top:14px"></div></article></div><article class="card" style="margin-top:14px"><div class="module-head"><div><h2>Productos más vendidos</h2><p class="mut">Ranking calculado a partir de los pedidos.</p></div></div><div id="topProducts" class="list"></div></article></section>
@@ -412,6 +412,8 @@ html,body{max-width:100%;overflow-x:hidden}
 <section id="qr" class="section"><div class="card"><h2>Código QR del restaurante</h2><p class="mut">Enlace directo para compartir el menú de tu restaurante.</p><div id="qrPanel"></div></div></section>
 
 <section id="plans" class="section"><div class="card"><h2>Planes disponibles</h2><p class="mut">Elige un plan para mantener activo tu restaurante.</p><div id="restaurantPlans" class="list"></div></div></section>
+
+<section id="whatsapp" class="section"><div class="card"><div class="row between" style="align-items:flex-start;gap:16px;flex-wrap:wrap"><div><h2>WhatsApp Bot</h2><p class="mut">Conecta el WhatsApp Business del restaurante sin reemplazar el número usado para atender clientes. Las automatizaciones funcionarán cuando Meta autorice la conexión.</p></div><span id="waBotStatus" class="pill">No conectado</span></div><div class="item" style="margin-top:16px"><h3>Conexión con WhatsApp Business</h3><p class="mut" id="waBotConnectionText">Todavía no hay una conexión configurada.</p><div class="row" style="flex-wrap:wrap"><button class="primary" type="button" onclick="prepareWhatsAppConnection()">Preparar conexión</button><button class="ghost" type="button" onclick="loadWhatsAppBot()">Actualizar estado</button></div></div><div class="item" style="margin-top:14px"><h3>Respuestas automáticas</h3><label><input id="waMenuEnabled" type="checkbox" style="width:auto"> Responder cuando el cliente pida el menú</label><label>Palabras que activan el menú</label><input id="waMenuKeywords" placeholder="menú, menu, carta, quiero pedir"><label><input id="waReceivedEnabled" type="checkbox" style="width:auto"> Pedido recibido</label><label><input id="waPreparationEnabled" type="checkbox" style="width:auto"> Pedido en preparación</label><label><input id="waReadyEnabled" type="checkbox" style="width:auto"> Pedido listo</label><label><input id="waDeliveredEnabled" type="checkbox" style="width:auto"> Pedido entregado</label><button class="primary" type="button" onclick="saveWhatsAppBotSettings()" style="margin-top:12px">Guardar automatizaciones</button></div><div class="item" style="margin-top:14px"><h3>Actividad reciente</h3><div id="waBotLog" class="list"><p class="mut">Sin mensajes todavía.</p></div></div></div></section>
 
 <section id="settings" class="section"><div class="card"><h2>Datos del negocio</h2><div class="grid">
 <div class="span4"><label>Nombre</label><input id="sname"></div><div class="span4"><label>WhatsApp</label><input id="swhatsapp"></div><div class="span4"><label>Instagram</label><input id="sinstagram"></div>
@@ -560,7 +562,7 @@ async function enter(user){
     msg.textContent=e.message||"No se pudo cargar la información del restaurante.";
   }
 }
-const roleTabs={restaurant:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","qr","plans","settings"],manager:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","qr","settings"],editor:["orders","kitchen","products","categories","inventory"],cashier:["orders","cash"],kitchen:["kitchen"],waiter:["pos"],courier:["orders"]};
+const roleTabs={restaurant:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","qr","whatsapp","plans","settings"],manager:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","qr","whatsapp","settings"],editor:["orders","kitchen","products","categories","inventory"],cashier:["orders","cash"],kitchen:["kitchen"],waiter:["pos"],courier:["orders"]};
 let subscriptionModuleAccess=null;let adminPreviewMode=false;let adminPreviewTab="dashboard";let adminPreviewBootPromise=null;let adminPreviewInitialized=false;
 function subscriptionIsUsable(r){if(!r)return false;const s=String(r.subscription_status||"").toLowerCase();const exp=r.subscription_expires_at?new Date(r.subscription_expires_at).getTime():null;return (s==="active"||s==="trial")&&(!exp||exp>=Date.now())}
 async function loadSubscriptionModuleAccess(){
@@ -582,6 +584,39 @@ async function loadSubscriptionModuleAccess(){
   }
  }
  subscriptionModuleAccess=[...new Set(["dashboard",...baseModules,...extra])];
+}
+async function loadWhatsAppBot(){
+ if(!currentRestaurant)return;
+ const [connRes,autoRes,logRes]=await Promise.all([
+  sb.from("restaurant_whatsapp_connections").select("*").eq("restaurant_id",currentRestaurant).maybeSingle(),
+  sb.from("restaurant_whatsapp_automations").select("*").eq("restaurant_id",currentRestaurant).maybeSingle(),
+  sb.from("restaurant_whatsapp_message_log").select("direction,trigger_type,message_preview,status,created_at").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(12)
+ ]);
+ const conn=connRes.data,status=document.getElementById("waBotStatus"),txt=document.getElementById("waBotConnectionText");
+ if(status){status.textContent=conn?.status==="connected"?"Conectado":conn?.status==="pending"?"Pendiente de Meta":conn?.status==="error"?"Error":"No conectado"}
+ if(txt){txt.textContent=conn?.status==="connected"?("Número conectado: "+(conn.display_phone_number||"WhatsApp Business")):conn?.status==="pending"?"La estructura está preparada. Falta completar la autorización oficial de Meta para este número.":conn?.last_error||"Todavía no hay una conexión configurada."}
+ const a=autoRes.data||{};
+ if(window.waMenuEnabled)waMenuEnabled.checked=a.menu_reply_enabled!==false;
+ if(window.waMenuKeywords)waMenuKeywords.value=(a.menu_keywords||["menu","menú","carta"]).join(", ");
+ if(window.waReceivedEnabled)waReceivedEnabled.checked=a.order_received_enabled!==false;
+ if(window.waPreparationEnabled)waPreparationEnabled.checked=a.order_preparation_enabled!==false;
+ if(window.waReadyEnabled)waReadyEnabled.checked=a.order_ready_enabled!==false;
+ if(window.waDeliveredEnabled)waDeliveredEnabled.checked=a.order_delivered_enabled!==false;
+ const log=document.getElementById("waBotLog");if(log)log.innerHTML=(logRes.data||[]).map(x=>`<div class="item"><b>${esc(x.trigger_type||x.direction||"Mensaje")}</b><div class="mut">${esc(x.message_preview||"")} · ${esc(x.status||"")}</div></div>`).join("")||"<p class='mut'>Sin mensajes todavía.</p>";
+}
+async function prepareWhatsAppConnection(){
+ if(!currentRestaurant)return;
+ const row={restaurant_id:currentRestaurant,status:"pending",enabled:false,provider:"meta_cloud_api",coexistence_enabled:true,updated_at:new Date().toISOString()};
+ const {error}=await sb.from("restaurant_whatsapp_connections").upsert(row,{onConflict:"restaurant_id"});
+ if(error)return toast(error.message);
+ toast("Conexión preparada. Falta autorizar el número con Meta.");await loadWhatsAppBot();
+}
+async function saveWhatsAppBotSettings(){
+ if(!currentRestaurant)return;
+ const keywords=(waMenuKeywords.value||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean);
+ const row={restaurant_id:currentRestaurant,menu_reply_enabled:waMenuEnabled.checked,menu_keywords:keywords,order_received_enabled:waReceivedEnabled.checked,order_preparation_enabled:waPreparationEnabled.checked,order_ready_enabled:waReadyEnabled.checked,order_delivered_enabled:waDeliveredEnabled.checked,updated_at:new Date().toISOString()};
+ const {error}=await sb.from("restaurant_whatsapp_automations").upsert(row,{onConflict:"restaurant_id"});
+ if(error)return toast(error.message);toast("Automatizaciones de WhatsApp guardadas");await loadWhatsAppBot();
 }
 let subscriptionAccessChannel=null;
 function startSubscriptionAccessRealtime(){
@@ -620,7 +655,7 @@ async function restoreSession(){const preview=new URLSearchParams(location.searc
 function toggleSideMenu(){const m=document.getElementById("sideMenu"),b=document.getElementById("sideMenuBackdrop");if(!m)return;m.classList.toggle("open");if(b)b.classList.toggle("open",m.classList.contains("open"))}
 function closeSideMenu(){const m=document.getElementById("sideMenu"),b=document.getElementById("sideMenuBackdrop");if(m)m.classList.remove("open");if(b)b.classList.remove("open")}
 function closeSideMenuMobile(){if(window.matchMedia("(max-width:800px)").matches)closeSideMenu()}
-document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{const allowed=effectiveTabs();if(!allowed.includes(b.dataset.tab)){applyRoleAccess();closeSideMenuMobile();return toast("Tu usuario no tiene permiso para abrir esta sección")};document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.tab)?.classList.add("active");closeSideMenuMobile();if(!currentRestaurant)return;try{if(b.dataset.tab==="dashboard")await refreshRestaurantDashboard();else if(b.dataset.tab==="orders")await loadOrders();else if(b.dataset.tab==="pos")await loadPos();else if(b.dataset.tab==="kitchen")await loadKitchen();else if(b.dataset.tab==="cash")await loadCash();else if(b.dataset.tab==="staff")await loadStaff();else if(b.dataset.tab==="products")await loadProducts();else if(b.dataset.tab==="categories")await loadCategories();else if(b.dataset.tab==="inventory")await loadInventory();else if(b.dataset.tab==="qr"){renderQrPanel()}else if(b.dataset.tab==="plans")await loadSubscriptionPlans();else if(b.dataset.tab==="settings"){await loadSettings();await loadRestaurantMercadoPago()}}catch(e){console.error("Error actualizando sección",b.dataset.tab,e);toast("No se pudo actualizar esta sección")}});
+document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{const allowed=effectiveTabs();if(!allowed.includes(b.dataset.tab)){applyRoleAccess();closeSideMenuMobile();return toast("Tu usuario no tiene permiso para abrir esta sección")};document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.tab)?.classList.add("active");closeSideMenuMobile();if(!currentRestaurant)return;try{if(b.dataset.tab==="dashboard")await refreshRestaurantDashboard();else if(b.dataset.tab==="orders")await loadOrders();else if(b.dataset.tab==="pos")await loadPos();else if(b.dataset.tab==="kitchen")await loadKitchen();else if(b.dataset.tab==="cash")await loadCash();else if(b.dataset.tab==="staff")await loadStaff();else if(b.dataset.tab==="products")await loadProducts();else if(b.dataset.tab==="categories")await loadCategories();else if(b.dataset.tab==="inventory")await loadInventory();else if(b.dataset.tab==="qr"){renderQrPanel()}else if(b.dataset.tab==="whatsapp")await loadWhatsAppBot();else if(b.dataset.tab==="plans")await loadSubscriptionPlans();else if(b.dataset.tab==="settings"){await loadSettings();await loadRestaurantMercadoPago()}}catch(e){console.error("Error actualizando sección",b.dataset.tab,e);toast("No se pudo actualizar esta sección")}});
 async function refreshAll(){
  bindRestaurantMpButtons();
  await loadPlatformCountries();
@@ -938,7 +973,7 @@ function renderQrPanel(){
 }
 function renderRestaurantPlans(){
  const box=document.getElementById("restaurantPlans");if(!box)return;
- const labels={dashboard:"Dashboard",products:"Gestión de productos",categories:"Gestión de categorías",qr:"Código QR del menú",settings:"Configuración del sitio y abrir/cerrar",orders:"Pedidos online",pos:"Meseros / POS",cash:"Caja",kitchen:"Pantalla de cocina",inventory:"Inventario",staff:"Gestión de personal"};
+ const labels={dashboard:"Dashboard",products:"Gestión de productos",categories:"Gestión de categorías",qr:"Código QR del menú",settings:"Configuración del sitio y abrir/cerrar",orders:"Pedidos online",pos:"Meseros / POS",cash:"Caja",kitchen:"Pantalla de cocina",inventory:"Inventario",staff:"Gestión de personal",whatsapp:"WhatsApp Bot"};
  const cfg=currentRestaurantConfig||countryByCode("CL"),country=countryByCode(cfg.country_code||"CL"),canPay=country.mercadopago_enabled&&String(country.code)==="CL"&&!adminPreviewMode;
  const helpMessage=encodeURIComponent("Hola, necesito ayuda para activar un plan de Yummy Pro.");
  box.innerHTML=(subscriptionPlans||[]).map(p=>{
@@ -1003,7 +1038,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.12</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.13</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
