@@ -5,7 +5,7 @@ for(const marker of ['data-tab="inventory"','restaurant_inventory_items','restau
 if(panel.includes('data-tab="health"')||panel.includes('loadRestaurantHealth'))throw new Error('panel/index.html: el monitoreo debe estar eliminado');
 if(panel.includes('.panel-layout,.panel-content,#orders'))throw new Error('panel/index.html: Pedidos no debe forzarse visible fuera de su pestaña');
 for(const marker of ['data-tab="whatsapp-demo"','id="whatsapp-demo"','WHATSAPP_DEVICE_DEMO_ENABLED','startWhatsAppDeviceDemo','whatsappDemoRequest'])if(panel.includes(marker))throw new Error(`panel/index.html: residuo de WhatsApp demo detectado: ${marker}`);
-if(!panel.includes('Versión v2.4.17'))throw new Error('panel/index.html: falta versión v2.4.17');
+if(!panel.includes('Versión v2.4.18'))throw new Error('panel/index.html: falta versión v2.4.18');
 if(!panel.includes('Enviar pedido a cocina'))throw new Error('panel/index.html: falta envío POS sin impresión del mesero');
 if(panel.includes('Enviar a cocina e imprimir'))throw new Error('panel/index.html: el POS no debe imprimir en el dispositivo del mesero');
 if(!panel.includes('data-cash-date="today"')||!panel.includes('data-inventory-date="today"')||!panel.includes('data-pos-date="today"'))throw new Error('panel/index.html: faltan filtros por periodo en POS, caja o inventario');
