@@ -574,10 +574,10 @@ function startSubscriptionAccessRealtime(){
 }
 function effectiveTabs(){if(adminPreviewMode)return roleTabs.restaurant;const byRole=roleTabs[currentRole]||["dashboard"];if(currentRole!=="restaurant"&&currentRole!=="manager")return byRole;if(subscriptionModuleAccess===null)return byRole;const set=new Set(subscriptionModuleAccess);return byRole.filter(x=>x==="plans"||set.has(x))}
 function applyRoleAccess(){
- const allowed=effectiveTabs(),tabs=[...document.querySelectorAll(".tab")];
+ const allowed=effectiveTabs(),tabs=[...document.querySelectorAll(".tab")],activeTab=document.querySelector(".tab.active")?.dataset.tab;
  tabs.forEach(tab=>{const visible=allowed.includes(tab.dataset.tab);tab.hidden=!visible;tab.classList.toggle("role-hidden",!visible);tab.setAttribute("aria-hidden",visible?"false":"true");tab.style.setProperty("display",visible?"":"none",visible?"":"important");tab.classList.remove("active")});
  document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
- const first=allowed[0],button=document.querySelector('.tab[data-tab="'+first+'"]');if(button)button.classList.add("active");document.getElementById(first)?.classList.add("active");
+ const selected=allowed.includes(activeTab)?activeTab:(adminPreviewMode&&allowed.includes(adminPreviewTab)?adminPreviewTab:allowed[0]),button=document.querySelector('.tab[data-tab="'+selected+'"]');if(button)button.classList.add("active");document.getElementById(selected)?.classList.add("active");
  document.getElementById("subscriptionBanner")?.style.setProperty("display",currentRole==="restaurant"?"":"none","important");
  document.getElementById("viewMenuLink")?.style.setProperty("display",currentRole==="restaurant"?"":"none",currentRole==="restaurant"?"":"important");
 }
@@ -943,7 +943,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.0</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.1</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
