@@ -381,6 +381,19 @@ html,body{max-width:100%;overflow-x:hidden}
  #orders>.grid,.orders-center{width:100%!important;max-width:100%!important;min-width:0!important;margin-left:0!important;margin-right:0!important}
  .orders-command-bar,.orders-filter-panel,.orders-search,.filter-block,.date-range,.status-select-block{width:100%!important;min-width:0!important}
 }
+</style><style id="cashier-pos-v2427">
+.cashier-sale-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.8fr);gap:14px;margin-top:14px}
+.cashier-products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.cashier-product{display:grid;grid-template-columns:52px minmax(0,1fr) 40px;gap:9px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}
+.cashier-product img,.cashier-product-placeholder{width:52px;height:52px;border-radius:11px;object-fit:cover}
+.cashier-product-placeholder{display:grid;place-items:center;background:var(--ghost);font-size:23px}
+.cashier-product button{width:40px;height:40px;padding:0}
+.cashier-cart{padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--surface-2);align-self:start;position:sticky;top:14px}
+.cashier-cart-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center}
+.cashier-qty{display:flex;align-items:center;gap:6px}.cashier-qty button{width:32px;height:32px;padding:0}
+.cashier-order-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+@media(max-width:800px){.cashier-sale-layout{grid-template-columns:1fr}.cashier-cart{position:static}}
+@media(max-width:600px){.cashier-products{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.cashier-product{grid-template-columns:42px minmax(0,1fr) 34px;padding:8px;gap:7px}.cashier-product img,.cashier-product-placeholder{width:42px;height:42px}.cashier-product button{width:34px;height:34px}.cashier-order-row{grid-template-columns:1fr}.cashier-order-row button{width:100%}}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -414,7 +427,41 @@ html,body{max-width:100%;overflow-x:hidden}
 
 <section id="kitchen" class="section"><div class="card"><div class="module-head"><div><h2>Pantalla de cocina</h2><p class="mut">Los pedidos aceptados avanzan en tiempo real desde nuevos hasta listos.</p></div><button class="ghost" onclick="loadKitchen()">↻ Actualizar cocina</button></div><div id="kitchenBoard" class="kds-board" style="margin-top:18px"></div></div></section>
 
-<section id="cash" class="section"><div class="card"><div class="module-head"><div><h2>Caja del restaurante</h2><p class="mut">Apertura, ventas, entradas, retiros y cierre con diferencia calculada.</p></div><button class="ghost" onclick="loadCash()">↻ Actualizar caja</button></div><div id="cashClosedPanel" class="item" style="margin-top:16px"><h3>Abrir caja</h3><div class="row" style="margin-top:10px"><input id="cashOpeningAmount" type="number" min="0" step="1" placeholder="Monto inicial"><button class="primary" onclick="openCashSession()">Abrir caja</button></div></div><div id="cashOpenPanel" hidden><div class="cash-grid"><article class="restaurant-metric"><span>Monto inicial</span><strong id="cashOpeningMetric">$0</strong></article><article class="restaurant-metric"><span>Valor de venta</span><strong id="cashTotalSalesMetric">$0</strong></article><article class="restaurant-metric"><span>Pago en efectivo</span><strong id="cashSalesMetric">$0</strong></article><article class="restaurant-metric"><span>Pago POS</span><strong id="cashPosMetric">$0</strong></article><article class="restaurant-metric"><span>Pago con tarjeta</span><strong id="cashCardMetric">$0</strong></article><article class="restaurant-metric"><span>Otros movimientos</span><strong id="cashOtherMetric">$0</strong></article><article class="restaurant-metric"><span>Efectivo esperado</span><strong id="cashExpectedMetric">$0</strong></article></div><div class="cash-form item"><label>Movimiento<select id="cashMovementType"><option value="income">Entrada adicional</option><option value="expense">Gasto</option><option value="withdrawal">Retiro</option></select></label><label>Monto<input id="cashMovementAmount" type="number" min="1" step="1"></label><label>Descripción<input id="cashMovementDescription" placeholder="Motivo del movimiento"></label><button class="primary" onclick="addCashMovement()">Registrar</button></div><div class="item" style="margin-top:12px"><div class="module-head"><div><h3>Cerrar caja</h3><p class="mut">Ingresa el efectivo contado. El sistema calculará la diferencia.</p></div><div class="row"><input id="cashClosingAmount" type="number" min="0" step="1" placeholder="Efectivo real"><button class="danger" onclick="closeCashSession()">Cerrar caja</button></div></div></div><h3 style="margin-top:20px">Movimientos</h3><div id="cashMovementList" class="list"></div></div><h3 style="margin-top:24px">Historial de cajas</h3><p class="mut">Consulta quién abrió y cerró cada turno, los montos y cualquier diferencia.</p><div class="period-toolbar"><div><span class="filter-label">Periodo</span><div class="date-filter-tabs"><button class="ghost active" data-cash-date="today" onclick="setCashDateFilter('today')">Hoy</button><button class="ghost" data-cash-date="week" onclick="setCashDateFilter('week')">Semana</button><button class="ghost" data-cash-date="month" onclick="setCashDateFilter('month')">Mes</button><button class="ghost" data-cash-date="all" onclick="setCashDateFilter('all')">Historial</button></div></div><div><span class="filter-label">Fecha personalizada</span><div class="date-range"><input id="cashDateFrom" type="date" onchange="setCashDateFilter('custom')"><span>—</span><input id="cashDateTo" type="date" onchange="setCashDateFilter('custom')"></div></div></div><div id="cashHistoryList" class="list" style="margin-top:12px"></div></div></section>
+<section id="cash" class="section"><div class="card"><div class="module-head"><div><h2>Caja del restaurante</h2><p class="mut">Apertura, ventas, entradas, retiros y cierre con diferencia calculada.</p></div><button class="ghost" onclick="loadCash()">↻ Actualizar caja</button></div><div id="cashClosedPanel" class="item" style="margin-top:16px"><h3>Abrir caja</h3><div class="row" style="margin-top:10px"><input id="cashOpeningAmount" type="number" min="0" step="1" placeholder="Monto inicial"><button class="primary" onclick="openCashSession()">Abrir caja</button></div></div><div id="cashOpenPanel" hidden><div class="cash-grid"><article class="restaurant-metric"><span>Monto inicial</span><strong id="cashOpeningMetric">$0</strong></article><article class="restaurant-metric"><span>Valor de venta</span><strong id="cashTotalSalesMetric">$0</strong></article><article class="restaurant-metric"><span>Pago en efectivo</span><strong id="cashSalesMetric">$0</strong></article><article class="restaurant-metric"><span>Pago POS</span><strong id="cashPosMetric">$0</strong></article><article class="restaurant-metric"><span>Pago con tarjeta</span><strong id="cashCardMetric">$0</strong></article><article class="restaurant-metric"><span>Otros movimientos</span><strong id="cashOtherMetric">$0</strong></article><article class="restaurant-metric"><span>Efectivo esperado</span><strong id="cashExpectedMetric">$0</strong></article></div>
+<div class="item cashier-sale-box" style="margin-top:16px">
+  <div class="module-head">
+    <div><h3>Venta rápida de caja</h3><p class="mut">El cajero agrega productos, cobra y genera un comprobante sin mezclar esta venta con los pedidos de mesero.</p></div>
+    <button class="ghost" type="button" onclick="loadCashSaleData()">↻ Productos</button>
+  </div>
+  <div class="cashier-sale-layout">
+    <div>
+      <input id="cashSaleSearch" type="search" placeholder="Buscar producto" oninput="renderCashSaleProducts(this.value)" aria-label="Buscar producto">
+      <div id="cashSaleProductList" class="cashier-products" style="margin-top:12px"></div>
+    </div>
+    <aside class="cashier-cart">
+      <h3>Venta actual</h3>
+      <label>Cliente (opcional)<input id="cashSaleCustomer" placeholder="Cliente de caja"></label>
+      <label>Observaciones<textarea id="cashSaleNotes" placeholder="Observaciones de la venta"></textarea></label>
+      <div id="cashSaleCartList" class="list" style="margin:12px 0"></div>
+      <div class="row between"><b>Total</b><strong id="cashSaleTotal" class="price">$0</strong></div>
+      <label>Método de pago
+        <select id="cashSalePaymentMethod" onchange="toggleCashSaleOtherMethod()">
+          <option value="Efectivo">Efectivo</option>
+          <option value="Tarjeta POS">Tarjeta POS</option>
+          <option value="Tarjeta">Tarjeta</option>
+          <option value="Otro">Otro método</option>
+        </select>
+      </label>
+      <label id="cashSaleOtherMethodWrap" class="hidden">Nombre del otro método<input id="cashSaleOtherMethod" placeholder="Ej: Transferencia, QR, Yape..."></label>
+      <button id="cashSalePayBtn" class="primary full" type="button" onclick="createCashierSale(true)">Cobrar e imprimir comprobante</button>
+    </aside>
+  </div>
+  <div style="margin-top:20px">
+    <div class="row between"><h3>Pedidos de caja</h3><span class="mut">Separados de Meseros / POS</span></div>
+    <div id="cashierOrderList" class="list" style="margin-top:10px"></div>
+  </div>
+</div>
+<div class="cash-form item"><label>Movimiento<select id="cashMovementType"><option value="income">Entrada adicional</option><option value="expense">Gasto</option><option value="withdrawal">Retiro</option></select></label><label>Monto<input id="cashMovementAmount" type="number" min="1" step="1"></label><label>Descripción<input id="cashMovementDescription" placeholder="Motivo del movimiento"></label><button class="primary" onclick="addCashMovement()">Registrar</button></div><div class="item" style="margin-top:12px"><div class="module-head"><div><h3>Cerrar caja</h3><p class="mut">Ingresa el efectivo contado. El sistema calculará la diferencia.</p></div><div class="row"><input id="cashClosingAmount" type="number" min="0" step="1" placeholder="Efectivo real"><button class="danger" onclick="closeCashSession()">Cerrar caja</button></div></div></div><h3 style="margin-top:20px">Movimientos</h3><div id="cashMovementList" class="list"></div></div><h3 style="margin-top:24px">Historial de cajas</h3><p class="mut">Consulta quién abrió y cerró cada turno, los montos y cualquier diferencia.</p><div class="period-toolbar"><div><span class="filter-label">Periodo</span><div class="date-filter-tabs"><button class="ghost active" data-cash-date="today" onclick="setCashDateFilter('today')">Hoy</button><button class="ghost" data-cash-date="week" onclick="setCashDateFilter('week')">Semana</button><button class="ghost" data-cash-date="month" onclick="setCashDateFilter('month')">Mes</button><button class="ghost" data-cash-date="all" onclick="setCashDateFilter('all')">Historial</button></div></div><div><span class="filter-label">Fecha personalizada</span><div class="date-range"><input id="cashDateFrom" type="date" onchange="setCashDateFilter('custom')"><span>—</span><input id="cashDateTo" type="date" onchange="setCashDateFilter('custom')"></div></div></div><div id="cashHistoryList" class="list" style="margin-top:12px"></div></div></section>
 
 <section id="staff" class="section"><div class="card"><div class="module-head"><div><h2>Personal y accesos</h2><p class="mut">Cada persona entra con su propio correo y ve únicamente los módulos de su función.</p></div><button class="ghost" onclick="loadStaff()">↻ Actualizar</button></div><div class="staff-form item" style="margin-top:16px"><label>Correo<input id="staffEmail" type="email" placeholder="persona@restaurante.cl"></label><label>Rol<select id="staffRole"><option value="manager">Encargado</option><option value="cashier">Caja</option><option value="kitchen">Cocina</option><option value="waiter">Mesero</option><option value="editor">Menú e inventario</option><option value="courier">Repartidor</option></select></label><label>Contraseña temporal<input id="staffPassword" type="password" minlength="8" placeholder="Mínimo 8 caracteres"></label><button class="primary" onclick="createStaffUser()">Crear acceso</button></div><div id="staffList" class="list" style="margin-top:16px"></div></div></section>
 
@@ -482,7 +529,7 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b){const next=theme==="dark"?"claro":"oscuro",icon=theme==="dark"?"☀️":"🌙";b.innerHTML='<span class="header-action-icon" aria-hidden="true">'+icon+'</span><span class="action-label">Modo '+next+'</span>';b.setAttribute("aria-label","Activar modo "+next);b.title="Activar modo "+next}}
 function toggleAdminTheme(){applyAdminTheme(document.documentElement.dataset.theme==="light"?"dark":"light")}
 applyAdminTheme(localStorage.getItem("admin_theme")||"dark");setTimeout(bindRestaurantMpButtons,0);
-let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",posCart={},subscriptionFxRates={},posOrders=[],posOrderDateFilter="today",cashDateFilter="today",inventoryDateFilter="today";
+let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",posCart={},subscriptionFxRates={},posOrders=[],posOrderDateFilter="today",cashDateFilter="today",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[];
 function matchesPeriod(value,period,fromId,toId){const date=new Date(value);if(Number.isNaN(date.getTime()))return false;if(period==="all")return true;const now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),now.getDate()),end=new Date(start);end.setDate(end.getDate()+1);if(period==="week")start.setDate(start.getDate()-6);if(period==="month")start.setDate(1);if(period==="custom"){const from=document.getElementById(fromId)?.value,to=document.getElementById(toId)?.value;if(from)start.setTime(new Date(from+"T00:00:00").getTime());else start.setTime(0);if(to)end.setTime(new Date(to+"T23:59:59.999").getTime());else end.setTime(8640000000000000)}return date>=start&&date<end}
 function activatePeriodButtons(attribute,value){document.querySelectorAll(`[${attribute}]`).forEach(button=>{const active=button.getAttribute(attribute)===value;button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active))})}
 function resetPeriodToToday(tab){
@@ -880,6 +927,67 @@ async function loadCash(){
  if(error)return toast(error.message);cashSessions=sessions||[];staffMembers=staff||staffMembers;cashSession=cashSessions.find(s=>s.status==="open")||null;cashMovements=[];
  if(cashSession){const r=await sb.from("restaurant_cash_movements").select("*").eq("session_id",cashSession.id).order("created_at",{ascending:false});if(r.error)return toast(r.error.message);cashMovements=r.data||[]}
  renderCash();
+ if(cashSession)await loadCashSaleData();
+}
+async function loadCashSaleData(){
+ if(!currentRestaurant||!cashSession)return;
+ const [productsResult,ordersResult]=await Promise.all([
+  sb.from("restaurant_products").select("id,name,description,price,image_url,available,sort_order").eq("restaurant_id",currentRestaurant).eq("available",true).order("sort_order"),
+  sb.from("restaurant_orders").select("id,order_code,customer_name,payment_method,paid_at,created_at,items,total,created_by,notes,order_source").eq("restaurant_id",currentRestaurant).eq("order_source","cashier").order("created_at",{ascending:false}).limit(100)
+ ]);
+ if(productsResult.error)return toast("No se pudieron cargar los productos de caja");
+ if(ordersResult.error)return toast("No se pudieron cargar los pedidos de caja");
+ cashSaleProducts=productsResult.data||[];
+ cashierOrders=ordersResult.data||[];
+ renderCashSaleProducts(document.getElementById("cashSaleSearch")?.value||"");
+ renderCashSaleCart();
+ renderCashierOrders();
+}
+function renderCashSaleProducts(search=""){
+ const root=document.getElementById("cashSaleProductList");if(!root)return;
+ const q=String(search).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+ const rows=cashSaleProducts.filter(p=>!q||String(p.name+" "+(p.description||"")).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().includes(q));
+ root.innerHTML=rows.map(p=>`<article class="cashier-product">${p.image_url?`<img src="${esc(p.image_url)}" alt="">`:'<div class="cashier-product-placeholder">🍽️</div>'}<div><b>${esc(p.name)}</b><div class="mut">${money(p.price)}</div></div><button class="primary" type="button" onclick="addCashSaleProduct(${p.id})" aria-label="Agregar ${esc(p.name)}">＋</button></article>`).join("")||'<p class="mut">No hay productos disponibles.</p>';
+}
+function addCashSaleProduct(id){cashSaleCart[id]=(cashSaleCart[id]||0)+1;renderCashSaleCart()}
+function changeCashSaleQuantity(id,delta){cashSaleCart[id]=Math.max(0,(cashSaleCart[id]||0)+delta);if(!cashSaleCart[id])delete cashSaleCart[id];renderCashSaleCart()}
+function renderCashSaleCart(){
+ const root=document.getElementById("cashSaleCartList"),total=document.getElementById("cashSaleTotal"),button=document.getElementById("cashSalePayBtn");if(!root||!total)return;
+ const rows=Object.entries(cashSaleCart).map(([id,qty])=>({product:cashSaleProducts.find(p=>String(p.id)===String(id)),qty})).filter(x=>x.product);
+ const sum=rows.reduce((s,x)=>s+Number(x.product.price)*x.qty,0);
+ root.innerHTML=rows.map(({product:p,qty})=>`<div class="item cashier-cart-row"><div><b>${esc(p.name)}</b><div class="mut">${money(Number(p.price)*qty)}</div></div><div class="cashier-qty"><button class="ghost" type="button" onclick="changeCashSaleQuantity(${p.id},-1)">−</button><b>${qty}</b><button class="ghost" type="button" onclick="changeCashSaleQuantity(${p.id},1)">＋</button></div></div>`).join("")||'<p class="mut">Agrega productos para comenzar la venta.</p>';
+ total.textContent=money(sum);if(button)button.disabled=rows.length===0;
+}
+function toggleCashSaleOtherMethod(){const wrap=document.getElementById("cashSaleOtherMethodWrap");if(wrap)wrap.classList.toggle("hidden",document.getElementById("cashSalePaymentMethod")?.value!=="Otro")}
+function cashierPaymentMethod(){const selected=document.getElementById("cashSalePaymentMethod")?.value||"";if(selected!=="Otro")return selected;return document.getElementById("cashSaleOtherMethod")?.value.trim()||""}
+async function createCashierSale(printAfter=false){
+ if(!cashSession)return toast("Primero abre la caja");
+ const items=Object.entries(cashSaleCart).map(([product_id,qty])=>({product_id:Number(product_id),qty:Number(qty)}));if(!items.length)return toast("Agrega al menos un producto");
+ const method=cashierPaymentMethod();if(!method)return toast("Escribe el método de pago");
+ let printWindow=null;if(printAfter)printWindow=window.open("","_blank","width=420,height=720");
+ const btn=document.getElementById("cashSalePayBtn");if(btn)btn.disabled=true;
+ try{
+  const {data,error}=await sb.rpc("create_cashier_sale",{p_restaurant_id:currentRestaurant,p_customer_name:document.getElementById("cashSaleCustomer")?.value.trim()||"",p_notes:document.getElementById("cashSaleNotes")?.value.trim()||"",p_payment_method:method,p_items:items});
+  if(error)throw error;
+  const order=Array.isArray(data)?data[0]:data;if(!order)throw new Error("No se pudo recuperar la venta creada");
+  cashSaleCart={};const customer=document.getElementById("cashSaleCustomer"),notes=document.getElementById("cashSaleNotes"),other=document.getElementById("cashSaleOtherMethod");if(customer)customer.value="";if(notes)notes.value="";if(other)other.value="";
+  renderCashSaleCart();await loadCash();
+  if(printAfter)printCashierReceipt(order,printWindow);else if(printWindow)printWindow.close();
+  toast("Venta de caja registrada correctamente");
+ }catch(e){if(printWindow)printWindow.close();toast(e.message||"No se pudo registrar la venta")}finally{if(btn)btn.disabled=Object.keys(cashSaleCart).length===0}
+}
+function renderCashierOrders(){
+ const root=document.getElementById("cashierOrderList");if(!root)return;
+ root.innerHTML=cashierOrders.map(o=>{const cashier=staffMembers.find(s=>String(s.user_id)===String(o.created_by))?.email||"Cajero";return `<article class="item cashier-order-row"><div><b>#${esc(o.order_code)}</b><div class="mut">${esc(o.customer_name||"Cliente caja")} · ${new Date(o.created_at).toLocaleString("es-CL")}</div><div class="mut">Cajero: ${esc(cashier)} · Método: ${esc(o.payment_method||"No registrado")}</div><strong class="price">${money(o.total)}</strong></div><button class="ghost" type="button" onclick="printCashierReceiptById(${o.id})">🧾 Imprimir</button></article>`}).join("")||'<p class="mut">Todavía no hay pedidos creados desde Caja.</p>';
+}
+function printCashierReceiptById(id){const order=cashierOrders.find(o=>String(o.id)===String(id));if(!order)return toast("Venta no encontrada");printCashierReceipt(order)}
+function printCashierReceipt(order,existingWindow=null){
+ const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant))||{name:"Restaurante",address:"",whatsapp:""};
+ const cashier=staffMembers.find(s=>String(s.user_id)===String(order.created_by))?.email||"Caja";
+ const items=Array.isArray(order.items)?order.items:[];const e=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+ const itemRows=items.map(x=>{const qty=Number(x.qty||1),price=Number(x.unit_price||x.price||0);return '<div class="line"><span>'+e(qty+" × "+(x.name||"Producto"))+'</span><b>'+e(money(price*qty))+'</b></div>'}).join("");
+ const html='<!doctype html><html><head><meta charset="utf-8"><title>Comprobante '+e(order.order_code)+'</title><style>@page{margin:4mm}body{font-family:Arial,sans-serif;width:72mm;max-width:100%;margin:0 auto;color:#000;font-size:12px}h1{text-align:center;font-size:18px;margin:0}.center{text-align:center}.sep{border-top:1px dashed #000;margin:8px 0}.line{display:flex;justify-content:space-between;gap:8px;margin:5px 0}.line span{flex:1}.total{font-size:16px;font-weight:700}button{width:100%;padding:10px;margin:12px 0}@media print{button{display:none}}</style></head><body><h1>'+e(r.name)+'</h1><div class="center">'+e(r.address||"")+'<br>'+e(r.whatsapp||"")+'</div><div class="sep"></div><b>COMPROBANTE DE CAJA</b><div>#'+e(order.order_code)+'</div><div>'+e(new Date(order.paid_at||order.created_at).toLocaleString("es-CL"))+'</div><div>Cliente: '+e(order.customer_name||"Cliente caja")+'</div><div>Cajero: '+e(cashier)+'</div><div>Pago: '+e(order.payment_method||"")+'</div><div class="sep"></div>'+itemRows+'<div class="sep"></div><div class="line total"><span>TOTAL</span><span>'+e(money(order.total||0))+'</span></div>'+(order.notes?'<div class="sep"></div><div><b>Observaciones:</b> '+e(order.notes)+'</div>':'')+'<div class="sep"></div><div class="center">Comprobante interno · No reemplaza documento tributario</div><button onclick="window.print()">Imprimir</button><script>setTimeout(()=>window.print(),250)<\/script></body></html>';
+ const w=existingWindow||window.open("","_blank","width=420,height=720");if(!w)return toast("Permite ventanas emergentes para imprimir");w.document.open();w.document.write(html);w.document.close();
 }
 function cashPaymentBucket(method){
  const value=String(method||"").trim().toLowerCase();
@@ -1158,7 +1266,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.26</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.27</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
