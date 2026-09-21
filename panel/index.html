@@ -555,7 +555,7 @@ async function enter(user){
   }
 }
 const roleTabs={restaurant:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","qr","plans","settings"],manager:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","qr","settings"],editor:["orders","kitchen","products","categories","inventory"],cashier:["orders","cash"],kitchen:["kitchen"],waiter:["pos"],courier:["orders"]};
-let subscriptionModuleAccess=null;let adminPreviewMode=false;let adminPreviewTab="dashboard";
+let subscriptionModuleAccess=null;let adminPreviewMode=false;let adminPreviewTab="dashboard";let adminPreviewBootPromise=null;let adminPreviewInitialized=false;
 function subscriptionIsUsable(r){if(!r)return false;const s=String(r.subscription_status||"").toLowerCase();const exp=r.subscription_expires_at?new Date(r.subscription_expires_at).getTime():null;return (s==="active"||s==="trial")&&(!exp||exp>=Date.now())}
 async function loadSubscriptionModuleAccess(){
  if(currentRole!=="restaurant"&&currentRole!=="manager"){subscriptionModuleAccess=null;return}
@@ -598,8 +598,19 @@ function applyRoleAccess(){
  document.getElementById("subscriptionBanner")?.style.setProperty("display",currentRole==="restaurant"?"":"none","important");
  document.getElementById("viewMenuLink")?.style.setProperty("display",currentRole==="restaurant"?"":"none",currentRole==="restaurant"?"":"important");
 }
-window.addEventListener("message",async e=>{if(e.origin!=="https://admin.yummypro.online"||e.data?.type!=="YUMMY_ADMIN_PREVIEW")return;try{await sb.auth.setSession({access_token:e.data.access_token,refresh_token:e.data.refresh_token});const url=new URL(location.href);url.searchParams.set("admin_preview",e.data.restaurant_id);url.searchParams.set("tab",e.data.tab||"dashboard");history.replaceState(null,"",url);const {data:{user}}=await sb.auth.getUser();if(user)await enter(user)}catch(err){console.error(err)}});
-async function restoreSession(){try{const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){await enter(data.session.user)}else if(new URLSearchParams(location.search).has("admin_preview")){document.getElementById("login").classList.add("hidden");document.getElementById("loginMsg").textContent="Abriendo vista administrativa del restaurante…"}else{document.getElementById("login").classList.remove("hidden")}}catch(e){document.getElementById("login").classList.remove("hidden");document.getElementById("loginMsg").textContent=e.message||"No se pudo validar la sesión."}finally{document.body.classList.remove("auth-loading")}}restoreSession();
+async function bootAdminPreview(payload){
+ if(adminPreviewInitialized)return;
+ if(adminPreviewBootPromise)return adminPreviewBootPromise;
+ adminPreviewBootPromise=(async()=>{try{
+  if(payload?.access_token&&payload?.refresh_token)await sb.auth.setSession({access_token:payload.access_token,refresh_token:payload.refresh_token});
+  if(payload?.restaurant_id){const url=new URL(location.href);url.searchParams.set("admin_preview",payload.restaurant_id);url.searchParams.set("tab",payload.tab||"dashboard");history.replaceState(null,"",url)}
+  const {data:{user}}=await sb.auth.getUser();if(!user)throw new Error("No se recibió una sesión administrativa válida.");
+  await enter(user);adminPreviewInitialized=adminPreviewMode;
+ }catch(err){console.error("No se pudo iniciar la vista administrativa",err);document.getElementById("loginMsg").textContent=err.message||"No se pudo abrir la vista administrativa."}finally{adminPreviewBootPromise=null}})();
+ return adminPreviewBootPromise;
+}
+window.addEventListener("message",e=>{if(e.origin!=="https://admin.yummypro.online"||e.data?.type!=="YUMMY_ADMIN_PREVIEW")return;bootAdminPreview(e.data)});
+async function restoreSession(){const preview=new URLSearchParams(location.search).has("admin_preview");try{if(preview){document.getElementById("login").classList.add("hidden");document.getElementById("loginMsg").textContent="Abriendo vista administrativa del restaurante…";try{window.opener?.postMessage({type:"YUMMY_ADMIN_PREVIEW_READY"},"https://admin.yummypro.online")}catch(e){}setTimeout(()=>{if(!adminPreviewInitialized&&!adminPreviewBootPromise)bootAdminPreview(null)},1800);return}const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){await enter(data.session.user)}else{document.getElementById("login").classList.remove("hidden")}}catch(e){document.getElementById("login").classList.remove("hidden");document.getElementById("loginMsg").textContent=e.message||"No se pudo validar la sesión."}finally{if(!preview)document.body.classList.remove("auth-loading")}}restoreSession();
 function toggleSideMenu(){const m=document.getElementById("sideMenu"),b=document.getElementById("sideMenuBackdrop");if(!m)return;m.classList.toggle("open");if(b)b.classList.toggle("open",m.classList.contains("open"))}
 function closeSideMenu(){const m=document.getElementById("sideMenu"),b=document.getElementById("sideMenuBackdrop");if(m)m.classList.remove("open");if(b)b.classList.remove("open")}
 function closeSideMenuMobile(){if(window.matchMedia("(max-width:800px)").matches)closeSideMenu()}
@@ -979,7 +990,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.3</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.4</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
