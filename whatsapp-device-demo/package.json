@@ -1,0 +1,13 @@
+{
+  "name": "yummypro-whatsapp-device-demo",
+  "private": true,
+  "version": "2.4.16-demo",
+  "type": "module",
+  "scripts": {"start":"node server.js"},
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.18",
+    "express": "^5.1.0",
+    "pino": "^9.9.4",
+    "qrcode": "^1.5.4"
+  }
+}
