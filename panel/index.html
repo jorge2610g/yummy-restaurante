@@ -1690,6 +1690,20 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
 @media(max-width:600px){#pwaNetworkStatus{top:8px;font-size:12px;padding:8px 11px}}
 </style>
 <div id="pwaNetworkStatus" role="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span>Sin conexión · los pedidos y pagos no se enviarán hasta recuperar internet.</span></div>
+<style id="pwa-update-v2504">
+#pwaUpdateBanner{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2700;display:none;align-items:center;gap:12px;width:min(560px,calc(100vw - 24px));padding:12px 14px;border-radius:16px;background:var(--card);color:var(--txt);border:1px solid var(--line);box-shadow:0 18px 55px #0008}
+#pwaUpdateBanner.show{display:flex}
+#pwaUpdateBanner .pwa-update-copy{min-width:0;flex:1}
+#pwaUpdateBanner .pwa-update-copy b{display:block;margin-bottom:2px}
+#pwaUpdateBanner .pwa-update-copy span{color:var(--mut);font-size:12px}
+#pwaUpdateBanner .pwa-update-actions{display:flex;gap:8px;flex-wrap:wrap}
+#pwaUpdateBanner button{padding:9px 11px;font-size:12px}
+@media(max-width:600px){#pwaUpdateBanner{bottom:10px;align-items:flex-start;flex-direction:column}#pwaUpdateBanner .pwa-update-actions{width:100%}#pwaUpdateBanner .pwa-update-actions button{flex:1}}
+</style>
+<div id="pwaUpdateBanner" role="status" aria-live="polite">
+ <div class="pwa-update-copy"><b>Nueva versión disponible</b><span>Actualiza YummyPro para usar la versión más reciente.</span></div>
+ <div class="pwa-update-actions"><button class="ghost" type="button" onclick="dismissYummyProUpdate()">Después</button><button class="primary" type="button" onclick="applyYummyProUpdate()">Actualizar ahora</button></div>
+</div>
 <div id="appBootLoader" role="status" aria-live="polite"><div class="app-boot-card"><div class="app-boot-mark">Y</div><h2>Cargando tu restaurante…</h2><p>Estamos verificando tu sesión y tus accesos.</p><div class="app-boot-spinner" aria-hidden="true"></div></div></div>
 <div id="login" class="wrap login hidden"><div class="card"><h1>Panel de administración</h1><p class="mut">Gestiona menú, precios, disponibilidad y datos del negocio.</p>
 <label>Correo administrador</label><input id="email" type="email" autocomplete="username" placeholder="tu@email.com">
@@ -4251,7 +4265,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v2.5.03</footer></main></div><script>
+</script><footer class="admin-version">Versión v2.5.04</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -4295,6 +4309,35 @@ async function saveSubscriptionMercadoPago(){
 </script>
 <script id="pwa-install-script-v2501">
 let yummyProInstallPrompt=null;
+let yummyProSwRegistration=null,yummyProUpdateReloading=false;
+function showYummyProUpdate(){
+ const banner=document.getElementById("pwaUpdateBanner");if(banner)banner.classList.add("show");
+}
+function dismissYummyProUpdate(){
+ const banner=document.getElementById("pwaUpdateBanner");if(banner)banner.classList.remove("show");
+}
+function applyYummyProUpdate(){
+ const worker=yummyProSwRegistration?.waiting;
+ if(!worker)return location.reload();
+ const btn=document.querySelector("#pwaUpdateBanner .primary");if(btn){btn.disabled=true;btn.textContent="Actualizando…"}
+ worker.postMessage({type:"SKIP_WAITING"});
+}
+function watchYummyProServiceWorker(registration){
+ yummyProSwRegistration=registration;
+ if(registration.waiting&&navigator.serviceWorker.controller)showYummyProUpdate();
+ registration.addEventListener("updatefound",()=>{
+  const worker=registration.installing;if(!worker)return;
+  worker.addEventListener("statechange",()=>{
+   if(worker.state==="installed"&&navigator.serviceWorker.controller)showYummyProUpdate();
+  });
+ });
+ navigator.serviceWorker.addEventListener("controllerchange",()=>{
+  if(yummyProUpdateReloading)return;yummyProUpdateReloading=true;location.reload();
+ });
+ const check=()=>{if(navigator.onLine)registration.update().catch(()=>{})};
+ setInterval(check,5*60*1000);
+ document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")check()});
+}
 function updateYummyProNetworkStatus(){
  const offline=!navigator.onLine,box=document.getElementById("pwaNetworkStatus");
  if(box)box.classList.toggle("show",offline);
@@ -4342,7 +4385,12 @@ window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();yum
 window.addEventListener("appinstalled",()=>{yummyProInstallPrompt=null;refreshYummyProInstallButton();toast("✅ YummyPro se instaló correctamente.")});
 window.addEventListener("DOMContentLoaded",async()=>{
  setupYummyProNetworkStatus();
- try{if("serviceWorker" in navigator)await navigator.serviceWorker.register("/push-sw.js")}catch(e){console.error("No se pudo preparar YummyPro para instalación",e)}
+ try{
+  if("serviceWorker" in navigator){
+   const registration=await navigator.serviceWorker.register("/push-sw.js");
+   watchYummyProServiceWorker(registration);
+  }
+ }catch(e){console.error("No se pudo preparar YummyPro para instalación",e)}
  refreshYummyProInstallButton();
 });
 </script>

@@ -45,3 +45,5 @@ for(const marker of ['planCheckoutCycleAnnual','setPlanPurchaseCycle','planCharg
 for(const marker of ['manifest.webmanifest','pwaInstallBtn','installYummyProPwa','beforeinstallprompt','pwa-install-v2501'])if(!panel.includes(marker))throw new Error('panel/index.html: falta PWA instalable '+marker);
 
 for(const marker of ['pwaNetworkStatus','setupYummyProNetworkStatus','Sin conexión · los pedidos y pagos no se enviarán'])if(!panel.includes(marker))throw new Error('panel/index.html: falta estado de conexión PWA '+marker);
+
+for(const marker of ['pwaUpdateBanner','Nueva versión disponible','applyYummyProUpdate','watchYummyProServiceWorker','Actualizar ahora'])if(!panel.includes(marker))throw new Error('panel/index.html: falta actualización PWA '+marker);
