@@ -31,3 +31,5 @@ for(const marker of ['cancel-recurring-subscription','manageRecurringSubscriptio
 for(const marker of ['Comprar ','Pago único','Suscripción automática','Pagar con Mercado Pago','Pagar con Flow','Reactivar con Mercado Pago','plan-provider-logo mp'])if(!panel.includes(marker))throw new Error('panel/index.html: falta checkout profesional '+marker);
 
 for(const marker of ['sidebar-no-gaps-v2462','align-content:start','grid-auto-rows:max-content','syncSidebarGroupVisibility'])if(!panel.includes(marker))throw new Error('panel/index.html: falta compactación del menú lateral '+marker);
+
+for(const marker of ['subscriptionBannerShouldShow','activeTab!=="plans"','banner.innerHTML=""','display","none","important"'])if(!panel.includes(marker))throw new Error('panel/index.html: falta prevención de flash del contador '+marker);
