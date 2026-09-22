@@ -22,3 +22,5 @@ test('login de restaurante con cuenta de prueba',async({page})=>{test.skip(!proc
 test('incluye Flow Chile en Plan y facturación',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('paySubscriptionPlanFlow');expect(html).toContain('create-flow-subscription-payment');expect(html).toContain('subscription-flow-settings')});
 
 test('reconcilia suscripciones de Mercado Pago al cargar facturación',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('syncMercadoPagoSubscription');expect(html).toContain('sync-mercadopago-subscription')});
+
+test('incluye suscripción automática y cancelación pendiente con Flow',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('Suscripción automática con Flow');expect(html).toContain('manageFlowPendingPayment');expect(html).toContain('create-flow-recurring-subscription');expect(html).toContain('manage-flow-pending-payment')});
