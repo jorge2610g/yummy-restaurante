@@ -2450,7 +2450,7 @@ function renderSubscriptionHistory(){
   const amount=money(p.amount,p.currency_code||currentRestaurantConfig?.currency_code,locale),type=(p.payment_type==="recurring"?"Suscripción automática":"Pago único")+" · "+(p.billing_cycle==="annual"?"Anual":"Mensual");
   const pending=String(p.status||"pending").toLowerCase()==="pending",provider=String(p.provider||"");
   const providerName=provider==="mercadopago"?"Mercado Pago":provider==="flow"?"Flow":provider==="veripagos"?"QR Bolivia":(provider||"Pago");
-  const pendingActions=pending?(provider==="flow"?'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="manageFlowPendingPayment('+Number(p.id)+',\'resume\')">Continuar pago</button><button class="danger" type="button" onclick="manageFlowPendingPayment('+Number(p.id)+',\'cancel\')">Cancelar</button></div>':provider==="veripagos"?'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="manageVeripagosPendingPayment('+Number(p.id)+')">Ver QR / estado</button><span class="mut" style="font-size:12px">Verificación automática activa</span></div>':'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'resume\')">Continuar pago</button><button class="danger" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'cancel\')">Cancelar</button></div>'):'';
+  const pendingActions=pending?(provider==="flow"?'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="manageFlowPendingPayment('+Number(p.id)+',\'resume\')">Continuar pago</button><button class="danger" type="button" onclick="manageFlowPendingPayment('+Number(p.id)+',\'cancel\')">Cancelar</button></div>':provider==="veripagos"?'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="manageVeripagosPendingPayment('+Number(p.id)+',\'resume\')">Ver QR / estado</button><button class="danger" type="button" onclick="manageVeripagosPendingPayment('+Number(p.id)+',\'cancel\')">Cancelar pago</button><span class="mut" style="font-size:12px">No puedes generar otro pago mientras este siga pendiente. Si vence sin pago, se cancela automáticamente.</span></div>':'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'resume\')">Continuar pago</button><button class="danger" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'cancel\')">Cancelar</button></div>'):'';
   return '<div class="billing-history-row '+(pending?'has-actions':'')+'"><div><b>'+esc(plan)+'</b><div class="mut">'+esc(type)+' · '+esc(providerName)+'</div></div><div class="billing-history-date">'+esc(date.toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}))+'</div><div class="billing-history-amount">'+esc(amount)+'</div><span class="billing-status '+billingStatusClass(p.status)+'">'+esc(billingStatusLabel(p.status))+'</span>'+pendingActions+'</div>';
  }).join("");
 }
@@ -4056,7 +4056,7 @@ let veripagosSubscriptionPollTimer=null,veripagosSubscriptionActivePaymentId=nul
 function ensureVeripagosSubscriptionModal(){
  let modal=document.getElementById("veripagosSubscriptionModal");if(modal)return modal;
  modal=document.createElement("div");modal.id="veripagosSubscriptionModal";modal.className="product-modal";modal.setAttribute("aria-hidden","true");
- modal.innerHTML='<div class="product-modal-backdrop" onclick="closeVeripagosSubscriptionModal()"></div><div class="card product-modal-card" style="max-width:520px;text-align:center"><div class="module-head"><div style="text-align:left"><h2>QR Bolivia · VeriPagos</h2><p class="mut">Escanea y paga desde tu banco. YummyPro verificará el pago automáticamente.</p></div><button class="ghost" type="button" onclick="closeVeripagosSubscriptionModal()">✕</button></div><img id="veripagosSubscriptionQr" alt="QR de pago" style="display:block;width:min(330px,90%);margin:18px auto;background:#fff;padding:10px;border-radius:16px"><div id="veripagosSubscriptionAmount" class="price" style="font-size:26px"></div><div id="veripagosSubscriptionState" class="item" style="margin-top:14px">Esperando confirmación automática…</div><div class="item" style="margin-top:10px;text-align:left"><b>Verificación automática activa</b><div class="mut" style="margin-top:5px">Nuestro servidor consulta el estado del pago en segundo plano. Puedes cerrar esta ventana o salir del panel; cuando VeriPagos confirme el pago, tu suscripción se activará automáticamente.</div></div><button class="ghost full" type="button" style="margin-top:14px" onclick="verifyVeripagosSubscriptionNow()">Verificar ahora (opcional)</button><p class="mut" style="margin-top:10px">Mientras esta ventana esté abierta también hacemos comprobaciones rápidas. Si la cierras, el servidor continuará verificando el pago.</p></div>';
+ modal.innerHTML='<div class="product-modal-backdrop" onclick="closeVeripagosSubscriptionModal()"></div><div class="card product-modal-card" style="max-width:520px;text-align:center"><div class="module-head"><div style="text-align:left"><h2>QR Bolivia · VeriPagos</h2><p class="mut">Escanea y paga desde tu banco. YummyPro verificará el pago automáticamente.</p></div><button class="ghost" type="button" onclick="closeVeripagosSubscriptionModal()">✕</button></div><img id="veripagosSubscriptionQr" alt="QR de pago" style="display:block;width:min(330px,90%);margin:18px auto;background:#fff;padding:10px;border-radius:16px"><div id="veripagosSubscriptionAmount" class="price" style="font-size:26px"></div><div id="veripagosSubscriptionState" class="item" style="margin-top:14px">Esperando confirmación automática…</div><div class="item" style="margin-top:10px;text-align:left"><b>Verificación automática activa</b><div class="mut" style="margin-top:5px">Nuestro servidor consulta el estado del pago en segundo plano. Puedes cerrar esta ventana o salir del panel; cuando VeriPagos confirme el pago, tu suscripción se activará automáticamente. Mientras este intento siga pendiente no podrás generar otro pago; si el QR vence sin pago, se cancelará automáticamente.</div></div><button class="ghost full" type="button" style="margin-top:14px" onclick="verifyVeripagosSubscriptionNow()">Verificar ahora (opcional)</button><p class="mut" style="margin-top:10px">Mientras esta ventana esté abierta también hacemos comprobaciones rápidas. Si la cierras, el servidor continuará verificando el pago.</p></div>';
  document.body.appendChild(modal);return modal;
 }
 function openVeripagosSubscriptionModal(data){
@@ -4089,7 +4089,27 @@ async function paySubscriptionPlanVeripagos(id,billingCycle="monthly"){
   openVeripagosSubscriptionModal(d);
  }catch(e){console.error(e);toast("No se pudo generar el QR Bolivia")}
 }
-async function manageVeripagosPendingPayment(paymentId){
+async function manageVeripagosPendingPayment(paymentId,action="resume"){
+ const payment=subscriptionPayments.find(x=>Number(x.id)===Number(paymentId));if(!payment)return toast("Pago QR no encontrado");
+ if(String(payment.status||"").toLowerCase()!=="pending")return toast("Este pago ya no está pendiente");
+ if(action==="cancel"){
+  if(!confirm("¿Cancelar este intento de pago QR?\n\nPodrás generar otro pago inmediatamente. Si el QR anterior llegara a pagarse antes de vencer, YummyPro seguirá vigilándolo para no perder una confirmación real."))return;
+  try{
+   const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return toast("Tu sesión venció. Vuelve a iniciar sesión.");
+   toast("Cancelando pago QR pendiente…");
+   const res=await fetch(SB_URL+"/functions/v1/manage-veripagos-pending-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({payment_id:Number(paymentId),action:"cancel"})});
+   const data=await res.json();if(!res.ok)return toast(data?.error||"No se pudo cancelar el pago QR");
+   if(data.status==="approved"){
+    toast("✅ VeriPagos ya había confirmado el pago. La suscripción fue activada.");
+    await refreshBillingCenter();return;
+   }
+   if(Number(veripagosSubscriptionActivePaymentId)===Number(paymentId)){veripagosSubscriptionActivePaymentId=null;closeVeripagosSubscriptionModal()}
+   const i=subscriptionPayments.findIndex(x=>Number(x.id)===Number(paymentId));if(i>=0)subscriptionPayments[i]={...subscriptionPayments[i],status:"cancelled"};
+   await loadSubscriptionHistory();renderSubscriptionHistory();renderRestaurantPlans();
+   toast("Pago QR cancelado. Ya puedes generar un nuevo pago.");
+  }catch(e){console.error(e);toast("No se pudo cancelar el pago QR")}
+  return;
+ }
  veripagosSubscriptionActivePaymentId=Number(paymentId);ensureVeripagosSubscriptionModal().classList.add("open");document.getElementById("veripagosSubscriptionModal").setAttribute("aria-hidden","false");
  const state=document.getElementById("veripagosSubscriptionState");if(state)state.textContent="Recuperando y verificando QR…";
  await verifyVeripagosSubscriptionNow();if(!veripagosSubscriptionPollTimer)veripagosSubscriptionPollTimer=setInterval(verifyVeripagosSubscriptionNow,7000);
@@ -4199,7 +4219,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v2.4.98</footer></main></div><script>
+</script><footer class="admin-version">Versión v2.4.99</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
