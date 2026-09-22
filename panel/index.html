@@ -819,6 +819,125 @@ html[data-theme="light"] .side-menu .tab.active .nav-icon{
   background:color-mix(in srgb,var(--a) 18%,#fff)!important;
   color:#9a6500!important;
 }
+</style><style id="yummypro-fullwidth-fixed-sidebar-v2443">
+@media(min-width:801px){
+  html,body{width:100%!important;max-width:none!important;overflow-x:hidden!important}
+  body{margin:0!important}
+
+  #app.wrap{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:10px 14px 34px 254px!important;
+    transition:padding-left .2s ease!important;
+  }
+  #app.wrap.sidebar-collapsed{
+    padding-left:82px!important;
+  }
+
+  #subscriptionBanner,
+  #app>.top,
+  #panelLayout,
+  .panel-content{
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    margin-left:0!important;
+    margin-right:0!important;
+  }
+
+  #subscriptionBanner{
+    margin:0 0 12px!important;
+    padding:16px 18px!important;
+  }
+
+  #app>.top{
+    margin:0 0 12px!important;
+    padding:2px 0 12px!important;
+  }
+
+  #panelLayout,
+  #panelLayout.sidebar-collapsed{
+    display:block!important;
+    grid-template-columns:none!important;
+    gap:0!important;
+  }
+
+  .panel-content{
+    display:block!important;
+    overflow:visible!important;
+  }
+
+  .side-menu{
+    position:fixed!important;
+    left:8px!important;
+    top:8px!important;
+    bottom:8px!important;
+    z-index:1450!important;
+    width:234px!important;
+    max-width:234px!important;
+    height:auto!important;
+    max-height:none!important;
+    margin:0!important;
+    border-radius:16px!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    box-shadow:0 14px 36px var(--shadow)!important;
+  }
+
+  .side-menu.collapsed{
+    width:60px!important;
+    max-width:60px!important;
+  }
+
+  .side-menu-backdrop{display:none!important}
+
+  #dashboard,
+  #orders,
+  #pos,
+  #kitchen,
+  #cash,
+  #products,
+  #categories,
+  #inventory,
+  #staff,
+  #table_qr,
+  #qr,
+  #plans,
+  #settings{
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+  }
+
+  .restaurant-dashboard-hero,
+  .restaurant-metrics,
+  .restaurant-control-grid,
+  .restaurant-analytics{
+    width:100%!important;
+    max-width:none!important;
+  }
+}
+@media(min-width:1400px){
+  #app.wrap{padding-right:18px!important}
+}
+@media(max-width:800px){
+  #app.wrap{
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:10px 12px 28px!important;
+  }
+  .side-menu{
+    left:0!important;
+    top:0!important;
+    bottom:0!important;
+    width:min(86vw,310px)!important;
+    max-width:min(86vw,310px)!important;
+    height:100dvh!important;
+    border-radius:0 16px 16px 0!important;
+  }
+}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -1172,10 +1291,16 @@ window.addEventListener("message",e=>{if(e.origin!=="https://admin.yummypro.onli
 async function restoreSession(){const preview=new URLSearchParams(location.search).has("admin_preview");try{if(preview){document.getElementById("login").classList.add("hidden");document.getElementById("loginMsg").textContent="Abriendo vista administrativa del restaurante…";try{window.opener?.postMessage({type:"YUMMY_ADMIN_PREVIEW_READY"},"https://admin.yummypro.online")}catch(e){}setTimeout(()=>{if(!adminPreviewInitialized&&!adminPreviewBootPromise)bootAdminPreview(null)},1800);return}const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){await enter(data.session.user)}else{document.getElementById("login").classList.remove("hidden")}}catch(e){document.getElementById("login").classList.remove("hidden");document.getElementById("loginMsg").textContent=e.message||"No se pudo validar la sesión."}finally{if(!preview)document.body.classList.remove("auth-loading")}}restoreSession();
 const RESTAURANT_SIDEBAR_STATE_KEY="yummy_restaurant_sidebar_collapsed";
 function applyRestaurantSidebarState(collapsed){
- const m=document.getElementById("sideMenu"),layout=document.getElementById("panelLayout"),btn=document.getElementById("restaurantSidebarCollapseBtn");if(!m)return;
+ const m=document.getElementById("sideMenu"),layout=document.getElementById("panelLayout"),app=document.getElementById("app"),btn=document.getElementById("restaurantSidebarCollapseBtn");if(!m)return;
  const desktop=window.matchMedia("(min-width:801px)").matches;
- if(!desktop){m.classList.remove("collapsed");layout?.classList.remove("sidebar-collapsed");if(btn){btn.textContent="‹";btn.title="Contraer menú";btn.setAttribute("aria-label","Contraer menú")}return}
- m.classList.toggle("collapsed",!!collapsed);layout?.classList.toggle("sidebar-collapsed",!!collapsed);
+ if(!desktop){
+  m.classList.remove("collapsed");layout?.classList.remove("sidebar-collapsed");app?.classList.remove("sidebar-collapsed");
+  if(btn){btn.textContent="‹";btn.title="Contraer menú";btn.setAttribute("aria-label","Contraer menú")}
+  return
+ }
+ m.classList.toggle("collapsed",!!collapsed);
+ layout?.classList.toggle("sidebar-collapsed",!!collapsed);
+ app?.classList.toggle("sidebar-collapsed",!!collapsed);
  if(btn){btn.textContent=collapsed?"›":"‹";btn.title=collapsed?"Expandir menú":"Contraer menú";btn.setAttribute("aria-label",btn.title)}
 }
 function restoreRestaurantSidebarState(){let collapsed=false;try{collapsed=localStorage.getItem(RESTAURANT_SIDEBAR_STATE_KEY)==="1"}catch(_){}applyRestaurantSidebarState(collapsed)}
@@ -1861,7 +1986,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.42</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.43</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
