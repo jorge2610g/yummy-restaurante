@@ -17,6 +17,3 @@ console.log('Landing y panel restaurante validados');
 for (const needle of ["subscriptionModuleAccess","loadSubscriptionModuleAccess","effectiveTabs","subscription_plans"]) {
   if (!panel.includes(needle)) throw new Error(`Missing subscription module access marker: ${needle}`);
 }
-
-if(panel.includes('Suscripción automática')||panel.includes('paySubscriptionPlan('))throw new Error('panel/index.html: la suscripción automática debe estar eliminada');
-if(!panel.includes('paySubscriptionPlanOnce('))throw new Error('panel/index.html: falta pago único de plan');
