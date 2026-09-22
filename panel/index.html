@@ -1794,6 +1794,7 @@ async function enter(user){
     document.querySelector('.tab[data-tab="'+initialTab+'"]')?.classList.add("active");
     document.getElementById(initialTab)?.classList.add("active");
     syncSubscriptionBannerForActiveTab();
+    if(initialTab==="plans")await loadSubscriptionPlans();
     if(urlParams.get("tab")==="plans"&&!paymentReturn){
       urlParams.delete("tab");const clean=location.pathname+(urlParams.toString()?"?"+urlParams.toString():"")+location.hash;history.replaceState(null,"",clean);
     }
