@@ -598,6 +598,227 @@ html[data-theme="light"] .admin-form-card::-webkit-scrollbar-thumb{background:#9
 }
 </style><style id="yummypro-settings-tabs-fixes-v2441">
 .settings-panel[hidden],.settings-tab[hidden],.settings-footer-save[hidden]{display:none!important}
+</style><style id="yummypro-sidebar-visual-balance-restaurant-v2442">
+@media(min-width:801px){
+  .panel-layout{grid-template-columns:234px minmax(0,1fr)!important;gap:14px!important}
+  .panel-layout.sidebar-collapsed{grid-template-columns:68px minmax(0,1fr)!important}
+
+  .side-menu{
+    width:234px!important;
+    max-width:234px!important;
+    padding:10px 8px 16px!important;
+    border-radius:18px!important;
+  }
+  .side-menu.collapsed{
+    width:68px!important;
+    max-width:68px!important;
+    padding:9px 7px 14px!important;
+  }
+
+  .side-menu .sidebar-brand{
+    min-height:52px!important;
+    height:auto!important;
+    padding:2px 4px 10px!important;
+    gap:9px!important;
+    overflow:visible!important;
+  }
+  .side-menu .sidebar-brand-mark{
+    flex:0 0 36px!important;
+    width:36px!important;
+    height:36px!important;
+    border-radius:11px!important;
+    font-size:17px!important;
+    box-shadow:none!important;
+  }
+  .side-menu .sidebar-brand-name{
+    font-size:15px!important;
+    font-weight:850!important;
+  }
+  .side-menu .sidebar-collapse-btn{
+    flex:0 0 26px!important;
+    width:26px!important;
+    height:26px!important;
+    min-height:26px!important;
+    border-radius:8px!important;
+    border:1px solid var(--line)!important;
+    background:color-mix(in srgb,var(--ghost) 78%,transparent)!important;
+    color:var(--mut)!important;
+    box-shadow:none!important;
+    font-size:19px!important;
+  }
+  .side-menu .sidebar-collapse-btn:hover{
+    background:color-mix(in srgb,var(--ghost) 92%,var(--card))!important;
+    color:var(--txt)!important;
+  }
+
+  .side-menu.collapsed .sidebar-brand{
+    min-height:78px!important;
+    padding:1px 0 8px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:7px!important;
+  }
+  .side-menu.collapsed .sidebar-brand-mark{
+    margin:0 auto!important;
+    flex-basis:34px!important;
+    width:34px!important;
+    height:34px!important;
+  }
+  .side-menu.collapsed .sidebar-collapse-btn{
+    position:static!important;
+    margin:0 auto!important;
+    width:24px!important;
+    height:24px!important;
+    min-height:24px!important;
+    flex-basis:24px!important;
+  }
+
+  .side-menu .tabs{gap:4px!important}
+  .side-menu .tab{
+    min-height:42px!important;
+    padding:4px 6px!important;
+    gap:9px!important;
+    border-radius:11px!important;
+    border:1px solid transparent!important;
+    background:transparent!important;
+    color:var(--mut)!important;
+    box-shadow:none!important;
+    transition:background .15s ease,border-color .15s ease,color .15s ease!important;
+  }
+  .side-menu .tab:hover{
+    background:color-mix(in srgb,var(--ghost) 78%,transparent)!important;
+    border-color:color-mix(in srgb,var(--line) 78%,transparent)!important;
+    color:var(--txt)!important;
+  }
+  .side-menu .nav-icon{
+    display:grid!important;
+    place-items:center!important;
+    flex:0 0 34px!important;
+    width:34px!important;
+    height:32px!important;
+    margin:0!important;
+    border-radius:9px!important;
+    background:color-mix(in srgb,var(--ghost) 64%,transparent)!important;
+    border:1px solid color-mix(in srgb,var(--line) 55%,transparent)!important;
+    color:inherit!important;
+    font-size:16px!important;
+    line-height:1!important;
+  }
+  .side-menu .nav-label{
+    font-size:12px!important;
+    font-weight:760!important;
+    letter-spacing:0!important;
+  }
+  .side-menu .tab.active{
+    background:color-mix(in srgb,var(--a) 9%,var(--surface-2))!important;
+    border-color:color-mix(in srgb,var(--a) 28%,var(--line))!important;
+    color:var(--txt)!important;
+    box-shadow:inset 3px 0 0 var(--a)!important;
+  }
+  .side-menu .tab.active .nav-icon{
+    background:color-mix(in srgb,var(--a) 15%,var(--ghost))!important;
+    border-color:color-mix(in srgb,var(--a) 34%,var(--line))!important;
+    color:var(--a)!important;
+  }
+
+  .side-menu.collapsed .tab{
+    width:100%!important;
+    min-height:42px!important;
+    padding:4px!important;
+    margin:1px 0!important;
+    display:grid!important;
+    place-items:center!important;
+    background:transparent!important;
+    border-color:transparent!important;
+    box-shadow:none!important;
+  }
+  .side-menu.collapsed .tab:hover{
+    background:color-mix(in srgb,var(--ghost) 55%,transparent)!important;
+  }
+  .side-menu.collapsed .nav-icon{
+    width:36px!important;
+    height:34px!important;
+    margin:0 auto!important;
+    background:color-mix(in srgb,var(--ghost) 56%,transparent)!important;
+  }
+  .side-menu.collapsed .tab.active{
+    background:transparent!important;
+    border-color:transparent!important;
+    box-shadow:none!important;
+  }
+  .side-menu.collapsed .tab.active .nav-icon{
+    background:color-mix(in srgb,var(--a) 14%,var(--ghost))!important;
+    border-color:color-mix(in srgb,var(--a) 40%,var(--line))!important;
+    color:var(--a)!important;
+    box-shadow:inset 2px 0 0 var(--a)!important;
+  }
+  .side-menu.collapsed .nav-group-label{
+    width:30px!important;
+    margin:5px auto!important;
+    border-top-color:color-mix(in srgb,var(--line) 55%,transparent)!important;
+  }
+}
+@media(max-width:800px){
+  .side-menu{
+    width:min(84vw,300px)!important;
+    max-width:min(84vw,300px)!important;
+    padding:14px 10px 22px!important;
+  }
+  .side-menu .sidebar-brand{
+    min-height:50px!important;
+    padding:2px 4px 10px!important;
+  }
+  .side-menu .sidebar-brand-mark{
+    width:36px!important;
+    height:36px!important;
+    flex-basis:36px!important;
+    border-radius:11px!important;
+    font-size:17px!important;
+  }
+  .side-menu .sidebar-brand-name{font-size:15px!important}
+  .side-menu .tab{
+    min-height:44px!important;
+    padding:6px 7px!important;
+    gap:9px!important;
+    border-radius:11px!important;
+    border:1px solid transparent!important;
+    background:transparent!important;
+    color:var(--mut)!important;
+  }
+  .side-menu .nav-icon{
+    width:34px!important;
+    height:32px!important;
+    flex:0 0 34px!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:9px!important;
+    background:color-mix(in srgb,var(--ghost) 64%,transparent)!important;
+    border:1px solid color-mix(in srgb,var(--line) 55%,transparent)!important;
+    font-size:16px!important;
+  }
+  .side-menu .nav-label{font-size:12px!important}
+  .side-menu .tab.active{
+    background:color-mix(in srgb,var(--a) 9%,var(--surface-2))!important;
+    border-color:color-mix(in srgb,var(--a) 28%,var(--line))!important;
+    color:var(--txt)!important;
+    box-shadow:inset 3px 0 0 var(--a)!important;
+  }
+  .side-menu .tab.active .nav-icon{
+    background:color-mix(in srgb,var(--a) 15%,var(--ghost))!important;
+    border-color:color-mix(in srgb,var(--a) 34%,var(--line))!important;
+    color:var(--a)!important;
+  }
+}
+html[data-theme="light"] .side-menu .tab.active{
+  background:color-mix(in srgb,var(--a) 10%,#fff)!important;
+  color:#243244!important;
+}
+html[data-theme="light"] .side-menu .tab.active .nav-icon{
+  background:color-mix(in srgb,var(--a) 18%,#fff)!important;
+  color:#9a6500!important;
+}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -1640,7 +1861,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.41</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.42</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
