@@ -30,3 +30,5 @@ test('incluye gestión de suscripciones recurrentes',async({page})=>{await page.
 test('incluye modal profesional para comprar planes',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('planCheckoutModal');expect(html).toContain('openPlanPurchaseModal');expect(html).toContain('Pagar con Mercado Pago');expect(html).toContain('Pagar con Flow');expect(html).toContain('Reactivar con Mercado Pago')});
 
 test('mantiene módulos permitidos juntos sin huecos',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('syncSidebarGroupVisibility');expect(html).toContain('grid-auto-rows:max-content');expect(html).toContain('align-content:start')});
+
+test('no renderiza el contador dentro de Plan y facturación',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('subscriptionBannerShouldShow');expect(html).toContain('activeTab!=="plans"');expect(html).toContain('banner.innerHTML=""')});
