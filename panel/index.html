@@ -2049,7 +2049,7 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
         <div><label>Vigencia del QR</label><input id="restaurantVeripagosVigencia" value="0/00:15" placeholder="0/00:15"><div class="mut" style="font-size:12px;margin-top:5px">Formato día/hora:minuto. Ejemplo: 0/00:15.</div></div>
       </div>
       <label class="item" style="display:flex;align-items:center;gap:10px;margin-top:10px"><input id="restaurantVeripagosEnabled" type="checkbox" style="width:auto" checked> Habilitar QR Bolivia en el menú y pedidos QR</label>
-      <div class="actions" style="margin-top:12px"><button type="button" class="primary" onclick="saveRestaurantVeripagosSettings()">Guardar QR Bolivia</button><button type="button" class="ghost" onclick="loadRestaurantVeripagosSettings()">Cargar estado</button></div>
+      <div class="actions" style="margin-top:12px"><button type="button" class="primary" onclick="saveRestaurantVeripagosSettings()">Guardar QR Bolivia</button><button type="button" class="ghost" onclick="verifyRestaurantVeripagosCredentials()">✓ Verificar credenciales</button><button type="button" class="ghost" onclick="loadRestaurantVeripagosSettings()">Cargar estado</button></div>
       <div id="restaurantVeripagosStatus" class="mp-status-card">Estado: sin configurar.</div>
       <div class="item" style="margin-top:12px"><b>Webhook de VeriPagos</b><div class="mut" style="word-break:break-all;margin-top:5px">https://gulctljitzlwokqydigx.supabase.co/functions/v1/veripagos-restaurant-webhook</div><div class="mut" style="margin-top:5px">Configura esta URL como callback/webhook en VeriPagos usando las mismas credenciales Basic Auth del restaurante.</div></div>
     </div>
@@ -2139,6 +2139,21 @@ async function saveRestaurantVeripagosSettings(){
   toast(d.message||"QR Bolivia guardado.");await loadRestaurantVeripagosSettings();
  }catch(e){toast("No se pudo guardar QR Bolivia.")}
 }
+async function verifyRestaurantVeripagosCredentials(){
+ if(!currentRestaurant)return toast("No hay restaurante seleccionado");
+ const status=document.getElementById("restaurantVeripagosStatus");
+ try{
+  const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return toast("Tu sesión venció.");
+  if(status)status.textContent="⏳ Verificando credenciales directamente con VeriPagos…";
+  const body={restaurant_id:currentRestaurant,basic_username:document.getElementById("restaurantVeripagosUser")?.value.trim()||"",basic_password:document.getElementById("restaurantVeripagosPassword")?.value||"",secret_key:document.getElementById("restaurantVeripagosSecret")?.value||""};
+  const res=await fetch(SB_URL+"/functions/v1/verify-restaurant-veripagos",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify(body)});
+  const d=await res.json();
+  if(!res.ok||!d.ok){if(status)status.textContent="❌ "+(d.error||"Las credenciales fueron rechazadas por VeriPagos.");return}
+  if(status)status.textContent="✅ Credenciales correctas. Conexión verificada con VeriPagos.";
+  toast("✅ Credenciales VeriPagos verificadas correctamente.");
+ }catch(e){if(status)status.textContent="❌ No se pudo verificar la conexión con VeriPagos.";}
+}
+
 async function logout(){await sb.auth.signOut();window.location.replace("https://web.yummypro.online/")}
 async function enter(user){
   currentUserId=user?.id||null;
@@ -4184,7 +4199,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v2.4.96</footer></main></div><script>
+</script><footer class="admin-version">Versión v2.4.97</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
