@@ -24,6 +24,8 @@ for(const marker of ['create-flow-subscription-payment','subscription-flow-setti
 
 for(const marker of ['sync-mercadopago-subscription','syncMercadoPagoSubscription','syncFlowSubscription','sync-flow-subscription'])if(!panel.includes(marker))throw new Error('panel/index.html: falta reconciliación de suscripciones '+marker);
 
-for(const marker of ['manage-flow-pending-payment','create-flow-recurring-subscription','payFlowRecurringSubscription','Suscripción automática con Flow','sync-flow-subscription','manageFlowPendingPayment'])if(!panel.includes(marker))throw new Error('panel/index.html: falta Flow recurrente/cancelación '+marker);
+for(const marker of ['manage-flow-pending-payment','create-flow-recurring-subscription','payFlowRecurringSubscription','sync-flow-subscription','manageFlowPendingPayment','planCheckoutModal','openPlanPurchaseModal','plan-provider-logo flow'])if(!panel.includes(marker))throw new Error('panel/index.html: falta Flow/modal de compra '+marker);
 
 for(const marker of ['cancel-recurring-subscription','manageRecurringSubscription','Cancelar suscripción Flow','Pausar renovación Mercado Pago','Reactivar suscripción Mercado Pago','Renovación cancelada'])if(!panel.includes(marker))throw new Error('panel/index.html: falta gestión de suscripción '+marker);
+
+for(const marker of ['Comprar ','Pago único','Suscripción automática','Pagar con Mercado Pago','Pagar con Flow','Reactivar con Mercado Pago','plan-provider-logo mp'])if(!panel.includes(marker))throw new Error('panel/index.html: falta checkout profesional '+marker);
