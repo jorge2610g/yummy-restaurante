@@ -1627,6 +1627,24 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
  body.waiter-mobile-shell #panelLayout>.panel-content::-webkit-scrollbar{width:5px}
  body.waiter-mobile-shell #panelLayout>.panel-content::-webkit-scrollbar-thumb{background:var(--line);border-radius:999px}
  body.waiter-mobile-shell.mobile-menu-open #panelLayout>.panel-content{overflow:hidden!important}
+ body.waiter-mobile-shell .waiter-pull-refresh{
+  position:sticky;top:0;z-index:24;height:0;min-height:0;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin:0 0 0;padding:0 12px;border-radius:14px;
+  background:color-mix(in srgb,var(--card) 94%,var(--a) 6%);
+  color:var(--mut);opacity:0;transform:translateY(-10px);
+  transition:height .16s ease,opacity .16s ease,transform .16s ease,margin .16s ease;
+  pointer-events:none
+ }
+ body.waiter-mobile-shell .waiter-pull-refresh.visible{
+  height:52px;min-height:52px;margin:0 0 10px;opacity:1;transform:translateY(0)
+ }
+ body.waiter-mobile-shell .waiter-pull-refresh.ready{color:var(--txt);border:1px solid color-mix(in srgb,var(--a) 45%,var(--line))}
+ body.waiter-mobile-shell .waiter-pull-refresh span{font-size:20px;font-weight:900;transition:transform .16s ease}
+ body.waiter-mobile-shell .waiter-pull-refresh.ready span{transform:rotate(180deg)}
+ body.waiter-mobile-shell .waiter-pull-refresh.refreshing span{animation:waiterPullSpin .7s linear infinite}
+ body.waiter-mobile-shell .waiter-pull-refresh b{font-size:12px;letter-spacing:.01em}
+ @keyframes waiterPullSpin{to{transform:rotate(360deg)}}
 }
 </style>
 <div id="appBootLoader" role="status" aria-live="polite"><div class="app-boot-card"><div class="app-boot-mark">Y</div><h2>Cargando tu restaurante…</h2><p>Estamos verificando tu sesión y tus accesos.</p><div class="app-boot-spinner" aria-hidden="true"></div></div></div>
@@ -1669,7 +1687,7 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
   <button class="tab" data-tab="plans" title="Plan y facturación"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span><span class="nav-label">Plan y facturación</span></button>
   <button class="tab" data-tab="settings" title="Configuración"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.2 2.3 2.6.4.8 2.5 2.3 1.2-.7 2.6.7 2.6-2.3 1.2-.8 2.5-2.6.4L12 21l-1.2-2.3-2.6-.4-.8-2.5-2.3-1.2.7-2.6-.7-2.6 2.3-1.2.8-2.5 2.6-.4z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="nav-label">Configuración</span></button>
 </div>
-</aside><main class="panel-content">
+</aside><main class="panel-content"><div id="waiterPullRefresh" class="waiter-pull-refresh" aria-live="polite"><span id="waiterPullRefreshIcon" aria-hidden="true">↓</span><b id="waiterPullRefreshText">Desliza hacia abajo para actualizar</b></div>
 
 <section id="dashboard" class="section active"><div class="restaurant-dashboard-hero"><div><span class="eyebrow">PANEL PRINCIPAL</span><h2>Todo bajo control</h2><p class="mut">Ventas, pedidos y operación del restaurante en una vista clara y rápida.</p></div><button class="ghost" onclick="refreshRestaurantDashboard()">↻ Actualizar</button></div><div class="restaurant-metrics dashboard-ref-metrics"><article class="restaurant-metric"><span class="dashboard-metric-icon metric-green">💰</span><div><span>Ventas de hoy</span><strong id="statSalesToday">$0</strong><small>Ingresos confirmados</small></div></article><article class="restaurant-metric"><span class="dashboard-metric-icon metric-blue">🕘</span><div><span>Pedidos de hoy</span><strong id="statOrdersToday">0</strong><small>Actividad del día</small></div></article><article class="restaurant-metric"><span class="dashboard-metric-icon metric-orange">🍔</span><div><span>Productos disponibles</span><strong id="statProducts">0</strong><small>Catálogo activo</small></div></article><article class="restaurant-metric"><span class="dashboard-metric-icon metric-violet">✓</span><div><span>Ticket promedio</span><strong id="statAverage">$0</strong><small>Promedio por pedido</small></div></article></div><div class="restaurant-control-grid"><article class="card quick-control-card"><div class="module-head"><div><span class="eyebrow">ACCIONES RÁPIDAS</span><h2>Gestiona lo importante</h2></div></div><div class="dashboard-quick-actions"><button type="button" class="dashboard-quick-action" onclick="document.querySelector('.tab[data-tab=&quot;orders&quot;]')?.click()"><span>📦</span><div><b>Ver pedidos</b><small>Gestionar pedidos activos</small></div><i>›</i></button><button type="button" class="dashboard-quick-action" onclick="document.querySelector('.tab[data-tab=&quot;products&quot;]')?.click()"><span>🍔</span><div><b>Gestionar productos</b><small>Precios y disponibilidad</small></div><i>›</i></button><button type="button" class="dashboard-quick-action" onclick="document.querySelector('.tab[data-tab=&quot;cash&quot;]')?.click()"><span>💵</span><div><b>Abrir Caja</b><small>Ventas y movimientos</small></div><i>›</i></button></div></article><article class="card system-status-card"><div class="module-head"><div><span class="eyebrow">SISTEMA</span><h2>Estado del sistema</h2></div></div><div class="system-status-list"><div><span class="status-badge">●</span><div><b>Menú y catálogo</b><small>Sincronizado con tu configuración</small></div></div><div><span class="status-badge">●</span><div><b>Pedidos</b><small>Actualización en tiempo real</small></div></div><div><span class="status-badge">●</span><div><b>Módulos</b><small>Visibles según tu suscripción</small></div></div></div></article></div><div class="restaurant-analytics"><article class="card"><div class="module-head"><div><h2>Ventas de los últimos 7 días</h2><p class="mut">Evolución diaria de ingresos confirmados.</p></div></div><div id="salesChart"></div></article><article class="card"><h2>Estado de pedidos</h2><div id="statusChart" class="list" style="margin-top:14px"></div></article></div><article class="card" style="margin-top:14px"><div class="module-head"><div><h2>Productos más vendidos</h2><p class="mut">Ranking calculado a partir de los pedidos.</p></div></div><div id="topProducts" class="list"></div></article></section>
 
@@ -2116,6 +2134,7 @@ async function enter(user){
     currentRestaurant=Number(membership[0].restaurant_id);
     currentRole=membership[0].role||"restaurant";
     document.body.classList.toggle("waiter-mobile-shell",currentRole==="waiter");
+    if(currentRole==="waiter")setTimeout(setupWaiterPullToRefresh,0);
     document.getElementById("login").classList.add("hidden");
     document.getElementById("who").textContent=user.email;
     subscriptionModuleAccess=[];
@@ -2890,6 +2909,60 @@ function startWaiterPosRefreshLoop(){
  if(currentRole!=="waiter")return;
  setTimeout(refreshWaiterPosState,1500);
  waiterPosRefreshTimer=setInterval(refreshWaiterPosState,5000);
+}
+let waiterPullRefreshBound=false;
+function setupWaiterPullToRefresh(){
+ if(waiterPullRefreshBound)return;
+ const scroller=document.querySelector("#panelLayout>.panel-content"),indicator=document.getElementById("waiterPullRefresh"),icon=document.getElementById("waiterPullRefreshIcon"),label=document.getElementById("waiterPullRefreshText");
+ if(!scroller||!indicator)return;
+ waiterPullRefreshBound=true;
+ let startY=null,distance=0,refreshing=false;
+ const reset=()=>{
+  startY=null;distance=0;
+  if(refreshing)return;
+  indicator.classList.remove("visible","ready","refreshing");
+  if(icon)icon.textContent="↓";
+  if(label)label.textContent="Desliza hacia abajo para actualizar";
+ };
+ scroller.addEventListener("touchstart",e=>{
+  if(currentRole!=="waiter"||window.innerWidth>800||refreshing||document.body.classList.contains("mobile-menu-open")||document.querySelector(".product-modal.open")||scroller.scrollTop>0||e.touches.length!==1){startY=null;return}
+  startY=e.touches[0].clientY;distance=0;
+ },{passive:true});
+ scroller.addEventListener("touchmove",e=>{
+  if(startY===null||refreshing||e.touches.length!==1)return;
+  if(scroller.scrollTop>0){reset();return}
+  const delta=e.touches[0].clientY-startY;
+  if(delta<=0){reset();return}
+  if(delta>5)e.preventDefault();
+  distance=Math.min(delta*.58,92);
+  indicator.classList.add("visible");
+  const ready=distance>=64;
+  indicator.classList.toggle("ready",ready);
+  if(label)label.textContent=ready?"Suelta para actualizar":"Desliza hacia abajo para actualizar";
+ },{passive:false});
+ scroller.addEventListener("touchend",async()=>{
+  if(startY===null)return;
+  const shouldRefresh=distance>=64;
+  startY=null;distance=0;
+  if(!shouldRefresh){reset();return}
+  refreshing=true;
+  indicator.classList.add("visible","refreshing");
+  indicator.classList.remove("ready");
+  if(icon)icon.textContent="↻";
+  if(label)label.textContent="Actualizando pedidos…";
+  try{
+   await refreshWaiterPosState();
+   if(label)label.textContent="Pedidos actualizados";
+   try{navigator.vibrate?.(35)}catch(_){}
+   setTimeout(()=>toast("✓ Pedidos actualizados"),50);
+  }catch(e){
+   console.error("Pull-to-refresh del mesero",e);
+   if(label)label.textContent="No se pudo actualizar";
+  }finally{
+   setTimeout(()=>{refreshing=false;reset()},520);
+  }
+ },{passive:true});
+ scroller.addEventListener("touchcancel",()=>{if(!refreshing)reset()},{passive:true});
 }
 function canReceiveKitchenNewAlerts(){
  try{return !!currentRestaurant&&effectiveTabs().includes("kitchen")}catch(_){return ["restaurant","manager","editor","kitchen"].includes(currentRole)}
@@ -3968,7 +4041,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.89</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.90</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
