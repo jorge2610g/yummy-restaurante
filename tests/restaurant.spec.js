@@ -36,3 +36,5 @@ test('no renderiza el contador dentro de Plan y facturación',async({page})=>{aw
 test('usa la misma escala visual del menú admin',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('restaurant-admin-sidebar-scale-v2464');expect(html).toContain('font-size:15px!important;font-weight:720!important');expect(html).toContain('width:44px!important;height:44px!important')});
 
 test('panel restaurante cerrado copia referencia admin sin barra visible',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('restaurant-collapsed-admin-reference-v2465');expect(html).toContain('scrollbar-width:none');expect(html).toContain('width:62px!important')});
+
+test('restringe POS y Cocina por rol y exige caja abierta',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('operationalTabLockReason');expect(html).toContain('restaurant_has_open_cash');expect(html).toContain('posCashGate');expect(html).toContain('usuario con rol Mesero');expect(html).toContain('usuario con rol Cocina')});
