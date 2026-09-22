@@ -1,6 +1,7 @@
-const YUMMYPRO_CACHE="yummypro-pwa-v2506";
+const YUMMYPRO_CACHE="yummypro-pwa-v2506-landing206";
 const YUMMYPRO_OFFLINE_URL="/offline.html";
-const YUMMYPRO_CORE=[YUMMYPRO_OFFLINE_URL,"/manifest.webmanifest","/pwa-icon.svg","/icon-192.png","/icon-512.png","/apple-touch-icon.png"];
+const YUMMYPRO_LANDING_OFFLINE="/restaurant-offline.html";
+const YUMMYPRO_CORE=[YUMMYPRO_OFFLINE_URL,YUMMYPRO_LANDING_OFFLINE,"/manifest.webmanifest","/restaurant.webmanifest","/pwa-icon.svg","/icon-192.png","/icon-512.png","/apple-touch-icon.png"];
 
 self.addEventListener("install",event=>{
  event.waitUntil(caches.open(YUMMYPRO_CACHE).then(cache=>cache.addAll(YUMMYPRO_CORE)));
@@ -20,8 +21,9 @@ self.addEventListener("fetch",event=>{
   event.respondWith(caches.match(request).then(cached=>cached||fetch(request)));
   return;
  }
- if(request.mode==="navigate"&&url.pathname.startsWith("/panel")){
-  event.respondWith(fetch(request).catch(()=>caches.match(YUMMYPRO_OFFLINE_URL)));
+ if(request.mode==="navigate"){
+  const fallback=url.pathname.startsWith("/panel")?YUMMYPRO_OFFLINE_URL:YUMMYPRO_LANDING_OFFLINE;
+  event.respondWith(fetch(request).catch(()=>caches.match(fallback)));
  }
 });
 self.addEventListener("push",event=>{
