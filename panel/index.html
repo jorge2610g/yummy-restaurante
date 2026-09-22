@@ -2028,7 +2028,7 @@ async function enter(user){
     const {data:menuRestaurant}=await sb.from("restaurants").select("slug").eq("id",currentRestaurant).single();
     const menuLink=document.getElementById("viewMenuLink");
     if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(menuRestaurant?.slug||currentRestaurant);menuLink.style.display=currentRole==="restaurant"?"":"none"}
-    enableRestaurantNotifications();restoreAutoPrintOrders();setTimeout(startRestaurantOrderRealtime,0);setTimeout(startWaiterReadyReminderLoop,0);setTimeout(startSubscriptionAccessRealtime,0);
+    enableRestaurantNotifications();restoreAutoPrintOrders();setTimeout(startRestaurantOrderRealtime,0);setTimeout(startWaiterReadyReminderLoop,0);setTimeout(startKitchenNewOrderReminderLoop,0);setTimeout(startSubscriptionAccessRealtime,0);
     await loadRestaurants();
     await Promise.allSettled([loadSubscriptionPlans(),loadSubscriptionModuleAccess()]);
     applyRoleAccess();
@@ -2464,6 +2464,30 @@ function playNewOrderSound(){
   });
  }catch(e){console.error("No se pudo reproducir sonido",e)}
 }
+let urgentAlertSoundUntil=0;
+function playUrgentAlertSound(kind="kitchen"){
+ try{
+  unlockRestaurantSound();const ac=restaurantAudioContext;if(!ac)return;
+  const duration=kind==="waiter"?6.5:8;
+  const now=ac.currentTime;
+  if(Date.now()<urgentAlertSoundUntil)return;
+  urgentAlertSoundUntil=Date.now()+Math.ceil(duration*1000);
+  const pulses=kind==="waiter"?18:24;
+  const gap=duration/pulses;
+  for(let i=0;i<pulses;i++){
+   const start=now+i*gap;
+   const freq=kind==="waiter"?(i%2?1320:960):(i%3===0?1450:i%2?1120:820);
+   const o=ac.createOscillator(),g=ac.createGain();
+   o.type=i%2?"square":"sine";
+   o.connect(g);g.connect(ac.destination);
+   o.frequency.setValueAtTime(freq,start);
+   g.gain.setValueAtTime(.0001,start);
+   g.gain.exponentialRampToValueAtTime(kind==="waiter"?.24:.3,start+.025);
+   g.gain.exponentialRampToValueAtTime(.0001,start+Math.min(.22,gap*.78));
+   o.start(start);o.stop(start+Math.min(.24,gap*.82));
+  }
+ }catch(e){console.error("No se pudo reproducir la alarma",e)}
+}
 function setAutoPrintOrders(v){localStorage.setItem("restaurant_auto_print",v?"1":"0");toast(v?"Impresión automática activada":"Impresión automática desactivada")}
 function restoreAutoPrintOrders(){const el=document.getElementById("autoPrintOrders");if(el)el.checked=localStorage.getItem("restaurant_auto_print")==="1"}
 async function testRestaurantNotification(){
@@ -2488,20 +2512,20 @@ function testRestaurantPrint(){
 }
 function restaurantOrderAlert(row){
  try{
-  if("Notification" in window&&Notification.permission==="granted")new Notification("🔔 Nuevo pedido Mercado Pago",{body:"#"+(row.order_code||row.id)+" · "+money(row.total||0),tag:"restaurant-order-"+row.id,renotify:true,requireInteraction:true});
+  if("Notification" in window&&Notification.permission==="granted")new Notification("🚨 Nuevo pedido Mercado Pago",{body:"#"+(row.order_code||row.id)+" · "+money(row.total||0)+" · Aceptar en Cocina",tag:"restaurant-order-"+row.id,renotify:true,requireInteraction:true});
  }catch(e){}
- playNewOrderSound();
- toast("🔔 Nuevo pedido recibido");
+ playUrgentAlertSound("kitchen");
+ toast("🚨 Nuevo pedido online esperando preparación");
 }
 let restaurantOrdersChannel=null;
 const notifiedRestaurantOrders=new Set();
 const notifiedWaiterReadyOrders=new Set();
-let waiterReadyReminderTimer=null;
+let waiterReadyReminderTimer=null,kitchenNewReminderTimer=null;
 function waiterReadyAlert(row){
  try{
-  if("Notification" in window&&Notification.permission==="granted")new Notification("🍽️ Pedido listo",{body:"#"+(row.order_code||row.id)+" · "+(row.table_reference||row.customer_name||"Retirar en cocina"),tag:"waiter-ready-"+row.id,renotify:true,requireInteraction:true});
+  if("Notification" in window&&Notification.permission==="granted")new Notification("🍽️ Pedido listo para retirar",{body:"#"+(row.order_code||row.id)+" · "+(row.table_reference||row.customer_name||"Retirar en cocina"),tag:"waiter-ready-"+row.id,renotify:true,requireInteraction:true});
  }catch(e){}
- playNewOrderSound();
+ playUrgentAlertSound("waiter");
  toast("🍽️ Pedido #"+(row.order_code||row.id)+" listo para retirar en cocina");
 }
 async function enableWaiterNotifications(){
@@ -2509,7 +2533,7 @@ async function enableWaiterNotifications(){
  await enableRestaurantNotifications();
  if(!("Notification" in window))return toast("Avisos sonoros activados en este dispositivo.");
  if(Notification.permission==="denied")return toast("Las notificaciones están bloqueadas. Actívalas en los permisos del navegador.");
- if(Notification.permission==="granted")return toast("🔔 Avisos del mesero activados.");
+ if(Notification.permission==="granted")return toast("🔔 Avisos intensos del mesero activados.");
  toast("Permite las notificaciones del navegador para recibir el aviso de pedido listo.");
 }
 async function checkWaiterReadyReminders(){
@@ -2530,7 +2554,35 @@ function startWaiterReadyReminderLoop(){
  setTimeout(checkWaiterReadyReminders,1200);
  waiterReadyReminderTimer=setInterval(checkWaiterReadyReminders,30000);
 }
-function isApprovedMercadoPagoOrder(row){const approved=String(row?.payment_status||"").trim().toLowerCase()==="approved",source=String(row?.order_source||"online").toLowerCase(),method=String(row?.payment_method||"").trim().toLowerCase();if(source==="table_qr")return method==="mercado pago"?approved:true;return approved&&source==="online"}
+function canReceiveKitchenNewAlerts(){
+ try{return !!currentRestaurant&&effectiveTabs().includes("kitchen")}catch(_){return ["restaurant","manager","editor","kitchen"].includes(currentRole)}
+}
+async function checkKitchenNewOrderReminders(){
+ if(!canReceiveKitchenNewAlerts())return;
+ const {data,error}=await sb.from("restaurant_orders")
+   .select("id,order_code,total,status,order_source,payment_method,payment_status,created_at")
+   .eq("restaurant_id",currentRestaurant)
+   .eq("order_source","online")
+   .eq("payment_status","approved")
+   .eq("payment_method","Mercado Pago")
+   .in("status",["nuevo","recibido"])
+   .order("created_at",{ascending:true})
+   .limit(25);
+ if(error){console.error("No se pudieron revisar pedidos nuevos de cocina",error);return}
+ const rows=data||[];if(!rows.length)return;
+ const first=rows[0];
+ try{
+  if("Notification" in window&&Notification.permission==="granted")new Notification(rows.length>1?"🚨 "+rows.length+" pedidos nuevos en Cocina":"🚨 Pedido nuevo en Cocina",{body:"#"+(first.order_code||first.id)+" · Mercado Pago aprobado · pendiente de aceptar",tag:"kitchen-new-reminder",renotify:true,requireInteraction:true});
+ }catch(e){}
+ playUrgentAlertSound("kitchen");
+ toast(rows.length>1?"🚨 Hay "+rows.length+" pedidos nuevos esperando preparación":"🚨 Pedido nuevo esperando preparación");
+}
+function startKitchenNewOrderReminderLoop(){
+ if(kitchenNewReminderTimer){clearInterval(kitchenNewReminderTimer);kitchenNewReminderTimer=null}
+ setTimeout(checkKitchenNewOrderReminders,1800);
+ kitchenNewReminderTimer=setInterval(checkKitchenNewOrderReminders,30000);
+}
+function isApprovedMercadoPagoOrder(row)function isApprovedMercadoPagoOrder(row){const approved=String(row?.payment_status||"").trim().toLowerCase()==="approved",source=String(row?.order_source||"online").toLowerCase(),method=String(row?.payment_method||"").trim().toLowerCase();if(source==="table_qr")return method==="mercado pago"?approved:true;return approved&&source==="online"}
 function startRestaurantOrderRealtime(){
  if(restaurantOrdersChannel){sb.removeChannel(restaurantOrdersChannel);restaurantOrdersChannel=null;}
  if(!currentRestaurant)return;
@@ -2588,14 +2640,28 @@ function staffNameByUserId(userId,fallback="Personal"){
 async function loadKitchen(){
  if(!currentRestaurant)return;
  const [{data,error}]=await Promise.all([
-  sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).in("status",["recibido","preparacion","listo"]).order("created_at",{ascending:true}).limit(100),
+  sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).in("status",["nuevo","recibido","preparacion","listo"]).order("created_at",{ascending:true}).limit(150),
   loadStaffDirectory()
  ]);
  if(error)return toast(error.message);
- const rows=(data||[]).filter(o=>(o.order_source==="waiter"&&String(o.payment_status||"").toLowerCase()!=="approved")||(o.order_source==="table_qr"&&(String(o.payment_method||"").toLowerCase()!=="mercado pago"||o.payment_status==="approved"))||(o.order_source==="online"&&o.payment_status==="approved")),board=document.getElementById("kitchenBoard");if(!board)return;
- rows.forEach(row=>{if(!orders.some(o=>String(o.id)===String(row.id)))orders.push(row)});
- const columns=[{status:"recibido",title:"Nuevos",action:"preparacion",button:"Preparar"},{status:"preparacion",title:"En preparación",action:"listo",button:"Marcar listo"},{status:"listo",title:"Listos",action:null,button:"Esperando retiro del mesero"}];
- board.innerHTML=columns.map(col=>{const list=rows.filter(o=>o.status===col.status);return `<div class="kds-column"><div class="kds-column-head"><h3>${col.title}</h3><span class="pill">${list.length}</span></div><div class="kds-column-scroll">${list.map(o=>{const items=Array.isArray(o.items)?o.items:[],minutes=Math.max(0,Math.floor((Date.now()-new Date(o.created_at).getTime())/60000));return `<article class="kds-ticket"><div class="row between"><b>#${esc(o.order_code)}</b><span class="pill">${minutes} min</span></div><div class="mut">${esc(o.order_source==="waiter"?(o.table_reference||"Pedido en local"):o.order_source==="table_qr"?(o.table_reference||"Mesa"):o.order_type)} · ${esc(o.customer_name||"Cliente")}${o.order_source==="waiter"?` · Mesero: ${esc(staffNameByUserId(o.created_by,"Sin identificar"))}`:o.order_source==="table_qr"?" · QR de mesa":""}</div><div class="kds-ticket-items">${items.map(x=>`<div><b>${Number(x.qty||1)}× ${esc(x.name||"Producto")}</b>${x.note?`<div class="mut">${esc(x.note)}</div>`:""}${Array.isArray(x.extras)&&x.extras.length?`<div class="mut">+ ${x.extras.map(e=>esc(e.name||e)).join(" · ")}</div>`:""}</div>`).join("")||"Sin detalle"}</div><div class="actions"><button class="ghost" onclick="printOrderCommand(${o.id})" title="Imprimir en cocina">🖨️ Imprimir</button>${col.action?`<button class="primary" onclick="setOrderStatus(${o.id},'${col.action}').then(loadKitchen)">${col.button}</button>`:`<span class="pill">✓ ${col.button}</span>`}</div></article>`}).join("")||'<p class="mut">Sin pedidos.</p>'}</div></div>`}).join("");
+ const isOnlineNew=o=>String(o.order_source||"").toLowerCase()==="online"&&String(o.payment_status||"").toLowerCase()==="approved"&&String(o.payment_method||"").trim().toLowerCase()==="mercado pago"&&["nuevo","recibido"].includes(String(o.status||"").toLowerCase());
+ const isLocalKitchen=o=>["waiter","table_qr"].includes(String(o.order_source||"").toLowerCase())&&String(o.payment_status||"").toLowerCase()!=="approved"||String(o.order_source||"").toLowerCase()==="table_qr"&&String(o.payment_status||"").toLowerCase()==="approved";
+ const rows=(data||[]).filter(o=>isOnlineNew(o)||String(o.status||"").toLowerCase()==="preparacion"||String(o.status||"").toLowerCase()==="listo").filter(o=>{
+   if(String(o.status||"").toLowerCase()==="preparacion"||String(o.status||"").toLowerCase()==="listo"){
+    const source=String(o.order_source||"").toLowerCase();
+    if(source==="online")return String(o.payment_status||"").toLowerCase()==="approved";
+    if(source==="waiter")return String(o.payment_status||"").toLowerCase()!=="approved";
+    if(source==="table_qr")return String(o.payment_method||"").toLowerCase()!=="mercado pago"||String(o.payment_status||"").toLowerCase()==="approved";
+   }
+   return true;
+ }),board=document.getElementById("kitchenBoard");if(!board)return;
+ rows.forEach(row=>{const i=orders.findIndex(o=>String(o.id)===String(row.id));if(i<0)orders.push(row);else orders[i]=row});
+ const columns=[
+  {key:"new",title:"Nuevos",action:"preparacion",button:"Aceptar y preparar",match:o=>isOnlineNew(o)},
+  {key:"preparacion",title:"En preparación",action:"listo",button:"Marcar listo",match:o=>String(o.status||"").toLowerCase()==="preparacion"},
+  {key:"listo",title:"Listos",action:null,button:"Esperando retiro del mesero",match:o=>String(o.status||"").toLowerCase()==="listo"}
+ ];
+ board.innerHTML=columns.map(col=>{const list=rows.filter(col.match);return `<div class="kds-column"><div class="kds-column-head"><h3>${col.title}</h3><span class="pill">${list.length}</span></div><div class="kds-column-scroll">${list.map(o=>{const items=Array.isArray(o.items)?o.items:[],minutes=Math.max(0,Math.floor((Date.now()-new Date(o.created_at).getTime())/60000));const source=String(o.order_source||"").toLowerCase();return `<article class="kds-ticket"><div class="row between"><b>#${esc(o.order_code)}</b><span class="pill">${minutes} min</span></div><div class="mut">${esc(source==="waiter"?(o.table_reference||"Pedido en local"):source==="table_qr"?(o.table_reference||"Mesa"):o.order_type)} · ${esc(o.customer_name||"Cliente")}${source==="waiter"?` · Mesero: ${esc(staffNameByUserId(o.created_by,"Sin identificar"))}`:source==="table_qr"?" · QR de mesa":source==="online"?" · Online · Mercado Pago":""}</div><div class="kds-ticket-items">${items.map(x=>`<div><b>${Number(x.qty||1)}× ${esc(x.name||"Producto")}</b>${x.note?`<div class="mut">${esc(x.note)}</div>`:""}${Array.isArray(x.extras)&&x.extras.length?`<div class="mut">+ ${x.extras.map(e=>esc(e.name||e)).join(" · ")}</div>`:""}</div>`).join("")||"Sin detalle"}</div><div class="actions"><button class="ghost" onclick="printOrderCommand(${o.id})" title="Imprimir en cocina">🖨️ Imprimir</button>${col.action?`<button class="primary" onclick="setOrderStatus(${o.id},'${col.action}').then(loadKitchen)">${col.button}</button>`:`<span class="pill">✓ ${col.button}</span>`}</div></article>`}).join("")||'<p class="mut">Sin pedidos.</p>'}</div></div>`}).join("");
 }
 function openCashActionModal(id){if(id!=="cashSalesHistoryModal"&&!cashSession)return toast("Primero abre la caja");const modal=document.getElementById(id);if(!modal)return;modal.classList.add("open");modal.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";if(id==="cashQuickSaleModal")loadCashSaleData()}function closeCashActionModal(id){const modal=document.getElementById(id);if(!modal)return;modal.classList.remove("open");modal.setAttribute("aria-hidden","true");document.body.style.overflow=""}
 function openCashNewOrder(){if(!cashSession){toast("Primero abre la caja para crear un pedido");document.getElementById("cashClosedPanel")?.scrollIntoView({behavior:"smooth",block:"center"});document.getElementById("cashOpeningAmount")?.focus();return}openCashActionModal("cashQuickSaleModal")}
@@ -3145,7 +3211,7 @@ async function setOrderStatus(id,status){
  }
  if(document.getElementById("orders")?.classList.contains("active"))await loadOrders();
  if(document.getElementById("kitchen")?.classList.contains("active"))await loadKitchen();
- if(status!=="cancelado"&&status!=="recibido"&&previousStatus==="recibido"&&localStorage.getItem("restaurant_auto_print")==="1"){
+ if(status!=="cancelado"&&status!=="recibido"&&["recibido","nuevo"].includes(previousStatus)&&localStorage.getItem("restaurant_auto_print")==="1"){
   setTimeout(()=>printOrderCommand(id),250);
  }
 }
@@ -3507,7 +3573,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.75</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.76</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
