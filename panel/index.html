@@ -1294,6 +1294,32 @@ html[data-theme="light"] .side-menu .tab.active .nav-icon{
   }
   .side-menu .tab.active .nav-icon{background:var(--ref-side-active)!important;color:#fff!important}
 }
+</style><style id="yummypro-mobile-sidebar-icon-scale-v2450">
+@media(max-width:800px){
+  #sideMenu .tab{
+    min-height:58px!important;
+    padding:5px 10px!important;
+    gap:12px!important;
+  }
+  #sideMenu .nav-icon{
+    width:46px!important;
+    height:46px!important;
+    flex:0 0 46px!important;
+    border-radius:12px!important;
+    display:grid!important;
+    place-items:center!important;
+  }
+  #sideMenu .nav-icon svg{
+    width:23px!important;
+    height:23px!important;
+    stroke-width:1.9!important;
+  }
+  #sideMenu .nav-label{
+    font-size:15px!important;
+    line-height:1.2!important;
+    font-weight:700!important;
+  }
+}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -2009,33 +2035,7 @@ function printCashierReceipt(order,existingWindow=null){
  const cashier=staffMembers.find(s=>String(s.user_id)===String(order.created_by))?.email||"Caja";
  const items=Array.isArray(order.items)?order.items:[];const e=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
  const itemRows=items.map(x=>{const qty=Number(x.qty||1),price=Number(x.unit_price||x.price||0);return '<div class="line"><span>'+e(qty+" × "+(x.name||"Producto"))+'</span><b>'+e(money(price*qty))+'</b></div>'}).join("");
- const html='<!doctype html><html><head><meta charset="utf-8"><title>Comprobante '+e(order.order_code)+'</title><style>@page{margin:4mm}body{font-family:Arial,sans-serif;width:72mm;max-width:100%;margin:0 auto;color:#000;font-size:12px}h1{text-align:center;font-size:18px;margin:0}.center{text-align:center}.sep{border-top:1px dashed #000;margin:8px 0}.line{display:flex;justify-content:space-between;gap:8px;margin:5px 0}.line span{flex:1}.total{font-size:16px;font-weight:700}button{width:100%;padding:10px;margin:12px 0}@media print{button{display:none}}</style></head><body><h1>'+e(r.name)+'</h1><div class="center">'+e(r.address||"")+'<br>'+e(r.whatsapp||"")+'</div><div class="sep"></div><b>COMPROBANTE DE CAJA</b><div>#'+e(order.order_code)+'</div><div>'+e(new Date(order.paid_at||order.created_at).toLocaleString("es-CL"))+'</div><div>Cliente: '+e(order.customer_name||"Cliente caja")+'</div><div>Cajero: '+e(cashier)+'</div><div>Pago: '+e(order.payment_method||"")+'</div><div class="sep"></div>'+itemRows+'<div class="sep"></div><div class="line total"><span>TOTAL</span><span>'+e(money(order.total||0))+'</span></div>'+(order.notes?'<div class="sep"></div><div><b>Observaciones:</b> '+e(order.notes)+'</div>':'')+'<div class="sep"></div><div class="center">Comprobante interno · No reemplaza documento tributario</div><button onclick="window.print()">Imprimir</button><script>setTimeout(()=>window.print(),250)<\/script><style id="yummypro-mobile-sidebar-icon-scale-v2449">
-@media(max-width:800px){
-  #sideMenu .tab{
-    min-height:58px!important;
-    padding:5px 10px!important;
-    gap:12px!important;
-  }
-  #sideMenu .nav-icon{
-    width:46px!important;
-    height:46px!important;
-    flex:0 0 46px!important;
-    border-radius:12px!important;
-    display:grid!important;
-    place-items:center!important;
-  }
-  #sideMenu .nav-icon svg{
-    width:23px!important;
-    height:23px!important;
-    stroke-width:1.9!important;
-  }
-  #sideMenu .nav-label{
-    font-size:15px!important;
-    line-height:1.2!important;
-    font-weight:700!important;
-  }
-}
-</style></body></html>';
+ const html='<!doctype html><html><head><meta charset="utf-8"><title>Comprobante '+e(order.order_code)+'</title><style>@page{margin:4mm}body{font-family:Arial,sans-serif;width:72mm;max-width:100%;margin:0 auto;color:#000;font-size:12px}h1{text-align:center;font-size:18px;margin:0}.center{text-align:center}.sep{border-top:1px dashed #000;margin:8px 0}.line{display:flex;justify-content:space-between;gap:8px;margin:5px 0}.line span{flex:1}.total{font-size:16px;font-weight:700}button{width:100%;padding:10px;margin:12px 0}@media print{button{display:none}}</style></head><body><h1>'+e(r.name)+'</h1><div class="center">'+e(r.address||"")+'<br>'+e(r.whatsapp||"")+'</div><div class="sep"></div><b>COMPROBANTE DE CAJA</b><div>#'+e(order.order_code)+'</div><div>'+e(new Date(order.paid_at||order.created_at).toLocaleString("es-CL"))+'</div><div>Cliente: '+e(order.customer_name||"Cliente caja")+'</div><div>Cajero: '+e(cashier)+'</div><div>Pago: '+e(order.payment_method||"")+'</div><div class="sep"></div>'+itemRows+'<div class="sep"></div><div class="line total"><span>TOTAL</span><span>'+e(money(order.total||0))+'</span></div>'+(order.notes?'<div class="sep"></div><div><b>Observaciones:</b> '+e(order.notes)+'</div>':'')+'<div class="sep"></div><div class="center">Comprobante interno · No reemplaza documento tributario</div><button onclick="window.print()">Imprimir</button><script>setTimeout(()=>window.print(),250)<\/script></body></html>';
  const w=existingWindow||window.open("","_blank","width=420,height=720");if(!w)return toast("Permite ventanas emergentes para imprimir");w.document.open();w.document.write(html);w.document.close();
 }
 function cashPaymentBucket(method){
@@ -2395,7 +2395,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.49</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.50</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
