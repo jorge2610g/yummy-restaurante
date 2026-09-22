@@ -2241,7 +2241,7 @@ async function loadSubscriptionHistory(){
  if(!currentRestaurant)return;
  const box=document.getElementById("subscriptionPaymentHistory");
  if(box)box.innerHTML='<div class="billing-loading">Cargando historial…</div>';
- const {data,error}=await sb.from("subscription_payments").select("id,restaurant_id,plan_id,amount,status,created_at,paid_at,payment_type,provider,currency_code,mp_payment_id,mp_subscription_id,provider_order_id,provider_token,checkout_url,provider_customer_id,provider_subscription_id,provider_plan_id,provider_meta").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(50);
+ const {data,error}=await sb.from("subscription_payments").select("id,restaurant_id,plan_id,amount,status,created_at,paid_at,payment_type,provider,currency_code,mp_payment_id,mp_subscription_id,provider_order_id,provider_token,checkout_url,provider_customer_id,provider_subscription_id,provider_plan_id,provider_meta,billing_cycle,access_days,bonus_months").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(50);
  if(error){console.error("No se pudo cargar el historial de suscripciones",error);subscriptionPayments=[];if(box)box.innerHTML='<div class="item"><b>No se pudo cargar el historial</b><div class="mut">'+esc(error.message||"Intenta nuevamente.")+'</div></div>';return}
  subscriptionPayments=data||[];renderSubscriptionHistory();
 }
@@ -2300,7 +2300,7 @@ async function managePendingSubscriptionPayment(paymentId,action){
 function renderBillingSummary(){
  const box=document.getElementById("billingCurrentPlan");if(!box)return;
  const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));if(!r){box.innerHTML='<div class="billing-empty">No se pudo cargar la suscripción.</div>';return}
- const status=String(r.subscription_status||"trial").toLowerCase(),statusLabel=status==="trial"?"Prueba gratuita":status==="active"?"Suscripción activa":status==="suspended"?"Suscripción suspendida":"Suscripción vencida";
+ const status=String(r.subscription_status||"trial").toLowerCase(),statusLabel=status==="trial"?"Prueba gratuita":status==="active"?"Suscripción activa":status==="suspended"?"Suscripción suspendida":"Suscripción vencida",billingCycle=String(r.subscription_billing_cycle||"monthly");
  const expires=r.subscription_expires_at?new Date(r.subscription_expires_at):null,locale=r.locale||currentRestaurantConfig?.locale||"es-CL",days=expires?Math.max(0,Math.ceil((expires.getTime()-Date.now())/86400000)):null;
  const mpRecurring=String(r.mp_subscription_status||"").toLowerCase(),flowRecurring=String(r.flow_subscription_status||"").toLowerCase(),hasFlow=!!r.flow_subscription_id,hasMp=!!r.mp_subscription_id;
  const mpActive=hasMp&&["authorized","active"].includes(mpRecurring),mpPaused=hasMp&&mpRecurring==="paused",mpCancelled=hasMp&&["canceled","cancelled"].includes(mpRecurring);
@@ -2317,7 +2317,7 @@ function renderBillingSummary(){
    if(buttons.length)cancelActions='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">'+buttons.join("")+'</div><div class="mut" style="margin-top:8px;font-size:13px">'+(mpPaused?'La renovación está pausada. Puedes reactivarla cuando quieras.':'Al detener la renovación, conservarás el acceso hasta '+esc(until)+'.')+'</div>';
    else if(flowCancelScheduled||mpCancelled)cancelActions='<div class="item" style="margin-top:18px"><b>Renovación cancelada</b><div class="mut" style="margin-top:5px">No habrá más cobros. Mantienes el acceso hasta '+esc(until)+'.</div></div>';
  }
- box.innerHTML='<div class="billing-kicker">PLAN ACTUAL</div><div class="billing-current-name">'+esc(r.subscription_plan||"Plan YummyPro")+'</div><div class="billing-current-status '+(status==="active"||status==="trial"?"billing-status-success":status==="suspended"?"billing-status-danger":"billing-status-pending")+'">'+esc(statusLabel)+'</div><div class="billing-current-grid"><div><span>Vencimiento</span><b>'+esc(expires?expires.toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric"}):"Sin vencimiento")+'</b></div><div><span>Tiempo restante</span><b>'+esc(days==null?"—":days+" días")+'</b></div><div><span>Renovación automática</span><b>'+esc(recurringLabel)+'</b></div><div><span>Próximo cobro</span><b>'+esc(next)+'</b></div></div>'+cancelActions;
+ box.innerHTML='<div class="billing-kicker">PLAN ACTUAL</div><div class="billing-current-name">'+esc(r.subscription_plan||"Plan YummyPro")+'</div><div class="billing-current-status '+(status==="active"||status==="trial"?"billing-status-success":status==="suspended"?"billing-status-danger":"billing-status-pending")+'">'+esc(statusLabel)+'</div><div class="billing-current-grid"><div><span>Vencimiento</span><b>'+esc(expires?expires.toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric"}):"Sin vencimiento")+'</b></div><div><span>Tiempo restante</span><b>'+esc(days==null?"—":days+" días")+'</b></div><div><span>Periodo</span><b>'+esc(billingCycle==="annual"?"Anual":"Mensual")+'</b></div><div><span>Renovación automática</span><b>'+esc(recurringLabel)+'</b></div><div><span>Próximo cobro</span><b>'+esc(next)+'</b></div></div>'+cancelActions;
 }
 function renderBillingPaymentMethods(){
  const box=document.getElementById("billingPaymentMethods");if(!box)return;
@@ -3100,32 +3100,32 @@ function renderPlanPurchaseModal(){
  if(management)management.innerHTML=manage;
 }
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElementById("planCheckoutModal")?.classList.contains("open"))closePlanPurchaseModal()});
-async function paySubscriptionPlanOnce(id){
+async function paySubscriptionPlanOnce(id,billingCycle="monthly"){
  const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
  try{
   const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return toast("Tu sesión venció. Vuelve a iniciar sesión.");
   toast("Preparando pago único con Mercado Pago…");
-  const res=await fetch(SB_URL+"/functions/v1/create-subscription-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({plan_id:p.id,restaurant_id:currentRestaurant})});
+  const res=await fetch(SB_URL+"/functions/v1/create-subscription-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({plan_id:p.id,restaurant_id:currentRestaurant,billing_cycle:billingCycle})});
   const data=await res.json();if(!res.ok||!data?.init_point)return toast(data?.error||"No se pudo iniciar el pago");
   window.location.assign(data.init_point);
  }catch(e){console.error(e);toast("No se pudo conectar con Mercado Pago");}
 }
-async function paySubscriptionPlanFlow(id){
+async function paySubscriptionPlanFlow(id,billingCycle="monthly"){
  const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
  try{
   const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return toast("Tu sesión venció. Vuelve a iniciar sesión.");
   toast("Preparando pago con Flow…");
-  const res=await fetch(SB_URL+"/functions/v1/create-flow-subscription-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({plan_id:p.id,restaurant_id:currentRestaurant})});
+  const res=await fetch(SB_URL+"/functions/v1/create-flow-subscription-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({plan_id:p.id,restaurant_id:currentRestaurant,billing_cycle:billingCycle})});
   const data=await res.json();if(!res.ok||!data?.init_point)return toast(data?.error||"No se pudo iniciar el pago con Flow");
   window.location.assign(data.init_point);
  }catch(e){console.error(e);toast("No se pudo conectar con Flow")}
 }
-async function payFlowRecurringSubscription(id){
+async function payFlowRecurringSubscription(id,billingCycle="monthly"){
  const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
  try{
   const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return toast("Tu sesión venció. Vuelve a iniciar sesión.");
   toast("Preparando suscripción automática con Flow…");
-  const res=await fetch(SB_URL+"/functions/v1/create-flow-recurring-subscription",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({plan_id:p.id,restaurant_id:currentRestaurant})});
+  const res=await fetch(SB_URL+"/functions/v1/create-flow-recurring-subscription",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({plan_id:p.id,restaurant_id:currentRestaurant,billing_cycle:billingCycle})});
   const data=await res.json();if(!res.ok)return toast(data?.error||"No se pudo crear la suscripción con Flow");
   if(data?.init_point){window.location.assign(data.init_point);return}
   if(data?.subscribed){toast(data.status==="approved"?"Suscripción Flow activada.":"Suscripción Flow creada; esperando confirmación del primer cobro.");await refreshBillingCenter();return}
@@ -3153,12 +3153,12 @@ function showFlowReturnMessage(){
  toast(labels[state]||"Estado de Flow actualizado.");
  params.delete("flow");params.delete("tab");const clean=location.pathname+(params.toString()?"?"+params.toString():"")+location.hash;history.replaceState(null,"",clean);
 }
-async function paySubscriptionPlan(id){
+async function paySubscriptionPlan(id,billingCycle="monthly"){
  const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
  try{
   const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return toast("Tu sesión venció. Vuelve a iniciar sesión.");
   toast("Preparando suscripción automática con Mercado Pago…");
-  const res=await fetch(SB_URL+"/functions/v1/create-recurring-subscription",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({plan_id:p.id,restaurant_id:currentRestaurant})});
+  const res=await fetch(SB_URL+"/functions/v1/create-recurring-subscription",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({plan_id:p.id,restaurant_id:currentRestaurant,billing_cycle:billingCycle})});
   const data=await res.json();if(!res.ok||!data?.init_point)return toast(data?.error||"No se pudo iniciar la suscripción");
   window.location.assign(data.init_point);
  }catch(e){console.error(e);toast("No se pudo crear la suscripción con Mercado Pago");}
@@ -3214,7 +3214,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.66</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.67</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
