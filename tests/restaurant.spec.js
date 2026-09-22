@@ -34,3 +34,5 @@ test('mantiene módulos permitidos juntos sin huecos',async({page})=>{await page
 test('no renderiza el contador dentro de Plan y facturación',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('subscriptionBannerShouldShow');expect(html).toContain('activeTab!=="plans"');expect(html).toContain('banner.innerHTML=""')});
 
 test('usa la misma escala visual del menú admin',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('restaurant-admin-sidebar-scale-v2464');expect(html).toContain('font-size:15px!important;font-weight:720!important');expect(html).toContain('width:44px!important;height:44px!important')});
+
+test('panel restaurante cerrado copia referencia admin sin barra visible',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('restaurant-collapsed-admin-reference-v2465');expect(html).toContain('scrollbar-width:none');expect(html).toContain('width:62px!important')});
