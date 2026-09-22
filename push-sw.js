@@ -1,6 +1,6 @@
-const YUMMYPRO_CACHE="yummypro-pwa-v2504";
+const YUMMYPRO_CACHE="yummypro-pwa-v2506";
 const YUMMYPRO_OFFLINE_URL="/offline.html";
-const YUMMYPRO_CORE=[YUMMYPRO_OFFLINE_URL,"/manifest.webmanifest","/pwa-icon.svg"];
+const YUMMYPRO_CORE=[YUMMYPRO_OFFLINE_URL,"/manifest.webmanifest","/pwa-icon.svg","/icon-192.png","/icon-512.png","/apple-touch-icon.png"];
 
 self.addEventListener("install",event=>{
  event.waitUntil(caches.open(YUMMYPRO_CACHE).then(cache=>cache.addAll(YUMMYPRO_CORE)));
@@ -26,7 +26,7 @@ self.addEventListener("fetch",event=>{
 });
 self.addEventListener("push",event=>{
  let data={};try{data=event.data?.json()||{}}catch{data={body:event.data?.text()||"Tienes una actualización."}}
- event.waitUntil(self.registration.showNotification(data.title||"YummyPro",{body:data.body||"Tienes una actualización.",icon:"/pwa-icon.svg",badge:"/pwa-icon.svg",tag:data.tag||"yummypro-notification",renotify:true,data:{url:data.url||"/panel/"}}));
+ event.waitUntil(self.registration.showNotification(data.title||"YummyPro",{body:data.body||"Tienes una actualización.",icon:"/icon-192.png",badge:"/icon-192.png",tag:data.tag||"yummypro-notification",renotify:true,data:{url:data.url||"/panel/"}}));
 });
 self.addEventListener("notificationclick",event=>{
  event.notification.close();

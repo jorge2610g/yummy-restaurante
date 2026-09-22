@@ -49,3 +49,5 @@ for(const marker of ['pwaNetworkStatus','setupYummyProNetworkStatus','Sin conexi
 for(const marker of ['pwaUpdateBanner','Nueva versión disponible','applyYummyProUpdate','watchYummyProServiceWorker','Actualizar ahora'])if(!panel.includes(marker))throw new Error('panel/index.html: falta actualización PWA '+marker);
 
 for(const marker of ['pwaNotificationBtn','activateYummyProNotifications','syncRestaurantPushIfGranted','refreshYummyProNotificationButton'])if(!panel.includes(marker))throw new Error('panel/index.html: falta integración de notificaciones PWA '+marker);
+
+for(const marker of ['apple-touch-icon.png','icon-192.png','icon-512.png'])if(!panel.includes(marker)&&marker==='apple-touch-icon.png')throw new Error('panel/index.html: falta icono iOS '+marker);
