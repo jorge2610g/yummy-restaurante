@@ -1,0 +1,29 @@
+{
+  "id": "/panel/",
+  "name": "YummyPro Restaurante",
+  "short_name": "YummyPro",
+  "description": "Panel de gestión para restaurantes YummyPro",
+  "lang": "es",
+  "start_url": "/panel/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
+  "orientation": "any",
+  "background_color": "#07111f",
+  "theme_color": "#07111f",
+  "categories": [
+    "business",
+    "food"
+  ],
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
