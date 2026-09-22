@@ -20,3 +20,5 @@ test('al elegir una sección se cierra el menú y su fondo',async({page})=>{awai
 test('login de restaurante con cuenta de prueba',async({page})=>{test.skip(!process.env.RESTAURANT_TEST_EMAIL||!process.env.RESTAURANT_TEST_PASSWORD,'Credenciales de prueba no configuradas');await page.goto('/panel/');await page.locator('#email').fill(process.env.RESTAURANT_TEST_EMAIL);await page.locator('#password').fill(process.env.RESTAURANT_TEST_PASSWORD);await page.getByRole('button',{name:/Ingresar/i}).click();await expect(page.locator('#app')).toBeVisible({timeout:15000})});
 
 test('incluye Flow Chile en Plan y facturación',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('paySubscriptionPlanFlow');expect(html).toContain('create-flow-subscription-payment');expect(html).toContain('subscription-flow-settings')});
+
+test('reconcilia suscripciones de Mercado Pago al cargar facturación',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('syncMercadoPagoSubscription');expect(html).toContain('sync-mercadopago-subscription')});
