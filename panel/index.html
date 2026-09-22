@@ -1694,7 +1694,8 @@ function resetPeriodToToday(tab){
  activatePeriodButtons(config[2],"today");
 }
 const countryByCode=code=>platformCountries.find(c=>c.code===code)||{code:"CL",currency_code:"CLP",locale:"es-CL",timezone:"America/Santiago",mercadopago_enabled:true};
-const money=(n,currency,locale)=>{const cfg=currentRestaurantConfig||countryByCode("CL"),cur=currency||cfg.currency_code||"CLP",loc=locale||cfg.locale||"es-CL";return new Intl.NumberFormat(loc,{style:"currency",currency:cur,maximumFractionDigits:["CLP","COP","PYG"].includes(cur)?0:2}).format(Number(n||0))};
+const currencyDigits=cur=>{try{return new Intl.NumberFormat("en",{style:"currency",currency:String(cur||"USD").toUpperCase()}).resolvedOptions().maximumFractionDigits}catch(_){return 2}};
+const money=(n,currency,locale)=>{const cfg=currentRestaurantConfig||countryByCode("CL"),cur=String(currency||cfg.currency_code||"CLP").toUpperCase(),loc=locale||cfg.locale||"es-CL",value=Number(n||0),digits=currencyDigits(cur),fractional=Math.abs(value-Math.trunc(value))>1e-9,shown=fractional?digits:0;return new Intl.NumberFormat(loc,{style:"currency",currency:cur,minimumFractionDigits:shown,maximumFractionDigits:shown}).format(value)};
 window.togglePassword=function(id,btn){const el=document.getElementById(id);if(!el)return false;const show=el.getAttribute("type")==="password";el.setAttribute("type",show?"text":"password");btn.textContent=show?"Ocultar":"Ver";btn.setAttribute("aria-pressed",show?"true":"false");return false}
 function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2500)}
 async function loadPlatformCountries(){const {data,error}=await sb.from("platform_countries").select("*").eq("active",true).order("sort_order");if(error)return toast(error.message);platformCountries=data||[];if(window.scountry)scountry.innerHTML=platformCountries.map(c=>`<option value="${c.code}">${esc(c.name)} · ${c.currency_code}</option>`).join("")}
@@ -2707,7 +2708,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.54</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.55</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
