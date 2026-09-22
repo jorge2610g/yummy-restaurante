@@ -1002,6 +1002,94 @@ html[data-theme="light"] .side-menu .tab.active .nav-icon{
     background:#aab3bf!important;
   }
 }
+</style><style id="yummypro-sidebar-scroll-mask-v2445">
+@media(min-width:801px){
+  .side-menu{
+    overflow:hidden!important;
+    scrollbar-width:none!important;
+  }
+  .side-menu::-webkit-scrollbar{display:none!important}
+
+  .side-menu .sidebar-brand{
+    position:relative!important;
+    top:auto!important;
+    z-index:5!important;
+    flex:0 0 auto!important;
+    margin:0!important;
+    background:var(--card)!important;
+    border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)!important;
+  }
+  .side-menu .sidebar-brand::after{
+    content:"";
+    position:absolute;
+    left:-8px;
+    right:-8px;
+    bottom:-10px;
+    height:10px;
+    pointer-events:none;
+    background:linear-gradient(to bottom,var(--card),transparent);
+  }
+
+  .side-menu .side-menu-title{
+    position:relative!important;
+    z-index:4!important;
+    flex:0 0 auto!important;
+    background:var(--card)!important;
+    margin-top:0!important;
+  }
+
+  .side-menu .tabs{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    scrollbar-width:thin!important;
+    scrollbar-color:rgba(255,255,255,.10) transparent!important;
+    padding-right:3px!important;
+    -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 8px,#000 calc(100% - 4px),transparent 100%);
+    mask-image:linear-gradient(to bottom,transparent 0,#000 8px,#000 calc(100% - 4px),transparent 100%);
+  }
+
+  .side-menu .tabs::-webkit-scrollbar{
+    width:1px!important;
+    height:1px!important;
+  }
+  .side-menu .tabs::-webkit-scrollbar-track{
+    background:transparent!important;
+  }
+  .side-menu .tabs::-webkit-scrollbar-thumb{
+    background:rgba(255,255,255,.10)!important;
+    border-radius:999px!important;
+  }
+  .side-menu .tabs::-webkit-scrollbar-thumb:hover{
+    background:rgba(255,255,255,.16)!important;
+  }
+
+  html[data-theme="light"] .side-menu .sidebar-brand,
+  html[data-theme="light"] .side-menu .side-menu-title{
+    background:var(--card)!important;
+  }
+  html[data-theme="light"] .side-menu .tabs{
+    scrollbar-color:rgba(20,35,55,.12) transparent!important;
+  }
+  html[data-theme="light"] .side-menu .tabs::-webkit-scrollbar-thumb{
+    background:rgba(20,35,55,.12)!important;
+  }
+  html[data-theme="light"] .side-menu .tabs::-webkit-scrollbar-thumb:hover{
+    background:rgba(20,35,55,.18)!important;
+  }
+
+  .side-menu.collapsed{
+    display:flex!important;
+    flex-direction:column!important;
+  }
+  .side-menu:not(.collapsed){
+    display:flex!important;
+    flex-direction:column!important;
+  }
+}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -2050,7 +2138,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.44</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.45</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
