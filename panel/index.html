@@ -596,6 +596,8 @@ html[data-theme="light"] .admin-form-card::-webkit-scrollbar-thumb{background:#9
  .settings-footer-save{position:sticky;bottom:8px;z-index:20}
  .settings-footer-save .full{box-shadow:0 8px 24px var(--shadow)}
 }
+</style><style id="yummypro-settings-tabs-fixes-v2441">
+.settings-panel[hidden],.settings-tab[hidden],.settings-footer-save[hidden]{display:none!important}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -794,7 +796,7 @@ const money=(n,currency,locale)=>{const cfg=currentRestaurantConfig||countryByCo
 window.togglePassword=function(id,btn){const el=document.getElementById(id);if(!el)return false;const show=el.getAttribute("type")==="password";el.setAttribute("type",show?"text":"password");btn.textContent=show?"Ocultar":"Ver";btn.setAttribute("aria-pressed",show?"true":"false");return false}
 function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2500)}
 async function loadPlatformCountries(){const {data,error}=await sb.from("platform_countries").select("*").eq("active",true).order("sort_order");if(error)return toast(error.message);platformCountries=data||[];if(window.scountry)scountry.innerHTML=platformCountries.map(c=>`<option value="${c.code}">${esc(c.name)} · ${c.currency_code}</option>`).join("")}
-function applyCountrySelection(code){const c=countryByCode(code);if(window.scurrency)scurrency.value=c.currency_code;if(window.stimezone)stimezone.value=c.timezone;const mp=document.getElementById("restaurantMpSettings");if(mp)mp.style.display=c.mercadopago_enabled?"":"none";if(window.altMethodType&&Array.isArray(c.alternative_payments)&&c.alternative_payments.length)altMethodType.value=c.alternative_payments[0];if(window.altMethodType)updateAlternativePaymentForm()}
+function applyCountrySelection(code){const c=countryByCode(code);if(window.scurrency)scurrency.value=c.currency_code;if(window.stimezone)stimezone.value=c.timezone;const mp=document.getElementById("restaurantMpSettings"),mpTab=document.querySelector('.settings-tab[data-settings-tab="mercadopago"]');if(mp)mp.hidden=!c.mercadopago_enabled;if(mpTab)mpTab.hidden=!c.mercadopago_enabled;if(!c.mercadopago_enabled&&currentSettingsPanel==="mercadopago")showSettingsPanel("country");if(window.altMethodType&&Array.isArray(c.alternative_payments)&&c.alternative_payments.length)altMethodType.value=c.alternative_payments[0];if(window.altMethodType)updateAlternativePaymentForm()}
 const qrPaymentTypes=new Set(["qr_bank","yape","plin","pix","yappy","mobile_payment"]);
 function updateAlternativePaymentForm(){const isQr=qrPaymentTypes.has(altMethodType.value);document.querySelectorAll(".alt-qr-field").forEach(x=>x.hidden=!isQr);document.querySelectorAll(".alt-transfer-field").forEach(x=>x.hidden=isQr);document.querySelectorAll(".alt-account-field").forEach(x=>x.hidden=false);if(!altMethodLabel.value)altMethodLabel.placeholder=isQr?"Ej: Pago QR Banco Nacional":"Ej: Transferencia Banco Nacional"}
 async function uploadRestaurantAsset(file,kind){if(!currentRestaurant||!file)throw new Error("Selecciona una imagen");if(!["image/jpeg","image/png","image/webp"].includes(file.type))throw new Error("Usa una imagen JPG, PNG o WEBP");if(file.size>5*1024*1024)throw new Error("La imagen no puede superar 5 MB");const ext=({"image/jpeg":"jpg","image/png":"png","image/webp":"webp"})[file.type],path=currentRestaurant+"/"+kind+"-"+Date.now()+"."+ext;const {error}=await sb.storage.from("restaurant-assets").upload(path,file,{cacheControl:"3600",upsert:false,contentType:file.type});if(error)throw error;return sb.storage.from("restaurant-assets").getPublicUrl(path).data.publicUrl}
@@ -1596,11 +1598,14 @@ function updateDeliveryZone(index,key,value){const zones=getDeliveryZones(),n=Nu
 function removeDeliveryZone(index){const zones=getDeliveryZones();zones.splice(index,1);setDeliveryZones(zones)}
 let currentSettingsPanel="general";
 function showSettingsPanel(name,button){
- currentSettingsPanel=name||"general";
+ const target=document.querySelector('.settings-panel[data-settings-panel="'+(name||"general")+'"]');
+ currentSettingsPanel=target&&!target.hidden?(name||"general"):"general";
  document.querySelectorAll(".settings-tab").forEach(x=>{const active=x.dataset.settingsTab===currentSettingsPanel;x.classList.toggle("active",active);x.setAttribute("aria-selected",String(active))});
- document.querySelectorAll(".settings-panel").forEach(x=>x.classList.toggle("active",x.dataset.settingsPanel===currentSettingsPanel));
+ document.querySelectorAll(".settings-panel").forEach(x=>x.classList.toggle("active",x.dataset.settingsPanel===currentSettingsPanel&&!x.hidden));
  const activeBtn=button||document.querySelector('.settings-tab[data-settings-tab="'+currentSettingsPanel+'"]');
  activeBtn?.scrollIntoView?.({behavior:"smooth",block:"nearest",inline:"center"});
+ const footer=document.querySelector(".settings-footer-save");
+ if(footer)footer.hidden=!["general","schedule","country","brand","delivery"].includes(currentSettingsPanel);
  try{localStorage.setItem("yummy_settings_panel",currentSettingsPanel)}catch(_){}
 }
 function restoreSettingsPanel(){
