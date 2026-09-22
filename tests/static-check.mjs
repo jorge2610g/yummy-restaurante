@@ -33,3 +33,5 @@ for(const marker of ['Comprar ','Pago único','Suscripción automática','Pagar 
 for(const marker of ['sidebar-no-gaps-v2462','align-content:start','grid-auto-rows:max-content','syncSidebarGroupVisibility'])if(!panel.includes(marker))throw new Error('panel/index.html: falta compactación del menú lateral '+marker);
 
 for(const marker of ['subscriptionBannerShouldShow','activeTab!=="plans"','banner.innerHTML=""','display","none","important"'])if(!panel.includes(marker))throw new Error('panel/index.html: falta prevención de flash del contador '+marker);
+
+for(const marker of ['restaurant-admin-sidebar-scale-v2464','#sideMenu .nav-label{font-size:15px!important;font-weight:720!important','#sideMenu .nav-icon{width:44px!important;height:44px!important','#sideMenu .tab{width:100%!important;height:56px!important'])if(!panel.includes(marker))throw new Error('panel/index.html: falta escala del menú igual al admin '+marker);
