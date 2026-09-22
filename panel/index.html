@@ -2803,9 +2803,11 @@ function isOnlineKitchenNewForPrint(order){
  return source==="online"&&payment==="approved"&&["mercado pago","qr bolivia"].includes(method)&&["nuevo","recibido"].includes(status);
 }
 function isLocalKitchenPreparationForPrint(order){
- const source=String(order?.order_source||"").trim().toLowerCase();
- const status=String(order?.status||"").trim().toLowerCase();
- return ["waiter","table_qr"].includes(source)&&status==="preparacion";
+ const source=String(order?.order_source||"").trim().toLowerCase(),status=String(order?.status||"").trim().toLowerCase(),method=String(order?.payment_method||"").trim().toLowerCase(),paid=String(order?.payment_status||"").trim().toLowerCase()==="approved";
+ if(status!=="preparacion")return false;
+ if(source==="waiter")return true;
+ if(source==="table_qr")return !["mercado pago","qr bolivia"].includes(method)||paid;
+ return false;
 }
 async function maybeAutoPrintKitchenArrival(order,{eventType="",old={}}={}){
  if(localStorage.getItem("restaurant_auto_print")!=="1"||!canReceiveKitchenNewAlerts()||!order?.id)return;
@@ -2824,8 +2826,8 @@ async function maybeAutoPrintKitchenArrival(order,{eventType="",old={}}={}){
   if(!eventType)shouldPrint=fresh;
   else if(eventType==="INSERT")shouldPrint=true;
   else{
-   const oldStatus=String(old?.status||"").trim().toLowerCase();
-   shouldPrint=fresh&&["nuevo","recibido"].includes(oldStatus);
+   const oldStatus=String(old?.status||"").trim().toLowerCase(),source=String(order?.order_source||"").trim().toLowerCase(),method=String(order?.payment_method||"").trim().toLowerCase(),onlineQr=source==="table_qr"&&["mercado pago","qr bolivia"].includes(method),oldPaid=String(old?.payment_status||"").trim().toLowerCase();
+   shouldPrint=onlineQr?fresh&&oldPaid!=="approved"&&String(order?.payment_status||"").trim().toLowerCase()==="approved":fresh&&["nuevo","recibido"].includes(oldStatus);
   }
  }
 
@@ -4182,7 +4184,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v2.4.95</footer></main></div><script>
+</script><footer class="admin-version">Versión v2.4.96</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
