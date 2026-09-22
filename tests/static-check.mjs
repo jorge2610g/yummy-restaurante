@@ -22,6 +22,6 @@ for(const marker of ['currencyDigits','minimumFractionDigits:shown','maximumFrac
 
 for(const marker of ['create-flow-subscription-payment','subscription-flow-settings','paySubscriptionPlanFlow','Pagar con Flow','flowPaymentConfigured','showFlowReturnMessage'])if(!panel.includes(marker))throw new Error('panel/index.html: falta integración Flow '+marker);
 
-for(const marker of ['sync-mercadopago-subscription','syncMercadoPagoSubscription','await Promise.allSettled([loadSubscriptionExchangeRates(),syncMercadoPagoSubscription()])'])if(!panel.includes(marker))throw new Error('panel/index.html: falta reconciliación Mercado Pago '+marker);
+for(const marker of ['sync-mercadopago-subscription','syncMercadoPagoSubscription','syncFlowSubscription','sync-flow-subscription'])if(!panel.includes(marker))throw new Error('panel/index.html: falta reconciliación de suscripciones '+marker);
 
 for(const marker of ['manage-flow-pending-payment','create-flow-recurring-subscription','payFlowRecurringSubscription','Suscripción automática con Flow','sync-flow-subscription','manageFlowPendingPayment'])if(!panel.includes(marker))throw new Error('panel/index.html: falta Flow recurrente/cancelación '+marker);
