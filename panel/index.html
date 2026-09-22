@@ -2582,7 +2582,7 @@ function startKitchenNewOrderReminderLoop(){
  setTimeout(checkKitchenNewOrderReminders,1800);
  kitchenNewReminderTimer=setInterval(checkKitchenNewOrderReminders,30000);
 }
-function isApprovedMercadoPagoOrder(row)function isApprovedMercadoPagoOrder(row){const approved=String(row?.payment_status||"").trim().toLowerCase()==="approved",source=String(row?.order_source||"online").toLowerCase(),method=String(row?.payment_method||"").trim().toLowerCase();if(source==="table_qr")return method==="mercado pago"?approved:true;return approved&&source==="online"}
+function isApprovedMercadoPagoOrder(row){const approved=String(row?.payment_status||"").trim().toLowerCase()==="approved",source=String(row?.order_source||"online").toLowerCase(),method=String(row?.payment_method||"").trim().toLowerCase();if(source==="table_qr")return method==="mercado pago"?approved:true;return approved&&source==="online"}
 function startRestaurantOrderRealtime(){
  if(restaurantOrdersChannel){sb.removeChannel(restaurantOrdersChannel);restaurantOrdersChannel=null;}
  if(!currentRestaurant)return;
@@ -2645,7 +2645,6 @@ async function loadKitchen(){
  ]);
  if(error)return toast(error.message);
  const isOnlineNew=o=>String(o.order_source||"").toLowerCase()==="online"&&String(o.payment_status||"").toLowerCase()==="approved"&&String(o.payment_method||"").trim().toLowerCase()==="mercado pago"&&["nuevo","recibido"].includes(String(o.status||"").toLowerCase());
- const isLocalKitchen=o=>["waiter","table_qr"].includes(String(o.order_source||"").toLowerCase())&&String(o.payment_status||"").toLowerCase()!=="approved"||String(o.order_source||"").toLowerCase()==="table_qr"&&String(o.payment_status||"").toLowerCase()==="approved";
  const rows=(data||[]).filter(o=>isOnlineNew(o)||String(o.status||"").toLowerCase()==="preparacion"||String(o.status||"").toLowerCase()==="listo").filter(o=>{
    if(String(o.status||"").toLowerCase()==="preparacion"||String(o.status||"").toLowerCase()==="listo"){
     const source=String(o.order_source||"").toLowerCase();
