@@ -3357,9 +3357,7 @@ async function setOrderStatus(id,status){
  }
  if(document.getElementById("orders")?.classList.contains("active"))await loadOrders();
  if(document.getElementById("kitchen")?.classList.contains("active"))await loadKitchen();
- if(status!=="cancelado"&&status!=="recibido"&&["recibido","nuevo"].includes(previousStatus)&&localStorage.getItem("restaurant_auto_print")==="1"){
-  setTimeout(()=>printOrderCommand(id),250);
- }
+
 }
 async function searchRestaurantAddress(){
  const input=document.getElementById("smapaddress"),st=document.getElementById("smapstatus");
