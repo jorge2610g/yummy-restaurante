@@ -3054,7 +3054,7 @@ function renderPlanPurchaseModal(){
  const cfg=currentRestaurantConfig||countryByCode("CL"),country=countryByCode(cfg.country_code||"CL"),restaurant=restaurants.find(x=>Number(x.id)===Number(currentRestaurant)),labels=planCheckoutModuleLabels();
  const price=planPriceInfo(p,planCheckoutCycle),localPrice=Number.isFinite(price.amount)&&price.amount>0?money(price.amount,price.currency,cfg.locale):"Precio por confirmar",usd=Number.isFinite(price.usd)&&price.usd>0?new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(price.usd):"";
  const annual=planCheckoutCycle==="annual",accessDays=annual?Number(p.annual_days||365):Number(p.days||30),bonus=annual?Number(p.annual_bonus_months||0):0,charged=annual?planChargedMonths(p):1;
- const modules=Array.isArray(p.modules)?p.modules:[],isChile=String(country.code||"CL")==="CL",canMp=!!country.mercadopago_enabled&&isChile&&!adminPreviewMode,canFlow=flowPaymentConfigured&&isChile&&!adminPreviewMode,isCurrent=subscriptionIsUsable(restaurant)&&Number(restaurant?.subscription_plan_id)===Number(p.id);
+ const modules=Array.isArray(p.modules)?p.modules:[],isChile=String(country.code||"CL")==="CL",canMp=!!country.mercadopago_enabled&&isChile&&!adminPreviewMode,canFlow=flowPaymentConfigured&&isChile&&!adminPreviewMode&&!annual,isCurrent=subscriptionIsUsable(restaurant)&&Number(restaurant?.subscription_plan_id)===Number(p.id);
  const mpStatus=String(restaurant?.mp_subscription_status||"").toLowerCase(),mpActive=!!restaurant?.mp_subscription_id&&["authorized","active"].includes(mpStatus),mpPaused=!!restaurant?.mp_subscription_id&&mpStatus==="paused";
  const flowStatus=String(restaurant?.flow_subscription_status||"").toLowerCase(),flowActive=!!restaurant?.flow_subscription_id&&["active","1"].includes(flowStatus),flowCancelScheduled=!!restaurant?.flow_subscription_id&&flowStatus==="cancel_at_period_end";
  const locale=cfg.locale||"es-CL",renewal=new Date();renewal.setDate(renewal.getDate()+accessDays);
@@ -3091,7 +3091,8 @@ function renderPlanPurchaseModal(){
      else html+=planProviderButton("flow","Suscribirme con Flow","Renovación automática "+(annual?"anual":"mensual")+" mediante Flow","closePlanPurchaseModal();payFlowRecurringSubscription("+Number(p.id)+",'"+planCheckoutCycle+"')");
    }
  }
- if(!(canMp||canFlow))html='<a class="billing-whatsapp-link" target="_blank" rel="noopener" href="https://wa.me/56982807639?text=Hola%2C%20necesito%20activar%20mi%20plan%20de%20YummyPro.">Solicitar activación por WhatsApp</a>';
+ if(annual&&flowPaymentConfigured&&!canMp)html+='<div class="plan-checkout-management"><strong>Flow anual</strong>Por seguridad, Flow queda disponible por ahora solo para mensual mientras terminamos su ciclo anual.</div>';
+ if(!(canMp||canFlow))html+='<a class="billing-whatsapp-link" target="_blank" rel="noopener" href="https://wa.me/56982807639?text=Hola%2C%20necesito%20activar%20mi%20plan%20de%20YummyPro.">Solicitar activación por WhatsApp</a>';
  if(providers)providers.innerHTML=html;
  let manage="";
  if(isCurrent&&mpPaused)manage='<div class="plan-checkout-management"><strong>Renovación de Mercado Pago pausada</strong>Puedes reactivarla en cualquier momento desde este mismo pop-up. Mientras esté pausada no se generan nuevos cobros.</div>';
