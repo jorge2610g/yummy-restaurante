@@ -2525,7 +2525,7 @@ function startRestaurantOrderRealtime(){
    if(document.getElementById("pos")?.classList.contains("active"))await loadPosOrders();
    if(document.getElementById("kitchen")?.classList.contains("active"))await loadKitchen();
    const tableQrVisible=row.order_source==="table_qr"&&(String(row.payment_method||"").trim().toLowerCase()!=="mercado pago"||String(row.payment_status||"").trim().toLowerCase()==="approved");
-   if(document.getElementById("cash")?.classList.contains("active")&&(tableQrVisible||row.status==="entregado"))await loadCash();
+   if(document.getElementById("cash")?.classList.contains("active")&&(tableQrVisible||row.status==="entregado")){await loadCash();if(document.getElementById("cashSalesHistoryModal")?.classList.contains("open"))await loadCashPaidOrders();}
   }).subscribe();
 }
 let currentOrderStatusFilter="all",currentOrderDateFilter="today";
@@ -2904,7 +2904,7 @@ async function payPosOrder(method){
  const {error}=await sb.rpc("pay_waiter_order",{p_order_id:editingPosOrderId,p_payment_method:method});
  if(error)return toast(error.message);
  closePosOrderModal();
- await Promise.allSettled([loadPosOrders(),loadCash()]);
+ await loadPosOrders();
  posOrderView="completed";document.querySelectorAll("[data-pos-view]").forEach(btn=>btn.classList.toggle("active",btn.dataset.posView==="completed"));renderPosOrders();
  toast("✓ Cuenta pagada con "+method+". Pedido movido a culminados.");
 }
@@ -3323,7 +3323,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.68</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.69</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
