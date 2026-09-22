@@ -26,4 +26,4 @@ for(const marker of ['sync-mercadopago-subscription','syncMercadoPagoSubscriptio
 
 for(const marker of ['manage-flow-pending-payment','create-flow-recurring-subscription','payFlowRecurringSubscription','Suscripción automática con Flow','sync-flow-subscription','manageFlowPendingPayment'])if(!panel.includes(marker))throw new Error('panel/index.html: falta Flow recurrente/cancelación '+marker);
 
-for(const marker of ['cancel-recurring-subscription','cancelRecurringSubscription','Cancelar suscripción Flow','Cancelar suscripción Mercado Pago','Renovación cancelada'])if(!panel.includes(marker))throw new Error('panel/index.html: falta cancelación de suscripción '+marker);
+for(const marker of ['cancel-recurring-subscription','manageRecurringSubscription','Cancelar suscripción Flow','Pausar renovación Mercado Pago','Reactivar suscripción Mercado Pago','Renovación cancelada'])if(!panel.includes(marker))throw new Error('panel/index.html: falta gestión de suscripción '+marker);
