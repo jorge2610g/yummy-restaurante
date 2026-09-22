@@ -475,6 +475,69 @@ html,body{max-width:100%;overflow-x:hidden}
  .sidebar-collapse-btn{display:none!important}
  .nav-group-label{font-size:10px;letter-spacing:.13em;font-weight:900;color:var(--mut);padding:12px 10px 5px}
 }
+</style><style id="yummypro-sidebar-scroll-responsive-restaurant-v2440">
+html,body{overflow-x:hidden!important}
+html{scrollbar-width:thin;scrollbar-color:#111827 transparent}
+body::-webkit-scrollbar,.side-menu::-webkit-scrollbar,.product-modal-card::-webkit-scrollbar,.admin-form-card::-webkit-scrollbar{width:3px!important;height:3px!important}
+body::-webkit-scrollbar-track,.side-menu::-webkit-scrollbar-track,.product-modal-card::-webkit-scrollbar-track,.admin-form-card::-webkit-scrollbar-track{background:transparent!important}
+body::-webkit-scrollbar-thumb,.side-menu::-webkit-scrollbar-thumb,.product-modal-card::-webkit-scrollbar-thumb,.admin-form-card::-webkit-scrollbar-thumb{background:#090d13!important;border-radius:999px!important}
+html[data-theme="light"]{scrollbar-color:#9aa7b5 transparent}
+html[data-theme="light"] body::-webkit-scrollbar-thumb,
+html[data-theme="light"] .side-menu::-webkit-scrollbar-thumb,
+html[data-theme="light"] .product-modal-card::-webkit-scrollbar-thumb,
+html[data-theme="light"] .admin-form-card::-webkit-scrollbar-thumb{background:#9aa7b5!important}
+
+@media(min-width:801px){
+ .wrap{width:100%!important;max-width:none!important;padding:14px 18px 30px!important;overflow-x:hidden!important}
+ .panel-layout{
+   width:100%!important;max-width:100%!important;min-width:0!important;
+   grid-template-columns:240px minmax(0,1fr)!important;gap:14px!important;
+   align-items:start!important;
+ }
+ .panel-layout.sidebar-collapsed{grid-template-columns:62px minmax(0,1fr)!important}
+ .side-menu{
+   position:sticky!important;top:10px!important;
+   width:240px!important;max-width:240px!important;min-width:0!important;
+   height:auto!important;max-height:calc(100dvh - 20px)!important;
+   padding:9px 7px 16px!important;box-sizing:border-box!important;
+   overflow-y:auto!important;overflow-x:hidden!important;
+   scrollbar-width:thin!important;scrollbar-color:#090d13 transparent!important;
+   scrollbar-gutter:stable both-edges;
+ }
+ .side-menu.collapsed{width:62px!important;max-width:62px!important}
+ .side-menu .tabs{width:100%!important;min-width:0!important;padding-bottom:12px!important}
+ .side-menu .tab{width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+ .side-menu .nav-icon{flex:0 0 36px!important;width:36px!important}
+ .side-menu.collapsed .nav-icon{flex-basis:36px!important;width:36px!important}
+ .side-menu.collapsed .sidebar-brand-mark{flex-basis:36px!important;width:36px!important;height:36px!important}
+ .side-menu.collapsed .sidebar-collapse-btn{right:0!important}
+ .panel-content{width:100%!important;max-width:100%!important;min-width:0!important;overflow-x:hidden!important}
+ .panel-content>.section,.panel-content>.card,.restaurant-control-grid,.restaurant-analytics,.restaurant-metrics{min-width:0!important;max-width:100%!important}
+ .card,.item,.restaurant-metric{min-width:0!important}
+}
+@media(max-width:800px){
+ body.mobile-menu-open{overflow:hidden!important}
+ .wrap{width:100%!important;max-width:100%!important;padding:12px!important;overflow-x:hidden!important}
+ .panel-layout{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important}
+ .side-menu{
+   position:fixed!important;left:0!important;top:0!important;bottom:0!important;z-index:1600!important;
+   width:min(86vw,320px)!important;max-width:min(86vw,320px)!important;
+   height:100dvh!important;max-height:100dvh!important;border-radius:0 18px 18px 0!important;
+   overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;
+   padding:14px 10px 24px!important;box-sizing:border-box!important;
+   scrollbar-width:thin!important;scrollbar-color:#090d13 transparent!important;
+ }
+ .side-menu .tabs{padding-bottom:32px!important}
+ .side-menu .tab{width:100%!important;max-width:100%!important}
+ .side-menu-backdrop.open{position:fixed!important;inset:0!important;z-index:1500!important;background:#0008!important}
+ .panel-content{width:100%!important;max-width:100%!important;min-width:0!important;overflow-x:hidden!important}
+ .restaurant-dashboard-hero{align-items:stretch!important;flex-direction:column!important}
+ .restaurant-metrics,.dashboard-ref-metrics{grid-template-columns:1fr!important}
+ .restaurant-control-grid,.restaurant-analytics{grid-template-columns:1fr!important}
+ .row{max-width:100%!important}
+ .card,.item{min-width:0!important;max-width:100%!important}
+ table{max-width:100%!important}
+}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -762,9 +825,9 @@ function toggleSideMenu(e){
   const collapsed=!m.classList.contains("collapsed");try{localStorage.setItem(RESTAURANT_SIDEBAR_STATE_KEY,collapsed?"1":"0")}catch(_){}
   applyRestaurantSidebarState(collapsed);return;
  }
- m.classList.toggle("open");if(b)b.classList.toggle("open",m.classList.contains("open"));
+ m.classList.toggle("open");const opened=m.classList.contains("open");if(b)b.classList.toggle("open",opened);document.body.classList.toggle("mobile-menu-open",opened);
 }
-function closeSideMenu(){if(window.matchMedia("(min-width:801px)").matches)return;const m=document.getElementById("sideMenu"),b=document.getElementById("sideMenuBackdrop");if(m)m.classList.remove("open");if(b)b.classList.remove("open")}
+function closeSideMenu(){if(window.matchMedia("(min-width:801px)").matches)return;const m=document.getElementById("sideMenu"),b=document.getElementById("sideMenuBackdrop");if(m)m.classList.remove("open");if(b)b.classList.remove("open");document.body.classList.remove("mobile-menu-open")}
 function closeSideMenuMobile(){if(window.matchMedia("(max-width:800px)").matches)closeSideMenu()}
 window.addEventListener("resize",restoreRestaurantSidebarState);
 requestAnimationFrame(restoreRestaurantSidebarState);
@@ -1420,7 +1483,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.39</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.40</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
