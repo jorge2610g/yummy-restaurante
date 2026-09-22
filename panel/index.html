@@ -1366,6 +1366,67 @@ html[data-theme="light"] .side-menu .tab.active .nav-icon{
 #plans .billing-pending-actions button{min-height:36px;padding:8px 11px;font-size:11px;font-weight:900;white-space:nowrap}
 @media(max-width:1050px){#plans .billing-history-row.has-actions{grid-template-columns:minmax(0,1fr) auto}.billing-pending-actions{grid-column:1/-1;justify-content:flex-start!important}}
 @media(max-width:520px){#plans .billing-pending-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}#plans .billing-pending-actions button{width:100%}}
+</style><style id="plan-checkout-modal-v2461">
+.plan-checkout-modal{display:none;position:fixed;inset:0;z-index:5000;align-items:center;justify-content:center;padding:22px}
+.plan-checkout-modal.open{display:flex}
+.plan-checkout-backdrop{position:absolute;inset:0;background:rgba(3,8,18,.78);backdrop-filter:blur(9px)}
+.plan-checkout-dialog{position:relative;z-index:1;width:min(980px,100%);max-height:94dvh;overflow:auto;border:1px solid color-mix(in srgb,var(--line) 78%,var(--a) 22%);border-radius:26px;background:linear-gradient(145deg,color-mix(in srgb,var(--card) 96%,#fff 4%),var(--card));box-shadow:0 34px 90px rgba(0,0,0,.48)}
+.plan-checkout-close{position:absolute;top:16px;right:16px;z-index:3;width:42px;height:42px;min-height:42px;padding:0;border-radius:50%;background:color-mix(in srgb,var(--item) 88%,transparent);color:var(--txt);border:1px solid var(--line);font-size:18px}
+.plan-checkout-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;padding:30px 34px 24px;border-bottom:1px solid var(--line);background:radial-gradient(circle at 88% 0,color-mix(in srgb,var(--a) 22%,transparent),transparent 40%)}
+.plan-checkout-eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:950;letter-spacing:.13em;color:var(--mut)}
+.plan-checkout-hero h2{margin:8px 0 6px;font-size:clamp(28px,4vw,42px)!important;letter-spacing:-.045em}
+.plan-checkout-hero p{margin:0;color:var(--mut);font-size:14px}
+.plan-checkout-price{text-align:right;white-space:nowrap}
+.plan-checkout-price strong{display:block;font-size:clamp(34px,5vw,50px);line-height:1;font-weight:950;letter-spacing:-.05em}
+.plan-checkout-price span{display:block;margin-top:7px;color:var(--mut);font-size:12px}
+.plan-checkout-body{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(340px,.92fr);gap:18px;padding:24px}
+.plan-checkout-panel{border:1px solid var(--line);border-radius:20px;padding:20px;background:color-mix(in srgb,var(--item) 65%,transparent)}
+.plan-checkout-panel h3{margin:0 0 6px;font-size:18px}
+.plan-checkout-panel>p{margin:0;color:var(--mut);font-size:13px;line-height:1.5}
+.plan-checkout-features{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:17px}
+.plan-checkout-feature{display:flex;align-items:flex-start;gap:8px;padding:11px;border:1px solid var(--line);border-radius:13px;background:color-mix(in srgb,var(--card) 82%,transparent);font-size:13px;font-weight:750;line-height:1.3}
+.plan-checkout-feature i{font-style:normal;color:#2dd4bf;font-weight:950}
+.plan-checkout-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:16px}
+.plan-checkout-summary>div{padding:12px;border:1px solid var(--line);border-radius:13px;background:color-mix(in srgb,var(--card) 84%,transparent)}
+.plan-checkout-summary span{display:block;color:var(--mut);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}
+.plan-checkout-summary b{display:block;margin-top:5px;font-size:13px}
+.plan-checkout-mode{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px;padding:5px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--card) 78%,transparent)}
+.plan-checkout-mode button{min-height:42px;border:0;border-radius:10px;background:transparent;color:var(--mut);font-weight:900}
+.plan-checkout-mode button.active{background:var(--a);color:#161000;box-shadow:0 8px 18px color-mix(in srgb,var(--a) 20%,transparent)}
+.plan-checkout-renewal-note{margin-top:12px;padding:12px 13px;border-radius:13px;border:1px solid color-mix(in srgb,var(--a) 28%,var(--line));background:color-mix(in srgb,var(--a) 7%,var(--card));font-size:12px;line-height:1.5}
+.plan-checkout-provider-title{margin:18px 0 9px;font-size:12px;font-weight:950;letter-spacing:.08em;color:var(--mut);text-transform:uppercase}
+.plan-checkout-providers{display:grid;gap:9px}
+.plan-provider-btn{display:grid;grid-template-columns:46px minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;min-height:64px;padding:10px 13px;border:1px solid var(--line);border-radius:15px;background:color-mix(in srgb,var(--card) 90%,transparent);color:var(--txt);text-align:left;transition:transform .16s ease,border-color .16s ease,background .16s ease}
+.plan-provider-btn:hover:not(:disabled){transform:translateY(-1px);border-color:color-mix(in srgb,var(--a) 55%,var(--line));background:color-mix(in srgb,var(--card) 84%,var(--a) 7%)}
+.plan-provider-btn:disabled{opacity:.62;cursor:not-allowed}
+.plan-provider-logo{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-weight:950;overflow:hidden}
+.plan-provider-logo.mp{background:#009ee3;color:#fff;font-size:12px;letter-spacing:-.03em}
+.plan-provider-logo.mp:before{content:"MP";display:grid;place-items:center;width:30px;height:30px;border-radius:50%;border:2px solid rgba(255,255,255,.92)}
+.plan-provider-logo.flow{background:linear-gradient(135deg,#5b2cff,#00c2ff);color:#fff;font-size:15px;font-style:italic}
+.plan-provider-name{display:block;font-weight:950;font-size:14px}
+.plan-provider-sub{display:block;margin-top:3px;color:var(--mut);font-size:11px;font-weight:650}
+.plan-provider-arrow{font-size:18px;color:var(--mut)}
+.plan-checkout-management{margin-top:12px;padding:12px;border-radius:13px;border:1px solid rgba(45,212,191,.24);background:rgba(45,212,191,.07);font-size:12px;line-height:1.45}
+.plan-checkout-management strong{display:block;margin-bottom:4px}
+.plan-checkout-secure{display:flex;align-items:flex-start;gap:8px;margin-top:14px;color:var(--mut);font-size:11px;line-height:1.45}
+.plan-buy-btn{background:var(--a)!important;color:#171000!important;border-color:var(--a)!important;font-size:14px!important}
+.plan-buy-btn:hover{filter:brightness(1.04)}
+html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47,71,.24)}
+@media(max-width:780px){
+ .plan-checkout-modal{padding:0;align-items:flex-end}
+ .plan-checkout-dialog{width:100%;max-height:94dvh;border-radius:24px 24px 0 0}
+ .plan-checkout-hero{padding:26px 22px 20px;align-items:flex-start;flex-direction:column}
+ .plan-checkout-price{text-align:left}
+ .plan-checkout-body{grid-template-columns:1fr;padding:14px}
+ .plan-checkout-features{grid-template-columns:1fr}
+ .plan-checkout-panel{padding:17px}
+}
+@media(max-width:430px){
+ .plan-checkout-summary{grid-template-columns:1fr 1fr}
+ .plan-checkout-mode{grid-template-columns:1fr}
+ .plan-provider-btn{grid-template-columns:42px minmax(0,1fr);padding:10px}
+ .plan-provider-arrow{display:none}
+}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -1563,6 +1624,45 @@ html[data-theme="light"] .side-menu .tab.active .nav-icon{
     </article>
   </div>
 </section>
+
+<div id="planCheckoutModal" class="plan-checkout-modal" aria-hidden="true">
+  <div class="plan-checkout-backdrop" onclick="closePlanPurchaseModal()"></div>
+  <div class="plan-checkout-dialog" role="dialog" aria-modal="true" aria-labelledby="planCheckoutTitle">
+    <button class="plan-checkout-close" type="button" onclick="closePlanPurchaseModal()" aria-label="Cerrar">✕</button>
+    <div class="plan-checkout-hero">
+      <div>
+        <span class="plan-checkout-eyebrow">YUMMYPRO · PLAN</span>
+        <h2 id="planCheckoutTitle">Plan</h2>
+        <p id="planCheckoutSubtitle">Revisa tu plan antes de continuar.</p>
+      </div>
+      <div class="plan-checkout-price">
+        <strong id="planCheckoutPrice">—</strong>
+        <span id="planCheckoutReference"></span>
+      </div>
+    </div>
+    <div class="plan-checkout-body">
+      <section class="plan-checkout-panel">
+        <h3>Todo lo que incluye</h3>
+        <p>Estas funciones se habilitan para tu restaurante mientras el plan esté activo.</p>
+        <div id="planCheckoutFeatures" class="plan-checkout-features"></div>
+      </section>
+      <section class="plan-checkout-panel">
+        <h3>Resumen de compra</h3>
+        <p>Elige cómo quieres pagar tu plan.</p>
+        <div id="planCheckoutSummary" class="plan-checkout-summary"></div>
+        <div class="plan-checkout-mode" role="tablist" aria-label="Modalidad de pago">
+          <button id="planCheckoutModeOnce" type="button" onclick="setPlanPurchaseMode('one_time')">Pago único</button>
+          <button id="planCheckoutModeRecurring" type="button" onclick="setPlanPurchaseMode('recurring')">Suscripción automática</button>
+        </div>
+        <div id="planCheckoutRenewalNote" class="plan-checkout-renewal-note"></div>
+        <div class="plan-checkout-provider-title">Elige cómo pagar</div>
+        <div id="planCheckoutProviders" class="plan-checkout-providers"></div>
+        <div id="planCheckoutManagement"></div>
+        <div class="plan-checkout-secure"><span>🔒</span><span>YummyPro no guarda los datos de tu tarjeta. El pago se completa de forma segura en la pasarela seleccionada.</span></div>
+      </section>
+    </div>
+  </div>
+</div>
 
 <section id="settings" class="section">
 <div class="settings-shell">
@@ -2675,38 +2775,86 @@ function renderQrPanel(){
 function renderRestaurantPlans(){
  const box=document.getElementById("restaurantPlans");if(!box)return;
  const labels={dashboard:"Dashboard",products:"Gestión de productos",categories:"Gestión de categorías",qr:"Código QR del menú",table_qr:"QR de Mesa",settings:"Configuración del sitio y abrir/cerrar",orders:"Pedidos online",pos:"Meseros / POS",cash:"Caja",kitchen:"Pantalla de cocina",inventory:"Inventario",staff:"Gestión de personal",promotions:"Promociones",reviews:"Reseñas"};
- const cfg=currentRestaurantConfig||countryByCode("CL"),country=countryByCode(cfg.country_code||"CL"),isChile=String(country.code||"CL")==="CL",canMp=country.mercadopago_enabled&&isChile&&!adminPreviewMode,canFlow=flowPaymentConfigured&&isChile&&!adminPreviewMode;
- const restaurant=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));
- const recurringStatus=String(restaurant?.mp_subscription_status||"").toLowerCase();
- const recurringActive=["authorized","active"].includes(recurringStatus),flowRecurringStatus=String(restaurant?.flow_subscription_status||"").toLowerCase(),flowRecurringActive=!!restaurant?.flow_subscription_id&&["active","1"].includes(flowRecurringStatus),flowRecurringCancelScheduled=!!restaurant?.flow_subscription_id&&flowRecurringStatus==="cancel_at_period_end";
- const helpMessage=encodeURIComponent("Hola, necesito ayuda para activar un plan de Yummy Pro.");
+ const cfg=currentRestaurantConfig||countryByCode("CL"),restaurant=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));
  box.innerHTML=(subscriptionPlans||[]).map(p=>{
   const modules=Array.isArray(p.modules)?p.modules:[],price=planPriceInfo(p),localPrice=Number.isFinite(price.amount)&&price.amount>0?money(price.amount,price.currency,cfg.locale):"Precio por confirmar",usd=Number.isFinite(price.usd)&&price.usd>0?new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(price.usd):"";
   const isCurrent=subscriptionIsUsable(restaurant)&&Number(restaurant?.subscription_plan_id)===Number(p.id);
   const detail=modules.length?'<div class="plan-features-title">Este plan incluye:</div><div class="plan-features">'+modules.map(m=>'<div><span aria-hidden="true">✓</span><span>'+esc(labels[m]||m)+'</span></div>').join("")+'</div>':'<div class="mut plan-empty-features">Este plan todavía no tiene módulos configurados.</div>';
-  let actions="";
-  if(adminPreviewMode){
-   actions='<div class="plan-admin-note"><b>Vista administrativa</b><span>Los botones de compra aparecen solo al restaurante.</span></div>';
-  }else if(canMp||canFlow){
-   const buttons=[];
-   if(isCurrent){
-    buttons.push('<button class="primary plan-action-btn current-plan-btn" type="button" disabled>Tu plan actual</button>');
-    if(canFlow)buttons.push('<button class="ghost plan-action-btn" type="button" onclick="paySubscriptionPlanFlow('+p.id+')">Renovar con Flow</button>');
-    if(canFlow)buttons.push(flowRecurringActive?'<button class="ghost plan-action-btn" type="button" disabled>Suscripción Flow activa</button>':flowRecurringCancelScheduled?'<button class="ghost plan-action-btn" type="button" disabled>Flow se cancelará al vencimiento</button>':'<button class="ghost plan-action-btn" type="button" onclick="payFlowRecurringSubscription('+p.id+')">Activar suscripción con Flow</button>');
-    if(canMp)buttons.push(recurringActive?'<button class="ghost plan-action-btn" type="button" disabled>Renovación automática activa</button>':'<button class="ghost plan-action-btn" type="button" onclick="paySubscriptionPlan('+p.id+')">Activar renovación automática</button>');
-   }else{
-    if(canMp)buttons.push('<button class="ghost plan-action-btn" type="button" onclick="paySubscriptionPlanOnce('+p.id+')">Pagar con Mercado Pago</button>');
-    if(canFlow)buttons.push('<button class="ghost plan-action-btn" type="button" onclick="paySubscriptionPlanFlow('+p.id+')">Pagar con Flow</button>');
-    if(canFlow)buttons.push('<button class="primary plan-action-btn" type="button" onclick="payFlowRecurringSubscription('+p.id+')">Suscripción automática con Flow</button>');
-    if(canMp)buttons.push('<button class="primary plan-action-btn" type="button" onclick="paySubscriptionPlan('+p.id+')">Suscripción automática con Mercado Pago</button>');
-   }
-   actions='<div class="plan-actions">'+buttons.join("")+'</div>';
-  }else{
-   actions='<div class="plan-assisted"><b>Activación asistida</b><span>Te ayudamos con el pago y la activación en tu país.</span><a target="_blank" rel="noopener" href="https://wa.me/56982807639?text='+helpMessage+'">Escríbenos por WhatsApp</a></div>';
-  }
-  return '<article class="item plan-card '+(isCurrent?'is-current':'')+'" data-plan-id="'+Number(p.id)+'">'+(isCurrent?'<div class="plan-current-badge">PLAN ACTUAL</div>':'')+'<div class="plan-card-body"><div class="plan-card-top"><div><span class="plan-duration">'+Number(p.days||0)+' días</span><h3 class="plan-name">'+esc(p.name||"Plan")+'</h3><div class="plan-price">'+esc(localPrice)+'</div>'+(usd?'<div class="plan-reference">Referencia: '+esc(usd)+' USD · tasa informativa</div>':'')+'</div></div>'+detail+'<div class="plan-card-spacer"></div>'+actions+'</div></article>';
+  const action=adminPreviewMode
+   ?'<div class="plan-admin-note"><b>Vista administrativa</b><span>La compra está disponible solamente para el restaurante.</span></div>'
+   :'<div class="plan-actions"><button class="primary plan-action-btn plan-buy-btn" type="button" onclick="openPlanPurchaseModal('+Number(p.id)+')">'+esc(isCurrent?'Administrar '+(p.name||"plan"):'Comprar '+(p.name||"plan"))+'</button></div>';
+  return '<article class="item plan-card '+(isCurrent?'is-current':'')+'" data-plan-id="'+Number(p.id)+'">'+(isCurrent?'<div class="plan-current-badge">PLAN ACTUAL</div>':'')+'<div class="plan-card-body"><div class="plan-card-top"><div><span class="plan-duration">'+Number(p.days||0)+' días</span><h3 class="plan-name">'+esc(p.name||"Plan")+'</h3><div class="plan-price">'+esc(localPrice)+'</div>'+(usd?'<div class="plan-reference">Referencia: '+esc(usd)+' USD · tasa informativa</div>':'')+'</div></div>'+detail+'<div class="plan-card-spacer"></div>'+action+'</div></article>';
  }).join("")||"<p class='mut'>No hay planes disponibles en este momento.</p>";
 }
+
+let planCheckoutPlanId=null,planCheckoutMode="one_time";
+function planCheckoutModuleLabels(){
+ return {dashboard:"Dashboard",products:"Gestión de productos",categories:"Gestión de categorías",qr:"Código QR del menú",table_qr:"QR de Mesa",settings:"Configuración del sitio y abrir/cerrar",orders:"Pedidos online",pos:"Meseros / POS",cash:"Caja",kitchen:"Pantalla de cocina",inventory:"Inventario",staff:"Gestión de personal",promotions:"Promociones",reviews:"Reseñas"};
+}
+function openPlanPurchaseModal(id){
+ const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
+ planCheckoutPlanId=Number(id);planCheckoutMode="one_time";
+ const modal=document.getElementById("planCheckoutModal");if(!modal)return;
+ modal.classList.add("open");modal.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
+ renderPlanPurchaseModal();
+}
+function closePlanPurchaseModal(){
+ const modal=document.getElementById("planCheckoutModal");if(!modal)return;
+ modal.classList.remove("open");modal.setAttribute("aria-hidden","true");document.body.style.overflow="";
+}
+function setPlanPurchaseMode(mode){
+ planCheckoutMode=mode==="recurring"?"recurring":"one_time";renderPlanPurchaseModal();
+}
+function planProviderButton(provider,label,sub,onclick,disabled=false){
+ const logo=provider==="mercadopago"?'<span class="plan-provider-logo mp" aria-label="Mercado Pago"></span>':'<span class="plan-provider-logo flow" aria-label="Flow">flow</span>';
+ return '<button class="plan-provider-btn" type="button" '+(disabled?'disabled':'onclick="'+onclick+'"')+'>'+logo+'<span><span class="plan-provider-name">'+esc(label)+'</span><span class="plan-provider-sub">'+esc(sub)+'</span></span><span class="plan-provider-arrow">›</span></button>';
+}
+function renderPlanPurchaseModal(){
+ const p=subscriptionPlans.find(x=>Number(x.id)===Number(planCheckoutPlanId));if(!p)return;
+ const cfg=currentRestaurantConfig||countryByCode("CL"),country=countryByCode(cfg.country_code||"CL"),restaurant=restaurants.find(x=>Number(x.id)===Number(currentRestaurant)),labels=planCheckoutModuleLabels();
+ const price=planPriceInfo(p),localPrice=Number.isFinite(price.amount)&&price.amount>0?money(price.amount,price.currency,cfg.locale):"Precio por confirmar",usd=Number.isFinite(price.usd)&&price.usd>0?new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(price.usd):"";
+ const modules=Array.isArray(p.modules)?p.modules:[],isChile=String(country.code||"CL")==="CL",canMp=!!country.mercadopago_enabled&&isChile&&!adminPreviewMode,canFlow=flowPaymentConfigured&&isChile&&!adminPreviewMode,isCurrent=subscriptionIsUsable(restaurant)&&Number(restaurant?.subscription_plan_id)===Number(p.id);
+ const mpStatus=String(restaurant?.mp_subscription_status||"").toLowerCase(),mpActive=!!restaurant?.mp_subscription_id&&["authorized","active"].includes(mpStatus),mpPaused=!!restaurant?.mp_subscription_id&&mpStatus==="paused";
+ const flowStatus=String(restaurant?.flow_subscription_status||"").toLowerCase(),flowActive=!!restaurant?.flow_subscription_id&&["active","1"].includes(flowStatus),flowCancelScheduled=!!restaurant?.flow_subscription_id&&flowStatus==="cancel_at_period_end";
+ const locale=cfg.locale||"es-CL",renewal=new Date();renewal.setDate(renewal.getDate()+Number(p.days||30));
+ const renewalDate=renewal.toLocaleDateString(locale,{day:"2-digit",month:"long",year:"numeric"});
+ const title=document.getElementById("planCheckoutTitle"),subtitle=document.getElementById("planCheckoutSubtitle"),priceEl=document.getElementById("planCheckoutPrice"),ref=document.getElementById("planCheckoutReference"),features=document.getElementById("planCheckoutFeatures"),summary=document.getElementById("planCheckoutSummary"),note=document.getElementById("planCheckoutRenewalNote"),providers=document.getElementById("planCheckoutProviders"),management=document.getElementById("planCheckoutManagement"),once=document.getElementById("planCheckoutModeOnce"),rec=document.getElementById("planCheckoutModeRecurring");
+ if(title)title.textContent=(isCurrent?"Administrar ":"Comprar ")+(p.name||"Plan");
+ if(subtitle)subtitle.textContent=isCurrent?"Revisa tu plan actual, renueva o administra la renovación automática.":"Revisa los detalles antes de continuar al pago.";
+ if(priceEl)priceEl.textContent=localPrice;
+ if(ref)ref.textContent=(usd?"Referencia: "+usd+" USD · tasa informativa":"")+(Number(p.days||0)?" · "+Number(p.days)+" días":"");
+ if(features)features.innerHTML=modules.length?modules.map(m=>'<div class="plan-checkout-feature"><i>✓</i><span>'+esc(labels[m]||m)+'</span></div>').join(""):'<div class="mut">Este plan todavía no tiene módulos configurados.</div>';
+ if(once)once.classList.toggle("active",planCheckoutMode==="one_time");
+ if(rec)rec.classList.toggle("active",planCheckoutMode==="recurring");
+ if(summary)summary.innerHTML='<div><span>Paga hoy</span><b>'+esc(localPrice)+'</b></div><div><span>Acceso</span><b>'+Number(p.days||0)+' días</b></div><div><span>Modalidad</span><b>'+(planCheckoutMode==="recurring"?"Automática":"Pago único")+'</b></div><div><span>'+(planCheckoutMode==="recurring"?"Renovación estimada":"Próxima renovación")+'</span><b>'+(planCheckoutMode==="recurring"?esc(renewalDate):"No automática")+'</b></div>';
+ if(note)note.innerHTML=planCheckoutMode==="recurring"
+   ?'<b>Renovación automática</b><br>Se renovará según el ciclo del plan. Puedes detener la renovación cuando quieras y mantendrás acceso hasta el final del período ya pagado.'
+   :'<b>Pago único</b><br>No se realizarán cobros automáticos. Cuando venza el plan podrás renovarlo nuevamente desde esta misma sección.';
+ let html="";
+ if(planCheckoutMode==="one_time"){
+   if(canMp)html+=planProviderButton("mercadopago","Pagar con Mercado Pago","Pago único · checkout seguro","closePlanPurchaseModal();paySubscriptionPlanOnce("+Number(p.id)+")");
+   if(canFlow)html+=planProviderButton("flow","Pagar con Flow","Pago único · checkout seguro","closePlanPurchaseModal();paySubscriptionPlanFlow("+Number(p.id)+")");
+ }else{
+   if(canMp){
+     if(isCurrent&&mpPaused)html+=planProviderButton("mercadopago","Reactivar con Mercado Pago","Renovación pausada · reactívala sin crear otra suscripción","manageRecurringSubscription('mercadopago','reactivate')");
+     else if(isCurrent&&mpActive)html+=planProviderButton("mercadopago","Mercado Pago","Tu renovación automática ya está activa","",true);
+     else html+=planProviderButton("mercadopago","Suscribirme con Mercado Pago","Renovación automática · puedes pausarla cuando quieras","closePlanPurchaseModal();paySubscriptionPlan("+Number(p.id)+")");
+   }
+   if(canFlow){
+     if(isCurrent&&flowActive)html+=planProviderButton("flow","Flow","Tu suscripción automática ya está activa","",true);
+     else if(isCurrent&&flowCancelScheduled)html+=planProviderButton("flow","Flow","Cancelación programada al finalizar el período","",true);
+     else html+=planProviderButton("flow","Suscribirme con Flow","Renovación automática mediante Flow","closePlanPurchaseModal();payFlowRecurringSubscription("+Number(p.id)+")");
+   }
+ }
+ if(!(canMp||canFlow))html='<a class="billing-whatsapp-link" target="_blank" rel="noopener" href="https://wa.me/56982807639?text=Hola%2C%20necesito%20activar%20mi%20plan%20de%20YummyPro.">Solicitar activación por WhatsApp</a>';
+ if(providers)providers.innerHTML=html;
+ let manage="";
+ if(isCurrent&&mpPaused)manage='<div class="plan-checkout-management"><strong>Renovación de Mercado Pago pausada</strong>Puedes reactivarla en cualquier momento desde este mismo pop-up. Mientras esté pausada no se generan nuevos cobros.</div>';
+ else if(isCurrent&&flowCancelScheduled)manage='<div class="plan-checkout-management"><strong>Flow se cancelará al vencimiento</strong>Conservarás el acceso hasta la fecha pagada. Después podrás suscribirte nuevamente al plan.</div>';
+ else if(isCurrent&&(mpActive||flowActive))manage='<div class="plan-checkout-management"><strong>Ya tienes renovación automática activa</strong>Puedes administrarla desde el bloque “Plan actual”, donde también puedes detener futuros cobros.</div>';
+ if(management)management.innerHTML=manage;
+}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElementById("planCheckoutModal")?.classList.contains("open"))closePlanPurchaseModal()});
 async function paySubscriptionPlanOnce(id){
  const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
  try{
@@ -2750,7 +2898,7 @@ async function manageRecurringSubscription(provider,action){
   toast(isReactivate?"Reactivando suscripción con Mercado Pago…":isPause?"Pausando renovación de Mercado Pago…":"Cancelando suscripción con Flow…");
   const res=await fetch(SB_URL+"/functions/v1/cancel-recurring-subscription",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({restaurant_id:currentRestaurant,provider,action})});
   const data=await res.json();if(!res.ok)return toast(data?.error||"No se pudo actualizar la suscripción");
-  await loadRestaurants();await loadSubscriptionHistory();renderBillingSummary();renderRestaurantPlans();
+  await loadRestaurants();await loadSubscriptionHistory();renderBillingSummary();renderRestaurantPlans();if(document.getElementById("planCheckoutModal")?.classList.contains("open"))renderPlanPurchaseModal();
   toast(isReactivate?"Suscripción Mercado Pago reactivada.":isPause?"Renovación Mercado Pago pausada. Puedes reactivarla cuando quieras.":"Suscripción Flow cancelada al final del período.");
  }catch(e){console.error(e);toast("No se pudo actualizar la suscripción con "+name)}
 }
@@ -2821,7 +2969,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.60</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.61</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
