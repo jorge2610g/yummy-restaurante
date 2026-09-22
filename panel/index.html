@@ -1320,6 +1320,12 @@ html[data-theme="light"] .side-menu .tab.active .nav-icon{
     font-weight:700!important;
   }
 }
+</style><style id="restaurant-promotions-reviews-v2451">
+@media(min-width:801px){#promotions,#reviews{width:100%!important;max-width:none!important;min-width:0!important}}
+.promotion-summary,.review-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.review-card p{line-height:1.55}.review-response{margin-top:10px;padding:11px!important;background:var(--ghost)!important}
+@media(max-width:800px){.promotion-summary,.review-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important}.promotion-summary .restaurant-metric,.review-summary .restaurant-metric{min-height:88px!important;padding:11px!important}.promotion-summary .restaurant-metric strong,.review-summary .restaurant-metric strong{font-size:22px!important;margin-top:8px!important}}
+@media(max-width:520px){.promotion-summary,.review-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}.promotion-summary .restaurant-metric,.review-summary .restaurant-metric{padding:9px!important;border-radius:13px!important}.promotion-summary .restaurant-metric span,.review-summary .restaurant-metric span{font-size:10px!important}.promotion-summary .restaurant-metric small,.review-summary .restaurant-metric small{display:none!important}.review-card>.row,.review-card .row.between{align-items:flex-start!important;flex-direction:column!important}.review-card .actions{width:100%!important}}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -1363,6 +1369,8 @@ html[data-theme="light"] .side-menu .tab.active .nav-icon{
 
   <div class="nav-group-label">GESTIÓN</div>
   <button class="tab" data-tab="staff" title="Personal"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2"/><path d="M15.5 14.5A4.5 4.5 0 0 1 21 19"/></svg></span><span class="nav-label">Personal</span></button>
+  <button class="tab" data-tab="promotions" title="Promociones"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z"/><path d="M12 7v12"/></svg></span><span class="nav-label">Promociones</span></button>
+  <button class="tab" data-tab="reviews" title="Reseñas"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg></span><span class="nav-label">Reseñas</span></button>
   <button class="tab" data-tab="table_qr" title="QR de Mesa"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16M6 8v10M18 8v10M4 18h16"/><path d="M8 4h3v3H8zM15 4h1M18 4h2v2M14 6h2"/></svg></span><span class="nav-label">QR de Mesa</span></button>
   <button class="tab" data-tab="qr" title="Código QR"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path d="M14 14h2v2h-2zM18 14h2M18 16v4M14 18h2v2h-2z"/></svg></span><span class="nav-label">Código QR</span></button>
 
@@ -1405,6 +1413,75 @@ html[data-theme="light"] .side-menu .tab.active .nav-icon{
 <div id="inventoryMovementModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closeInventoryMovementModal()"></div><div class="card product-modal-card"><div class="row between"><h2 id="inventoryMovementTitle">Registrar movimiento</h2><button class="ghost modal-close" type="button" onclick="closeInventoryMovementModal()">✕</button></div><input id="inventoryMovementItemId" type="hidden"><label>Tipo de movimiento</label><select id="inventoryMovementType"><option value="entrada">Entrada de stock</option><option value="salida">Salida</option><option value="consumo">Consumo</option><option value="ajuste">Ajustar stock final</option></select><label id="inventoryMovementQuantityLabel">Cantidad</label><input id="inventoryMovementQuantity" type="number" min="0" step="0.001"><label>Motivo o referencia</label><input id="inventoryMovementNote" placeholder="Ej: Compra proveedor / merma"><button class="primary full" onclick="saveInventoryMovement()">Registrar movimiento</button></div></div>
 
 
+
+
+<section id="promotions" class="section">
+  <div class="card">
+    <div class="module-head">
+      <div><span class="eyebrow">VENTAS Y FIDELIZACIÓN</span><h2>Promociones</h2><p class="mut">Crea descuentos y códigos para tus clientes. Solo afectan a este restaurante.</p></div>
+      <div class="actions"><button class="primary" type="button" onclick="openRestaurantPromotionModal()">＋ Nueva promoción</button><button class="ghost" type="button" onclick="loadRestaurantPromotions()">↻ Actualizar</button></div>
+    </div>
+    <div class="restaurant-metrics promotion-summary" style="margin-top:18px">
+      <article class="restaurant-metric"><span>Promociones</span><strong id="promotionCount">0</strong><small>Total creadas</small></article>
+      <article class="restaurant-metric"><span>Activas</span><strong id="promotionActiveCount">0</strong><small>Disponibles ahora</small></article>
+      <article class="restaurant-metric"><span>Usos</span><strong id="promotionUsageCount">0</strong><small>Veces utilizadas</small></article>
+    </div>
+    <div id="restaurantPromotionList" class="list" style="margin-top:18px"></div>
+  </div>
+</section>
+
+<div id="restaurantPromotionModal" class="product-modal" aria-hidden="true">
+  <div class="product-modal-backdrop" onclick="closeRestaurantPromotionModal()"></div>
+  <div class="card product-modal-card">
+    <div class="row between"><div><span class="eyebrow">PROMOCIÓN</span><h2 id="restaurantPromotionModalTitle">Nueva promoción</h2></div><button class="ghost modal-close" type="button" onclick="closeRestaurantPromotionModal()">✕</button></div>
+    <input id="restaurantPromotionId" type="hidden">
+    <label>Nombre</label><input id="restaurantPromotionName" placeholder="Ej: 20% fin de semana">
+    <div class="two">
+      <div><label>Código</label><input id="restaurantPromotionCode" placeholder="YUMMY20"></div>
+      <div><label>Tipo</label><select id="restaurantPromotionType" onchange="syncRestaurantPromotionType()"><option value="percentage">Porcentaje</option><option value="fixed">Monto fijo</option><option value="free_delivery">Delivery gratis</option></select></div>
+    </div>
+    <div class="two">
+      <div><label>Valor</label><input id="restaurantPromotionValue" type="number" min="0" step="1"></div>
+      <div><label>Compra mínima</label><input id="restaurantPromotionMinimum" type="number" min="0" step="1" value="0"></div>
+    </div>
+    <div class="two">
+      <div><label>Desde</label><input id="restaurantPromotionStarts" type="datetime-local"></div>
+      <div><label>Hasta</label><input id="restaurantPromotionEnds" type="datetime-local"></div>
+    </div>
+    <label>Límite de usos</label><input id="restaurantPromotionLimit" type="number" min="1" placeholder="Sin límite">
+    <div class="row product-checks" style="margin-top:12px;flex-wrap:wrap">
+      <label style="margin:0"><input id="restaurantPromotionFirstOrder" type="checkbox" style="width:auto"> Solo primera compra</label>
+      <label style="margin:0"><input id="restaurantPromotionActive" type="checkbox" style="width:auto" checked> Promoción activa</label>
+    </div>
+    <div class="row product-modal-actions" style="margin-top:16px"><button class="primary" type="button" onclick="saveRestaurantPromotion()">Guardar promoción</button><button class="ghost" type="button" onclick="closeRestaurantPromotionModal()">Cancelar</button></div>
+  </div>
+</div>
+
+<section id="reviews" class="section">
+  <div class="card">
+    <div class="module-head">
+      <div><span class="eyebrow">EXPERIENCIA DEL CLIENTE</span><h2>Reseñas</h2><p class="mut">Consulta las valoraciones recibidas y responde directamente como restaurante.</p></div>
+      <button class="ghost" type="button" onclick="loadRestaurantReviews()">↻ Actualizar</button>
+    </div>
+    <div class="restaurant-metrics review-summary" style="margin-top:18px">
+      <article class="restaurant-metric"><span>Reseñas</span><strong id="reviewCount">0</strong><small>Total recibidas</small></article>
+      <article class="restaurant-metric"><span>Promedio</span><strong id="reviewAverage">0.0</strong><small>Valoración general</small></article>
+      <article class="restaurant-metric"><span>Publicadas</span><strong id="reviewPublishedCount">0</strong><small>Visibles al público</small></article>
+    </div>
+    <div id="restaurantReviewList" class="list" style="margin-top:18px"></div>
+  </div>
+</section>
+
+<div id="restaurantReviewResponseModal" class="product-modal" aria-hidden="true">
+  <div class="product-modal-backdrop" onclick="closeRestaurantReviewResponseModal()"></div>
+  <div class="card product-modal-card">
+    <div class="row between"><div><span class="eyebrow">RESPONDER RESEÑA</span><h2>Respuesta del restaurante</h2></div><button class="ghost modal-close" type="button" onclick="closeRestaurantReviewResponseModal()">✕</button></div>
+    <input id="restaurantReviewResponseId" type="hidden">
+    <div id="restaurantReviewResponsePreview" class="item" style="margin:12px 0"></div>
+    <label>Tu respuesta</label><textarea id="restaurantReviewResponseText" placeholder="Gracias por tu comentario..."></textarea>
+    <div class="row product-modal-actions" style="margin-top:16px"><button class="primary" type="button" onclick="saveRestaurantReviewResponse()">Guardar respuesta</button><button class="ghost" type="button" onclick="closeRestaurantReviewResponseModal()">Cancelar</button></div>
+  </div>
+</div>
 
 <section id="table_qr" class="section"><div class="card"><div class="module-head"><div><h2>QR de Mesa</h2><p class="mut">Crea un QR único para cada mesa. El cliente escanea, pide desde su teléfono y el pedido llega a Cocina y Caja.</p></div><button class="ghost" type="button" onclick="loadRestaurantTables()">↻ Actualizar</button></div><div class="item" style="margin-top:16px"><div class="row" style="align-items:end;flex-wrap:wrap"><label style="flex:1;min-width:220px">Nombre de la mesa<input id="tableQrName" placeholder="Ej: Mesa 1, Terraza 2, Barra 1"></label><button class="primary" type="button" onclick="createRestaurantTable()">＋ Crear mesa</button></div></div><div id="tableQrList" class="list" style="margin-top:16px"></div></div></section>
 <section id="qr" class="section"><div class="card"><h2>Código QR del restaurante</h2><p class="mut">Enlace directo para compartir el menú de tu restaurante.</p><div id="qrPanel"></div></div></section>
@@ -1529,7 +1606,7 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b){const next=theme==="dark"?"claro":"oscuro",icon=theme==="dark"?"☀️":"🌙";b.innerHTML='<span class="header-action-icon" aria-hidden="true">'+icon+'</span><span class="action-label">Modo '+next+'</span>';b.setAttribute("aria-label","Activar modo "+next);b.title="Activar modo "+next}}
 function toggleAdminTheme(){applyAdminTheme(document.documentElement.dataset.theme==="light"?"dark":"light")}
 applyAdminTheme(localStorage.getItem("admin_theme")||"dark");setTimeout(bindRestaurantMpButtons,0);
-let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],cashPaidOrders=[],currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",posCart={},subscriptionFxRates={},posOrders=[],posOrderDateFilter="today",cashDateFilter="today",cashPaidOrderDateFilter="today",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[];
+let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",posCart={},subscriptionFxRates={},posOrders=[],posOrderDateFilter="today",cashDateFilter="today",cashPaidOrderDateFilter="today",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[];
 function matchesPeriod(value,period,fromId,toId){const date=new Date(value);if(Number.isNaN(date.getTime()))return false;if(period==="all")return true;const now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),now.getDate()),end=new Date(start);end.setDate(end.getDate()+1);if(period==="week")start.setDate(start.getDate()-6);if(period==="month")start.setDate(1);if(period==="custom"){const from=document.getElementById(fromId)?.value,to=document.getElementById(toId)?.value;if(from)start.setTime(new Date(from+"T00:00:00").getTime());else start.setTime(0);if(to)end.setTime(new Date(to+"T23:59:59.999").getTime());else end.setTime(8640000000000000)}return date>=start&&date<end}
 function activatePeriodButtons(attribute,value){document.querySelectorAll(`[${attribute}]`).forEach(button=>{const active=button.getAttribute(attribute)===value;button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active))})}
 function resetPeriodToToday(tab){
@@ -1648,7 +1725,7 @@ async function enter(user){
     msg.textContent=e.message||"No se pudo cargar la información del restaurante.";
   }
 }
-const roleTabs={restaurant:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","table_qr","qr","plans","settings"],manager:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","table_qr","qr","settings"],editor:["orders","kitchen","products","categories","inventory"],cashier:["orders","cash"],kitchen:["kitchen"],waiter:["pos"],courier:["orders"]};
+const roleTabs={restaurant:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","promotions","reviews","table_qr","qr","plans","settings"],manager:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","promotions","reviews","table_qr","qr","settings"],editor:["orders","kitchen","products","categories","inventory"],cashier:["orders","cash"],kitchen:["kitchen"],waiter:["pos"],courier:["orders"]};
 let subscriptionModuleAccess=null;let adminPreviewMode=false;let adminPreviewTab="dashboard";let adminPreviewBootPromise=null;let adminPreviewInitialized=false;
 function subscriptionIsUsable(r){if(!r)return false;const s=String(r.subscription_status||"").toLowerCase();const exp=r.subscription_expires_at?new Date(r.subscription_expires_at).getTime():null;return (s==="active"||s==="trial")&&(!exp||exp>=Date.now())}
 async function loadSubscriptionModuleAccess(){
@@ -1726,11 +1803,11 @@ function closeSideMenu(){if(window.matchMedia("(min-width:801px)").matches)retur
 function closeSideMenuMobile(){if(window.matchMedia("(max-width:800px)").matches)closeSideMenu()}
 window.addEventListener("resize",restoreRestaurantSidebarState);
 requestAnimationFrame(restoreRestaurantSidebarState);
-document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{const allowed=effectiveTabs();if(!allowed.includes(b.dataset.tab)){applyRoleAccess();closeSideMenuMobile();return toast("Tu usuario no tiene permiso para abrir esta sección")};document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.tab)?.classList.add("active");closeSideMenuMobile();resetPeriodToToday(b.dataset.tab);if(!currentRestaurant)return;try{if(b.dataset.tab==="dashboard")await refreshRestaurantDashboard();else if(b.dataset.tab==="orders")await loadOrders();else if(b.dataset.tab==="pos")await loadPos();else if(b.dataset.tab==="kitchen")await loadKitchen();else if(b.dataset.tab==="cash")await loadCash();else if(b.dataset.tab==="staff")await loadStaff();else if(b.dataset.tab==="products")await loadProducts();else if(b.dataset.tab==="categories")await loadCategories();else if(b.dataset.tab==="inventory")await loadInventory();else if(b.dataset.tab==="table_qr")await loadRestaurantTables();else if(b.dataset.tab==="qr"){renderQrPanel()}else if(b.dataset.tab==="plans")await loadSubscriptionPlans();else if(b.dataset.tab==="settings"){await loadSettings();await loadRestaurantMercadoPago()}}catch(e){console.error("Error actualizando sección",b.dataset.tab,e);toast("No se pudo actualizar esta sección")}});
+document.querySelectorAll(".tab").forEach(b=>b.onclick=async()=>{const allowed=effectiveTabs();if(!allowed.includes(b.dataset.tab)){applyRoleAccess();closeSideMenuMobile();return toast("Tu usuario no tiene permiso para abrir esta sección")};document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.tab)?.classList.add("active");closeSideMenuMobile();resetPeriodToToday(b.dataset.tab);if(!currentRestaurant)return;try{if(b.dataset.tab==="dashboard")await refreshRestaurantDashboard();else if(b.dataset.tab==="orders")await loadOrders();else if(b.dataset.tab==="pos")await loadPos();else if(b.dataset.tab==="kitchen")await loadKitchen();else if(b.dataset.tab==="cash")await loadCash();else if(b.dataset.tab==="staff")await loadStaff();else if(b.dataset.tab==="products")await loadProducts();else if(b.dataset.tab==="categories")await loadCategories();else if(b.dataset.tab==="inventory")await loadInventory();else if(b.dataset.tab==="promotions")await loadRestaurantPromotions();else if(b.dataset.tab==="reviews")await loadRestaurantReviews();else if(b.dataset.tab==="table_qr")await loadRestaurantTables();else if(b.dataset.tab==="qr"){renderQrPanel()}else if(b.dataset.tab==="plans")await loadSubscriptionPlans();else if(b.dataset.tab==="settings"){await loadSettings();await loadRestaurantMercadoPago()}}catch(e){console.error("Error actualizando sección",b.dataset.tab,e);toast("No se pudo actualizar esta sección")}});
 async function refreshAll(){
  bindRestaurantMpButtons();
  await loadPlatformCountries();
- const loaders={dashboard:()=>Promise.allSettled([loadRestaurants(),loadProducts(),loadDashboardOrders()]),orders:()=>Promise.allSettled([loadRestaurants(),loadOrders()]),pos:()=>Promise.allSettled([loadRestaurants(),loadPos()]),kitchen:()=>Promise.allSettled([loadRestaurants(),loadKitchen()]),cash:()=>Promise.allSettled([loadRestaurants(),loadCash()]),products:()=>Promise.allSettled([loadRestaurants(),loadCategories(),loadProducts()]),categories:()=>Promise.allSettled([loadRestaurants(),loadCategories()]),inventory:()=>Promise.allSettled([loadRestaurants(),loadInventory()]),staff:()=>Promise.allSettled([loadRestaurants(),loadStaff()]),table_qr:()=>Promise.allSettled([loadRestaurants(),loadRestaurantTables()])};
+ const loaders={dashboard:()=>Promise.allSettled([loadRestaurants(),loadProducts(),loadDashboardOrders()]),orders:()=>Promise.allSettled([loadRestaurants(),loadOrders()]),pos:()=>Promise.allSettled([loadRestaurants(),loadPos()]),kitchen:()=>Promise.allSettled([loadRestaurants(),loadKitchen()]),cash:()=>Promise.allSettled([loadRestaurants(),loadCash()]),products:()=>Promise.allSettled([loadRestaurants(),loadCategories(),loadProducts()]),categories:()=>Promise.allSettled([loadRestaurants(),loadCategories()]),inventory:()=>Promise.allSettled([loadRestaurants(),loadInventory()]),staff:()=>Promise.allSettled([loadRestaurants(),loadStaff()]),promotions:()=>Promise.allSettled([loadRestaurants(),loadRestaurantPromotions()]),reviews:()=>Promise.allSettled([loadRestaurants(),loadRestaurantReviews()]),table_qr:()=>Promise.allSettled([loadRestaurants(),loadRestaurantTables()])};
  const initialTabs=effectiveTabs(),first=(initialTabs.includes("dashboard")?"dashboard":(initialTabs[0]||"plans")),results=await (loaders[first]||(()=>Promise.allSettled([loadRestaurants()])))();
  results.forEach((r,i)=>{if(r.status==="rejected")console.error("Carga inicial falló",i,r.reason)});
  if(currentRole==="restaurant"||currentRole==="manager")try{await loadRestaurantMercadoPago()}catch(e){console.error("Mercado Pago settings",e)}
@@ -2256,6 +2333,77 @@ async function searchRestaurantAddress(){
   if(st)st.textContent="❌ No se pudo verificar la dirección. Revisa lo escrito e intenta nuevamente.";
  }
 }
+
+function promotionLocalDateValue(value){if(!value)return "";const d=new Date(value);if(Number.isNaN(d.getTime()))return "";return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}
+function syncRestaurantPromotionType(){
+ const type=document.getElementById("restaurantPromotionType"),value=document.getElementById("restaurantPromotionValue");if(!type||!value)return;
+ const free=type.value==="free_delivery";value.disabled=free;if(free)value.value="0";
+}
+async function loadRestaurantPromotions(){
+ if(!currentRestaurant)return;
+ const {data,error}=await sb.from("restaurant_promotions").select("*").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false});
+ if(error)return toast(error.message);
+ restaurantPromotions=data||[];renderRestaurantPromotions();
+}
+function renderRestaurantPromotions(){
+ const list=document.getElementById("restaurantPromotionList");if(!list)return;
+ const now=Date.now(),active=restaurantPromotions.filter(p=>p.active&&(!p.starts_at||new Date(p.starts_at).getTime()<=now)&&(!p.ends_at||new Date(p.ends_at).getTime()>=now));
+ const uses=restaurantPromotions.reduce((a,p)=>a+Number(p.usage_count||0),0);
+ const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+ set("promotionCount",restaurantPromotions.length);set("promotionActiveCount",active.length);set("promotionUsageCount",uses);
+ list.innerHTML=restaurantPromotions.map(p=>{
+  const display=p.promotion_type==="percentage"?Number(p.value||0)+"%":p.promotion_type==="free_delivery"?"Delivery gratis":money(p.value||0);
+  const expired=p.ends_at&&new Date(p.ends_at).getTime()<now;
+  const dateText=[p.starts_at?"Desde "+new Date(p.starts_at).toLocaleString("es"):null,p.ends_at?"Hasta "+new Date(p.ends_at).toLocaleString("es"):null].filter(Boolean).join(" · ");
+  return `<div class="item"><div class="row between"><div><h3>${esc(p.name)}</h3><div class="mut">Código: ${esc(p.code||"Sin código")} · ${p.promotion_type==="percentage"?"Descuento":p.promotion_type==="fixed"?"Monto fijo":"Delivery"}</div><div class="price">${display}</div><div class="mut">Compra mínima ${money(p.minimum_order||0)} · Usos ${Number(p.usage_count||0)}${p.usage_limit?" / "+p.usage_limit:""}${dateText?" · "+esc(dateText):""}</div></div><div class="actions"><span class="pill">${expired?"Vencida":p.active?"Activa":"Inactiva"}</span><button class="ghost" onclick="editRestaurantPromotion(${p.id})">Editar</button><button class="ghost" onclick="toggleRestaurantPromotion(${p.id},${!p.active})">${p.active?"Desactivar":"Activar"}</button><button class="danger" onclick="deleteRestaurantPromotion(${p.id})">Eliminar</button></div></div></div>`
+ }).join("")||"<p class='mut'>Todavía no tienes promociones creadas.</p>";
+}
+function openRestaurantPromotionModal(){
+ const m=document.getElementById("restaurantPromotionModal");document.getElementById("restaurantPromotionId").value="";document.getElementById("restaurantPromotionName").value="";document.getElementById("restaurantPromotionCode").value="";document.getElementById("restaurantPromotionType").value="percentage";document.getElementById("restaurantPromotionValue").value="";document.getElementById("restaurantPromotionMinimum").value="0";document.getElementById("restaurantPromotionStarts").value="";document.getElementById("restaurantPromotionEnds").value="";document.getElementById("restaurantPromotionLimit").value="";document.getElementById("restaurantPromotionFirstOrder").checked=false;document.getElementById("restaurantPromotionActive").checked=true;document.getElementById("restaurantPromotionModalTitle").textContent="Nueva promoción";syncRestaurantPromotionType();m?.classList.add("open");m?.setAttribute("aria-hidden","false");
+}
+function closeRestaurantPromotionModal(){const m=document.getElementById("restaurantPromotionModal");m?.classList.remove("open");m?.setAttribute("aria-hidden","true")}
+function editRestaurantPromotion(id){
+ const p=restaurantPromotions.find(x=>Number(x.id)===Number(id));if(!p)return;
+ openRestaurantPromotionModal();document.getElementById("restaurantPromotionId").value=p.id;document.getElementById("restaurantPromotionName").value=p.name||"";document.getElementById("restaurantPromotionCode").value=p.code||"";document.getElementById("restaurantPromotionType").value=p.promotion_type||"percentage";document.getElementById("restaurantPromotionValue").value=Number(p.value||0);document.getElementById("restaurantPromotionMinimum").value=Number(p.minimum_order||0);document.getElementById("restaurantPromotionStarts").value=promotionLocalDateValue(p.starts_at);document.getElementById("restaurantPromotionEnds").value=promotionLocalDateValue(p.ends_at);document.getElementById("restaurantPromotionLimit").value=p.usage_limit||"";document.getElementById("restaurantPromotionFirstOrder").checked=!!p.first_order_only;document.getElementById("restaurantPromotionActive").checked=!!p.active;document.getElementById("restaurantPromotionModalTitle").textContent="Editar promoción";syncRestaurantPromotionType();
+}
+async function saveRestaurantPromotion(){
+ if(!currentRestaurant)return toast("No hay restaurante seleccionado");
+ const id=Number(document.getElementById("restaurantPromotionId").value)||null,type=document.getElementById("restaurantPromotionType").value;
+ const row={restaurant_id:currentRestaurant,name:document.getElementById("restaurantPromotionName").value.trim(),code:document.getElementById("restaurantPromotionCode").value.trim().toUpperCase()||null,promotion_type:type,value:type==="free_delivery"?0:Number(document.getElementById("restaurantPromotionValue").value||0),minimum_order:Number(document.getElementById("restaurantPromotionMinimum").value||0),starts_at:document.getElementById("restaurantPromotionStarts").value?new Date(document.getElementById("restaurantPromotionStarts").value).toISOString():null,ends_at:document.getElementById("restaurantPromotionEnds").value?new Date(document.getElementById("restaurantPromotionEnds").value).toISOString():null,usage_limit:document.getElementById("restaurantPromotionLimit").value?Number(document.getElementById("restaurantPromotionLimit").value):null,first_order_only:document.getElementById("restaurantPromotionFirstOrder").checked,active:document.getElementById("restaurantPromotionActive").checked,updated_at:new Date().toISOString()};
+ if(!row.name)return toast("Escribe un nombre para la promoción");
+ if(type!=="free_delivery"&&row.value<=0)return toast("El valor de la promoción debe ser mayor a cero");
+ if(row.starts_at&&row.ends_at&&new Date(row.ends_at)<=new Date(row.starts_at))return toast("La fecha final debe ser posterior al inicio");
+ const q=id?sb.from("restaurant_promotions").update(row).eq("id",id).eq("restaurant_id",currentRestaurant):sb.from("restaurant_promotions").insert(row);
+ const {error}=await q;if(error)return toast(error.message);closeRestaurantPromotionModal();await loadRestaurantPromotions();toast("Promoción guardada");
+}
+async function toggleRestaurantPromotion(id,active){const {error}=await sb.from("restaurant_promotions").update({active,updated_at:new Date().toISOString()}).eq("id",id).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);await loadRestaurantPromotions()}
+async function deleteRestaurantPromotion(id){if(!confirm("¿Eliminar esta promoción?"))return;const {error}=await sb.from("restaurant_promotions").delete().eq("id",id).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);await loadRestaurantPromotions();toast("Promoción eliminada")}
+
+async function loadRestaurantReviews(){
+ if(!currentRestaurant)return;
+ const {data,error}=await sb.from("restaurant_reviews").select("*").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(200);
+ if(error)return toast(error.message);restaurantReviews=data||[];renderRestaurantReviews();
+}
+function reviewAverageValue(r){const vals=[Number(r.food_rating||0),Number(r.service_rating||0)];if(r.delivery_rating!=null)vals.push(Number(r.delivery_rating||0));return vals.length?vals.reduce((a,v)=>a+v,0)/vals.length:0}
+function renderRestaurantReviews(){
+ const list=document.getElementById("restaurantReviewList");if(!list)return;
+ const total=restaurantReviews.length,avg=total?restaurantReviews.reduce((a,r)=>a+reviewAverageValue(r),0)/total:0,published=restaurantReviews.filter(r=>r.published).length;
+ const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};set("reviewCount",total);set("reviewAverage",avg.toFixed(1));set("reviewPublishedCount",published);
+ list.innerHTML=restaurantReviews.map(r=>`<div class="item review-card"><div class="row between"><div><h3>⭐ ${reviewAverageValue(r).toFixed(1)}</h3><div class="mut">Comida ${r.food_rating}/5 · Servicio ${r.service_rating}/5${r.delivery_rating?" · Delivery "+r.delivery_rating+"/5":""}</div><p>${esc(r.comment||"Sin comentario")}</p>${r.response?`<div class="item review-response"><b>Tu respuesta</b><div class="mut">${esc(r.response)}</div></div>`:""}</div><div class="actions"><span class="pill">${r.published?"Publicada":"Oculta"}</span><button class="ghost" onclick="openRestaurantReviewResponse(${r.id})">Responder</button><button class="${r.published?"danger":"primary"}" onclick="toggleRestaurantReview(${r.id},${!r.published})">${r.published?"Ocultar":"Publicar"}</button></div></div></div>`).join("")||"<p class='mut'>Todavía no has recibido reseñas.</p>";
+}
+function openRestaurantReviewResponse(id){
+ const r=restaurantReviews.find(x=>Number(x.id)===Number(id));if(!r)return;
+ document.getElementById("restaurantReviewResponseId").value=r.id;document.getElementById("restaurantReviewResponseText").value=r.response||"";document.getElementById("restaurantReviewResponsePreview").innerHTML=`<b>⭐ ${reviewAverageValue(r).toFixed(1)}</b><div class="mut">${esc(r.comment||"Sin comentario")}</div>`;const m=document.getElementById("restaurantReviewResponseModal");m?.classList.add("open");m?.setAttribute("aria-hidden","false");
+}
+function closeRestaurantReviewResponseModal(){const m=document.getElementById("restaurantReviewResponseModal");m?.classList.remove("open");m?.setAttribute("aria-hidden","true")}
+async function saveRestaurantReviewResponse(){
+ const id=Number(document.getElementById("restaurantReviewResponseId").value),response=document.getElementById("restaurantReviewResponseText").value.trim();
+ if(!id)return;
+ const {error}=await sb.from("restaurant_reviews").update({response:response||null,responded_at:response?new Date().toISOString():null,updated_at:new Date().toISOString()}).eq("id",id).eq("restaurant_id",currentRestaurant);
+ if(error)return toast(error.message);closeRestaurantReviewResponseModal();await loadRestaurantReviews();toast("Respuesta guardada");
+}
+async function toggleRestaurantReview(id,published){const {error}=await sb.from("restaurant_reviews").update({published,updated_at:new Date().toISOString()}).eq("id",id).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);await loadRestaurantReviews()}
+
 async function loadRestaurantTables(){
  if(!currentRestaurant)return;
  const {data,error}=await sb.from("restaurant_tables").select("*").eq("restaurant_id",currentRestaurant).order("sort_order",{ascending:true}).order("id",{ascending:true});
@@ -2395,7 +2543,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.50</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.51</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
