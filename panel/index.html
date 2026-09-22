@@ -1912,11 +1912,24 @@ async function loadFlowPaymentStatus(){
   flowPaymentConfigured=!!d.configured;flowPaymentEnvironment=d.environment||"sandbox";
  }catch(e){console.error("Flow settings",e)}
 }
+async function syncMercadoPagoSubscription(){
+ if(!currentRestaurant)return null;
+ const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));
+ if(!r?.mp_subscription_id)return null;
+ try{
+  const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return null;
+  const res=await fetch(SB_URL+"/functions/v1/sync-mercadopago-subscription",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({restaurant_id:currentRestaurant})});
+  const d=await res.json();if(!res.ok){console.error("No se pudo sincronizar Mercado Pago",d);return null}
+  if(d?.synced)await loadRestaurants();
+  return d;
+ }catch(e){console.error("Sincronización Mercado Pago",e);return null}
+}
 async function loadSubscriptionPlans(){
  const {data,error}=await sb.from("subscription_plans").select("*").eq("active",true).eq("is_default_trial",false).order("amount",{ascending:true});
  if(error){console.error("Error cargando planes",error);subscriptionPlans=[];renderRestaurantPlans();renderBillingSummary();return}
  subscriptionPlans=data||[];
- await Promise.allSettled([loadSubscriptionExchangeRates(),loadSubscriptionHistory(),loadFlowPaymentStatus()]);
+ await Promise.allSettled([loadSubscriptionExchangeRates(),syncMercadoPagoSubscription()]);
+ await Promise.allSettled([loadSubscriptionHistory(),loadFlowPaymentStatus()]);
  renderRestaurantPlans();renderBillingSummary();renderBillingPaymentMethods();showFlowReturnMessage();
 }
 async function loadSubscriptionHistory(){
@@ -2747,7 +2760,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.56</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.57</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
