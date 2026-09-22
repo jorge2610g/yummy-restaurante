@@ -2259,7 +2259,7 @@ function renderSubscriptionHistory(){
  const plans=new Map((subscriptionPlans||[]).map(p=>[Number(p.id),p.name]));
  box.innerHTML=subscriptionPayments.map(p=>{
   const plan=plans.get(Number(p.plan_id))||"Plan YummyPro",date=new Date(p.paid_at||p.created_at),locale=currentRestaurantConfig?.locale||"es-CL";
-  const amount=money(p.amount,p.currency_code||currentRestaurantConfig?.currency_code,locale),type=p.payment_type==="recurring"?"Suscripción automática":"Pago único";
+  const amount=money(p.amount,p.currency_code||currentRestaurantConfig?.currency_code,locale),type=(p.payment_type==="recurring"?"Suscripción automática":"Pago único")+" · "+(p.billing_cycle==="annual"?"Anual":"Mensual");
   const pending=String(p.status||"pending").toLowerCase()==="pending",provider=String(p.provider||"");
   const providerName=provider==="mercadopago"?"Mercado Pago":provider==="flow"?"Flow":(provider||"Pago");
   const pendingActions=pending?(provider==="flow"?'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="manageFlowPendingPayment('+Number(p.id)+',\'resume\')">Continuar pago</button><button class="danger" type="button" onclick="manageFlowPendingPayment('+Number(p.id)+',\'cancel\')">Cancelar</button></div>':'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'resume\')">Continuar pago</button><button class="danger" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'cancel\')">Cancelar</button></div>'):'';
