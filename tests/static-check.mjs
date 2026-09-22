@@ -47,3 +47,5 @@ for(const marker of ['manifest.webmanifest','pwaInstallBtn','installYummyProPwa'
 for(const marker of ['pwaNetworkStatus','setupYummyProNetworkStatus','Sin conexión · los pedidos y pagos no se enviarán'])if(!panel.includes(marker))throw new Error('panel/index.html: falta estado de conexión PWA '+marker);
 
 for(const marker of ['pwaUpdateBanner','Nueva versión disponible','applyYummyProUpdate','watchYummyProServiceWorker','Actualizar ahora'])if(!panel.includes(marker))throw new Error('panel/index.html: falta actualización PWA '+marker);
+
+for(const marker of ['pwaNotificationBtn','activateYummyProNotifications','syncRestaurantPushIfGranted','refreshYummyProNotificationButton'])if(!panel.includes(marker))throw new Error('panel/index.html: falta integración de notificaciones PWA '+marker);

@@ -1712,7 +1712,7 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
 
 <div id="app" class="wrap hidden">
 <div id="subscriptionBanner" class="card" style="margin-bottom:14px;display:none"></div>
-<div class="top"><div><h1 id="panelMainTitle">Panel Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><button class="ghost header-action hidden" id="pwaInstallBtn" type="button" onclick="installYummyProPwa()" aria-label="Instalar YummyPro" title="Instalar YummyPro"><span class="header-action-icon" aria-hidden="true">⬇️</span><span class="action-label">Instalar</span></button><a id="viewMenuLink" href="#" target="_blank" style="display:none"><button class="ghost header-action" type="button" aria-label="Ver menú" title="Ver menú"><span class="header-action-icon" aria-hidden="true">👁️</span><span class="action-label">Ver menú</span></button></a><button class="ghost header-action" id="themeBtn" type="button" onclick="toggleAdminTheme()" aria-label="Cambiar modo de color" title="Cambiar tema"><span class="header-action-icon" aria-hidden="true">☀️</span><span class="action-label">Modo claro</span></button><button class="ghost header-action" type="button" onclick="logout()" aria-label="Salir" title="Salir"><span class="header-action-icon" aria-hidden="true">↪</span><span class="action-label">Salir</span></button><button id="sideMenuToggle" class="ghost side-menu-toggle header-action" type="button" onclick="toggleSideMenu()" aria-label="Abrir menú del panel" title="Menú del panel"><span class="header-action-icon" aria-hidden="true">☰</span><span class="action-label">Menú</span></button></div></div>
+<div class="top"><div><h1 id="panelMainTitle">Panel Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><button class="ghost header-action hidden" id="pwaInstallBtn" type="button" onclick="installYummyProPwa()" aria-label="Instalar YummyPro" title="Instalar YummyPro"><span class="header-action-icon" aria-hidden="true">⬇️</span><span class="action-label">Instalar</span></button><button class="ghost header-action hidden" id="pwaNotificationBtn" type="button" onclick="activateYummyProNotifications()" aria-label="Activar notificaciones" title="Activar notificaciones"><span class="header-action-icon" aria-hidden="true">🔔</span><span class="action-label">Notificaciones</span></button><a id="viewMenuLink" href="#" target="_blank" style="display:none"><button class="ghost header-action" type="button" aria-label="Ver menú" title="Ver menú"><span class="header-action-icon" aria-hidden="true">👁️</span><span class="action-label">Ver menú</span></button></a><button class="ghost header-action" id="themeBtn" type="button" onclick="toggleAdminTheme()" aria-label="Cambiar modo de color" title="Cambiar tema"><span class="header-action-icon" aria-hidden="true">☀️</span><span class="action-label">Modo claro</span></button><button class="ghost header-action" type="button" onclick="logout()" aria-label="Salir" title="Salir"><span class="header-action-icon" aria-hidden="true">↪</span><span class="action-label">Salir</span></button><button id="sideMenuToggle" class="ghost side-menu-toggle header-action" type="button" onclick="toggleSideMenu()" aria-label="Abrir menú del panel" title="Menú del panel"><span class="header-action-icon" aria-hidden="true">☰</span><span class="action-label">Menú</span></button></div></div>
 <div id="sideMenuBackdrop" class="side-menu-backdrop" onclick="closeSideMenu()"></div><div id="panelLayout" class="panel-layout"><aside id="sideMenu" class="side-menu">
 <div class="sidebar-brand">
   <span class="sidebar-brand-mark">Y</span>
@@ -2249,7 +2249,7 @@ async function enter(user){
     const {data:menuRestaurant}=await sb.from("restaurants").select("slug").eq("id",currentRestaurant).single();
     const menuLink=document.getElementById("viewMenuLink");
     if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(menuRestaurant?.slug||currentRestaurant);menuLink.style.display=currentRole==="restaurant"?"":"none"}
-    enableRestaurantNotifications();restoreAutoPrintOrders();setTimeout(startRestaurantOrderRealtime,0);setTimeout(startWaiterReadyReminderLoop,0);setTimeout(startWaiterPosRefreshLoop,0);setTimeout(startKitchenNewOrderReminderLoop,0);setTimeout(startSubscriptionAccessRealtime,0);
+    syncRestaurantPushIfGranted();restoreAutoPrintOrders();setTimeout(startRestaurantOrderRealtime,0);setTimeout(startWaiterReadyReminderLoop,0);setTimeout(startWaiterPosRefreshLoop,0);setTimeout(startKitchenNewOrderReminderLoop,0);setTimeout(startSubscriptionAccessRealtime,0);
     await loadRestaurants();
     await Promise.allSettled([loadSubscriptionPlans(),loadSubscriptionModuleAccess()]);
     applyRoleAccess();
@@ -2679,11 +2679,19 @@ async function registerRestaurantPush(){
  const {error}=await sb.from("push_subscriptions").upsert({user_id:user.id,restaurant_id:currentRestaurant,audience:"restaurant",endpoint:subscription.endpoint,p256dh:json.keys?.p256dh,auth:json.keys?.auth,enabled:true,updated_at:new Date().toISOString()},{onConflict:"endpoint"});
  if(error)throw error;
 }
+async function syncRestaurantPushIfGranted(){
+ if(!("Notification" in window)||Notification.permission!=="granted")return;
+ try{await registerRestaurantPush()}catch(e){console.error("No se pudo sincronizar Web Push",e)}
+ try{window.refreshYummyProNotificationButton?.()}catch(_){}
+}
 async function enableRestaurantNotifications(){
- if("Notification" in window&&Notification.permission==="default"){
+ if(!("Notification" in window))return false;
+ if(Notification.permission==="default"){
   try{await Notification.requestPermission()}catch(e){}
  }
- if("Notification" in window&&Notification.permission==="granted"){try{await registerRestaurantPush()}catch(e){console.error("No se pudo activar Web Push",e)}}
+ if(Notification.permission==="granted"){try{await registerRestaurantPush()}catch(e){console.error("No se pudo activar Web Push",e)}}
+ try{window.refreshYummyProNotificationButton?.()}catch(_){}
+ return Notification.permission==="granted";
 }
 function playNewOrderSound(){
  try{
@@ -4265,7 +4273,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v2.5.04</footer></main></div><script>
+</script><footer class="admin-version">Versión v2.5.05</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -4346,10 +4354,29 @@ function updateYummyProNetworkStatus(){
 function setupYummyProNetworkStatus(){
  updateYummyProNetworkStatus();
  window.addEventListener("offline",()=>{updateYummyProNetworkStatus();try{toast("⚠️ Sin conexión. No se enviarán pedidos ni pagos.")}catch(_){}});
- window.addEventListener("online",()=>{updateYummyProNetworkStatus();try{toast("✅ Conexión restablecida.")}catch(_){}});
+ window.addEventListener("online",()=>{updateYummyProNetworkStatus();try{toast("✅ Conexión restablecida.")}catch(_){};syncRestaurantPushIfGranted().catch(()=>{})});
 }
 function yummyProStandalone(){return window.matchMedia?.("(display-mode: standalone)")?.matches===true||window.navigator.standalone===true}
 function yummyProIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(/macintosh/i.test(navigator.userAgent)&&navigator.maxTouchPoints>1)}
+window.refreshYummyProNotificationButton=function(){
+ const btn=document.getElementById("pwaNotificationBtn");if(!btn)return;
+ if(!("Notification" in window)){btn.classList.add("hidden");return}
+ const permission=Notification.permission;
+ btn.classList.toggle("hidden",permission==="granted");
+ btn.title=permission==="denied"?"Notificaciones bloqueadas en el navegador":"Activar notificaciones";
+ btn.setAttribute("aria-label",btn.title);
+}
+async function activateYummyProNotifications(){
+ if(!("Notification" in window))return toast("Este navegador no admite notificaciones.");
+ if(Notification.permission==="denied"){
+  toast("Las notificaciones están bloqueadas. Actívalas desde los permisos del navegador o del sistema.");
+  return;
+ }
+ const ok=await enableRestaurantNotifications();
+ refreshYummyProNotificationButton();
+ if(ok)toast("✅ Notificaciones activadas en este dispositivo.");
+ else toast("No se activaron las notificaciones.");
+}
 function yummyProAndroid(){return /android/i.test(navigator.userAgent)}
 function refreshYummyProInstallButton(){
  const btn=document.getElementById("pwaInstallBtn");if(!btn)return;
@@ -4392,6 +4419,7 @@ window.addEventListener("DOMContentLoaded",async()=>{
   }
  }catch(e){console.error("No se pudo preparar YummyPro para instalación",e)}
  refreshYummyProInstallButton();
+ refreshYummyProNotificationButton();
 });
 </script>
 </body></html>
