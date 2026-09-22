@@ -17,3 +17,5 @@ console.log('Landing y panel restaurante validados');
 for (const needle of ["subscriptionModuleAccess","loadSubscriptionModuleAccess","effectiveTabs","subscription_plans"]) {
   if (!panel.includes(needle)) throw new Error(`Missing subscription module access marker: ${needle}`);
 }
+
+for(const marker of ['currencyDigits','minimumFractionDigits:shown','maximumFractionDigits:shown'])if(!panel.includes(marker))throw new Error('panel/index.html: falta formato monetario adaptable '+marker);
