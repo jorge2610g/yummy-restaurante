@@ -29,3 +29,5 @@ for(const marker of ['manage-flow-pending-payment','create-flow-recurring-subscr
 for(const marker of ['cancel-recurring-subscription','manageRecurringSubscription','Cancelar suscripción Flow','Pausar renovación Mercado Pago','Reactivar suscripción Mercado Pago','Renovación cancelada'])if(!panel.includes(marker))throw new Error('panel/index.html: falta gestión de suscripción '+marker);
 
 for(const marker of ['Comprar ','Pago único','Suscripción automática','Pagar con Mercado Pago','Pagar con Flow','Reactivar con Mercado Pago','plan-provider-logo mp'])if(!panel.includes(marker))throw new Error('panel/index.html: falta checkout profesional '+marker);
+
+for(const marker of ['sidebar-no-gaps-v2462','align-content:start','grid-auto-rows:max-content','syncSidebarGroupVisibility'])if(!panel.includes(marker))throw new Error('panel/index.html: falta compactación del menú lateral '+marker);
