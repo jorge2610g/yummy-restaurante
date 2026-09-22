@@ -2008,17 +2008,18 @@ function renderBillingSummary(){
  const status=String(r.subscription_status||"trial").toLowerCase(),statusLabel=status==="trial"?"Prueba gratuita":status==="active"?"Suscripción activa":status==="suspended"?"Suscripción suspendida":"Suscripción vencida";
  const expires=r.subscription_expires_at?new Date(r.subscription_expires_at):null,locale=r.locale||currentRestaurantConfig?.locale||"es-CL",days=expires?Math.max(0,Math.ceil((expires.getTime()-Date.now())/86400000)):null;
  const mpRecurring=String(r.mp_subscription_status||"").toLowerCase(),flowRecurring=String(r.flow_subscription_status||"").toLowerCase(),hasFlow=!!r.flow_subscription_id,hasMp=!!r.mp_subscription_id;
- const mpActive=hasMp&&["authorized","active"].includes(mpRecurring),mpCancelled=hasMp&&["canceled","cancelled"].includes(mpRecurring);
+ const mpActive=hasMp&&["authorized","active"].includes(mpRecurring),mpPaused=hasMp&&mpRecurring==="paused",mpCancelled=hasMp&&["canceled","cancelled"].includes(mpRecurring);
  const flowActive=hasFlow&&["active","1"].includes(flowRecurring),flowCancelScheduled=hasFlow&&flowRecurring==="cancel_at_period_end";
- const recurringLabel=flowCancelScheduled?"Flow · cancelación programada":flowActive?"Activa con Flow":mpCancelled?"Mercado Pago · cancelada":mpActive?"Activa con Mercado Pago":hasFlow&&flowRecurring?"Flow · "+billingStatusLabel(flowRecurring):mpRecurring?billingStatusLabel(mpRecurring):"No activa";
- const nextRaw=(flowCancelScheduled||mpCancelled)?null:(flowActive||hasFlow?r.flow_next_invoice_date:r.mp_next_payment_date),next=nextRaw?new Date(nextRaw).toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric"}):"Sin próximo cobro";
+ const recurringLabel=flowCancelScheduled?"Flow · cancelación programada":flowActive?"Activa con Flow":mpPaused?"Mercado Pago · renovación pausada":mpCancelled?"Mercado Pago · cancelada":mpActive?"Activa con Mercado Pago":hasFlow&&flowRecurring?"Flow · "+billingStatusLabel(flowRecurring):mpRecurring?billingStatusLabel(mpRecurring):"No activa";
+ const nextRaw=(flowCancelScheduled||mpPaused||mpCancelled)?null:(flowActive||hasFlow?r.flow_next_invoice_date:r.mp_next_payment_date),next=nextRaw?new Date(nextRaw).toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric"}):"Sin próximo cobro";
  const until=expires?expires.toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric"}):"la fecha de vencimiento";
  let cancelActions="";
  if(!adminPreviewMode){
    const buttons=[];
-   if(flowActive)buttons.push('<button class="danger" type="button" onclick="cancelRecurringSubscription(\'flow\')">Cancelar suscripción Flow</button>');
-   if(mpActive)buttons.push('<button class="danger" type="button" onclick="cancelRecurringSubscription(\'mercadopago\')">Cancelar suscripción Mercado Pago</button>');
-   if(buttons.length)cancelActions='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">'+buttons.join("")+'</div><div class="mut" style="margin-top:8px;font-size:13px">Al cancelar, conservarás el acceso hasta '+esc(until)+'. No se realizarán nuevos cobros.</div>';
+   if(flowActive)buttons.push('<button class="danger" type="button" onclick="manageRecurringSubscription(\'flow\',\'cancel\')">Cancelar suscripción Flow</button>');
+   if(mpActive)buttons.push('<button class="danger" type="button" onclick="manageRecurringSubscription(\'mercadopago\',\'pause\')">Pausar renovación Mercado Pago</button>');
+   if(mpPaused)buttons.push('<button class="primary" type="button" onclick="manageRecurringSubscription(\'mercadopago\',\'reactivate\')">Reactivar suscripción Mercado Pago</button>');
+   if(buttons.length)cancelActions='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">'+buttons.join("")+'</div><div class="mut" style="margin-top:8px;font-size:13px">'+(mpPaused?'La renovación está pausada. Puedes reactivarla cuando quieras.':'Al detener la renovación, conservarás el acceso hasta '+esc(until)+'.')+'</div>';
    else if(flowCancelScheduled||mpCancelled)cancelActions='<div class="item" style="margin-top:18px"><b>Renovación cancelada</b><div class="mut" style="margin-top:5px">No habrá más cobros. Mantienes el acceso hasta '+esc(until)+'.</div></div>';
  }
  box.innerHTML='<div class="billing-kicker">PLAN ACTUAL</div><div class="billing-current-name">'+esc(r.subscription_plan||"Plan YummyPro")+'</div><div class="billing-current-status '+(status==="active"||status==="trial"?"billing-status-success":status==="suspended"?"billing-status-danger":"billing-status-pending")+'">'+esc(statusLabel)+'</div><div class="billing-current-grid"><div><span>Vencimiento</span><b>'+esc(expires?expires.toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric"}):"Sin vencimiento")+'</b></div><div><span>Tiempo restante</span><b>'+esc(days==null?"—":days+" días")+'</b></div><div><span>Renovación automática</span><b>'+esc(recurringLabel)+'</b></div><div><span>Próximo cobro</span><b>'+esc(next)+'</b></div></div>'+cancelActions;
@@ -2738,18 +2739,20 @@ async function payFlowRecurringSubscription(id){
   toast("Flow está procesando la suscripción.");
  }catch(e){console.error(e);toast("No se pudo crear la suscripción con Flow")}
 }
-async function cancelRecurringSubscription(provider){
+async function manageRecurringSubscription(provider,action){
  const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));if(!r)return toast("No se pudo cargar la suscripción");
  const name=provider==="flow"?"Flow":"Mercado Pago",locale=r.locale||currentRestaurantConfig?.locale||"es-CL",expires=r.subscription_expires_at?new Date(r.subscription_expires_at):null,until=expires?expires.toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric"}):"la fecha de vencimiento";
- if(!confirm("¿Cancelar la suscripción automática con "+name+"?\n\nNo habrá nuevos cobros y conservarás el acceso hasta "+until+"."))return;
+ const isReactivate=provider==="mercadopago"&&action==="reactivate",isPause=provider==="mercadopago"&&action==="pause";
+ const question=isReactivate?"¿Reactivar la renovación automática con Mercado Pago?":isPause?"¿Pausar la renovación automática con Mercado Pago?\n\nNo habrá nuevos cobros mientras esté pausada y mantendrás el acceso hasta "+until+".":"¿Cancelar la suscripción automática con Flow?\n\nNo habrá nuevos cobros y conservarás el acceso hasta "+until+".";
+ if(!confirm(question))return;
  try{
   const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return toast("Tu sesión venció. Vuelve a iniciar sesión.");
-  toast("Cancelando suscripción con "+name+"…");
-  const res=await fetch(SB_URL+"/functions/v1/cancel-recurring-subscription",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({restaurant_id:currentRestaurant,provider})});
-  const data=await res.json();if(!res.ok)return toast(data?.error||"No se pudo cancelar la suscripción");
+  toast(isReactivate?"Reactivando suscripción con Mercado Pago…":isPause?"Pausando renovación de Mercado Pago…":"Cancelando suscripción con Flow…");
+  const res=await fetch(SB_URL+"/functions/v1/cancel-recurring-subscription",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({restaurant_id:currentRestaurant,provider,action})});
+  const data=await res.json();if(!res.ok)return toast(data?.error||"No se pudo actualizar la suscripción");
   await loadRestaurants();await loadSubscriptionHistory();renderBillingSummary();renderRestaurantPlans();
-  toast("Suscripción "+name+" cancelada. Mantienes el acceso hasta "+until+".");
- }catch(e){console.error(e);toast("No se pudo cancelar la suscripción con "+name)}
+  toast(isReactivate?"Suscripción Mercado Pago reactivada.":isPause?"Renovación Mercado Pago pausada. Puedes reactivarla cuando quieras.":"Suscripción Flow cancelada al final del período.");
+ }catch(e){console.error(e);toast("No se pudo actualizar la suscripción con "+name)}
 }
 function showFlowReturnMessage(){
  const params=new URLSearchParams(location.search),state=params.get("flow");if(!state)return;
@@ -2818,7 +2821,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.59</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.60</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
