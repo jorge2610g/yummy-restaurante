@@ -2883,7 +2883,7 @@ function renderPosTableSelectors(editSelected=null){
   if(exact)select.value=exact.name;
   else if(posTables.length===1)select.value=posTables[0].name;
   else select.value="";
-  select.disabled=posTables.length===0||isEdit&&select.disabled;
+  select.disabled=posTables.length===0;
  };
  build(document.getElementById("posTableReference"),null,false);
  const edit=document.getElementById("posEditTable");
@@ -2987,7 +2987,7 @@ function openPosOrderModal(id){
  posOrderPaymentState.className=paid?"pos-paid":"mut";
  const workflow=document.getElementById("posOrderWorkflowState");if(workflow)workflow.textContent=paid?"✓ Pedido culminado.":(workflowLabels[status]||"");
  const frozen=paid||["listo","entregado","cancelado"].includes(status);
- posEditCustomer.disabled=frozen;posEditTable.disabled=frozen;posEditNotes.disabled=frozen;
+ posEditCustomer.disabled=frozen;posEditTable.disabled=frozen||posTables.length===0;posEditNotes.disabled=frozen;
  const saveBtn=document.getElementById("posSaveOrderBtn"),withdrawBtn=document.getElementById("posWithdrawOrderBtn"),payBtn=document.getElementById("posPayOrderBtn");
  if(saveBtn)saveBtn.classList.toggle("hidden",frozen);
  if(withdrawBtn)withdrawBtn.classList.toggle("hidden",paid||status!=="listo"||!(currentRole==="waiter"||adminPreviewMode));
