@@ -1,9 +1,32 @@
+const YUMMYPRO_CACHE="yummypro-pwa-v2503";
+const YUMMYPRO_OFFLINE_URL="/offline.html";
+const YUMMYPRO_CORE=[YUMMYPRO_OFFLINE_URL,"/manifest.webmanifest","/pwa-icon.svg"];
+
+self.addEventListener("install",event=>{
+ event.waitUntil(caches.open(YUMMYPRO_CACHE).then(cache=>cache.addAll(YUMMYPRO_CORE)).then(()=>self.skipWaiting()));
+});
+self.addEventListener("activate",event=>{
+ event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith("yummypro-pwa-")&&key!==YUMMYPRO_CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));
+});
+self.addEventListener("fetch",event=>{
+ const request=event.request;
+ if(request.method!=="GET")return;
+ const url=new URL(request.url);
+ if(url.origin!==self.location.origin)return;
+ if(YUMMYPRO_CORE.includes(url.pathname)){
+  event.respondWith(caches.match(request).then(cached=>cached||fetch(request)));
+  return;
+ }
+ if(request.mode==="navigate"&&url.pathname.startsWith("/panel")){
+  event.respondWith(fetch(request).catch(()=>caches.match(YUMMYPRO_OFFLINE_URL)));
+ }
+});
 self.addEventListener("push",event=>{
  let data={};try{data=event.data?.json()||{}}catch{data={body:event.data?.text()||"Tienes una actualización."}}
- event.waitUntil(self.registration.showNotification(data.title||"YummyPro",{body:data.body||"Tienes una actualización.",icon:"/icon-192.png",badge:"/icon-192.png",tag:data.tag||"yummypro-notification",renotify:true,data:{url:data.url||"/"}}));
+ event.waitUntil(self.registration.showNotification(data.title||"YummyPro",{body:data.body||"Tienes una actualización.",icon:"/pwa-icon.svg",badge:"/pwa-icon.svg",tag:data.tag||"yummypro-notification",renotify:true,data:{url:data.url||"/panel/"}}));
 });
 self.addEventListener("notificationclick",event=>{
  event.notification.close();
- const target=new URL(event.notification.data?.url||"/",self.location.origin).href;
+ const target=new URL(event.notification.data?.url||"/panel/",self.location.origin).href;
  event.waitUntil(clients.matchAll({type:"window",includeUncontrolled:true}).then(list=>{for(const client of list){if(client.url.startsWith(self.location.origin)){client.navigate(target);return client.focus()}}return clients.openWindow(target)}));
 });

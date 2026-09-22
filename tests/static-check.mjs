@@ -43,3 +43,5 @@ for(const marker of ['role-and-cash-gates-v2466','operationalTabLockReason','Mes
 for(const marker of ['planCheckoutCycleAnnual','setPlanPurchaseCycle','planChargedMonths','annual_bonus_months','billing_cycle:billingCycle','Plan anual','12 meses de acceso'])if(!panel.includes(marker))throw new Error('panel/index.html: falta compra anual '+marker);
 
 for(const marker of ['manifest.webmanifest','pwaInstallBtn','installYummyProPwa','beforeinstallprompt','pwa-install-v2501'])if(!panel.includes(marker))throw new Error('panel/index.html: falta PWA instalable '+marker);
+
+for(const marker of ['pwaNetworkStatus','setupYummyProNetworkStatus','Sin conexión · los pedidos y pagos no se enviarán'])if(!panel.includes(marker))throw new Error('panel/index.html: falta estado de conexión PWA '+marker);

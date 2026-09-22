@@ -1683,6 +1683,13 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
   <button class="primary full" type="button" onclick="closePwaInstallHelp()">Entendido</button>
  </div>
 </div>
+<style id="pwa-network-v2503">
+#pwaNetworkStatus{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:2600;display:none;align-items:center;gap:8px;max-width:calc(100vw - 24px);padding:9px 13px;border-radius:999px;background:#3b1720;color:#fecdd3;border:1px solid #7f1d1d;box-shadow:0 10px 30px #0005;font-size:13px;font-weight:800}
+#pwaNetworkStatus.show{display:flex}
+#pwaNetworkStatus .dot{width:9px;height:9px;border-radius:50%;background:#fb7185;box-shadow:0 0 0 4px #fb718522}
+@media(max-width:600px){#pwaNetworkStatus{top:8px;font-size:12px;padding:8px 11px}}
+</style>
+<div id="pwaNetworkStatus" role="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span>Sin conexión · los pedidos y pagos no se enviarán hasta recuperar internet.</span></div>
 <div id="appBootLoader" role="status" aria-live="polite"><div class="app-boot-card"><div class="app-boot-mark">Y</div><h2>Cargando tu restaurante…</h2><p>Estamos verificando tu sesión y tus accesos.</p><div class="app-boot-spinner" aria-hidden="true"></div></div></div>
 <div id="login" class="wrap login hidden"><div class="card"><h1>Panel de administración</h1><p class="mut">Gestiona menú, precios, disponibilidad y datos del negocio.</p>
 <label>Correo administrador</label><input id="email" type="email" autocomplete="username" placeholder="tu@email.com">
@@ -4244,7 +4251,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v2.5.02</footer></main></div><script>
+</script><footer class="admin-version">Versión v2.5.03</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -4288,6 +4295,16 @@ async function saveSubscriptionMercadoPago(){
 </script>
 <script id="pwa-install-script-v2501">
 let yummyProInstallPrompt=null;
+function updateYummyProNetworkStatus(){
+ const offline=!navigator.onLine,box=document.getElementById("pwaNetworkStatus");
+ if(box)box.classList.toggle("show",offline);
+ document.documentElement.classList.toggle("pwa-offline",offline);
+}
+function setupYummyProNetworkStatus(){
+ updateYummyProNetworkStatus();
+ window.addEventListener("offline",()=>{updateYummyProNetworkStatus();try{toast("⚠️ Sin conexión. No se enviarán pedidos ni pagos.")}catch(_){}});
+ window.addEventListener("online",()=>{updateYummyProNetworkStatus();try{toast("✅ Conexión restablecida.")}catch(_){}});
+}
 function yummyProStandalone(){return window.matchMedia?.("(display-mode: standalone)")?.matches===true||window.navigator.standalone===true}
 function yummyProIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(/macintosh/i.test(navigator.userAgent)&&navigator.maxTouchPoints>1)}
 function yummyProAndroid(){return /android/i.test(navigator.userAgent)}
@@ -4324,6 +4341,7 @@ async function installYummyProPwa(){
 window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();yummyProInstallPrompt=event;refreshYummyProInstallButton()});
 window.addEventListener("appinstalled",()=>{yummyProInstallPrompt=null;refreshYummyProInstallButton();toast("✅ YummyPro se instaló correctamente.")});
 window.addEventListener("DOMContentLoaded",async()=>{
+ setupYummyProNetworkStatus();
  try{if("serviceWorker" in navigator)await navigator.serviceWorker.register("/push-sw.js")}catch(e){console.error("No se pudo preparar YummyPro para instalación",e)}
  refreshYummyProInstallButton();
 });
