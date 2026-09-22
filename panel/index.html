@@ -3050,39 +3050,45 @@ function planProviderButton(provider,label,sub,onclick,disabled=false){
 }
 function renderPlanPurchaseModal(){
  const p=subscriptionPlans.find(x=>Number(x.id)===Number(planCheckoutPlanId));if(!p)return;
+ if(planCheckoutCycle==="annual"&&!p.annual_enabled)planCheckoutCycle="monthly";
  const cfg=currentRestaurantConfig||countryByCode("CL"),country=countryByCode(cfg.country_code||"CL"),restaurant=restaurants.find(x=>Number(x.id)===Number(currentRestaurant)),labels=planCheckoutModuleLabels();
- const price=planPriceInfo(p),localPrice=Number.isFinite(price.amount)&&price.amount>0?money(price.amount,price.currency,cfg.locale):"Precio por confirmar",usd=Number.isFinite(price.usd)&&price.usd>0?new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(price.usd):"";
+ const price=planPriceInfo(p,planCheckoutCycle),localPrice=Number.isFinite(price.amount)&&price.amount>0?money(price.amount,price.currency,cfg.locale):"Precio por confirmar",usd=Number.isFinite(price.usd)&&price.usd>0?new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(price.usd):"";
+ const annual=planCheckoutCycle==="annual",accessDays=annual?Number(p.annual_days||365):Number(p.days||30),bonus=annual?Number(p.annual_bonus_months||0):0,charged=annual?planChargedMonths(p):1;
  const modules=Array.isArray(p.modules)?p.modules:[],isChile=String(country.code||"CL")==="CL",canMp=!!country.mercadopago_enabled&&isChile&&!adminPreviewMode,canFlow=flowPaymentConfigured&&isChile&&!adminPreviewMode,isCurrent=subscriptionIsUsable(restaurant)&&Number(restaurant?.subscription_plan_id)===Number(p.id);
  const mpStatus=String(restaurant?.mp_subscription_status||"").toLowerCase(),mpActive=!!restaurant?.mp_subscription_id&&["authorized","active"].includes(mpStatus),mpPaused=!!restaurant?.mp_subscription_id&&mpStatus==="paused";
  const flowStatus=String(restaurant?.flow_subscription_status||"").toLowerCase(),flowActive=!!restaurant?.flow_subscription_id&&["active","1"].includes(flowStatus),flowCancelScheduled=!!restaurant?.flow_subscription_id&&flowStatus==="cancel_at_period_end";
- const locale=cfg.locale||"es-CL",renewal=new Date();renewal.setDate(renewal.getDate()+Number(p.days||30));
+ const locale=cfg.locale||"es-CL",renewal=new Date();renewal.setDate(renewal.getDate()+accessDays);
  const renewalDate=renewal.toLocaleDateString(locale,{day:"2-digit",month:"long",year:"numeric"});
- const title=document.getElementById("planCheckoutTitle"),subtitle=document.getElementById("planCheckoutSubtitle"),priceEl=document.getElementById("planCheckoutPrice"),ref=document.getElementById("planCheckoutReference"),features=document.getElementById("planCheckoutFeatures"),summary=document.getElementById("planCheckoutSummary"),note=document.getElementById("planCheckoutRenewalNote"),providers=document.getElementById("planCheckoutProviders"),management=document.getElementById("planCheckoutManagement"),once=document.getElementById("planCheckoutModeOnce"),rec=document.getElementById("planCheckoutModeRecurring");
+ const title=document.getElementById("planCheckoutTitle"),subtitle=document.getElementById("planCheckoutSubtitle"),priceEl=document.getElementById("planCheckoutPrice"),ref=document.getElementById("planCheckoutReference"),features=document.getElementById("planCheckoutFeatures"),summary=document.getElementById("planCheckoutSummary"),note=document.getElementById("planCheckoutRenewalNote"),providers=document.getElementById("planCheckoutProviders"),management=document.getElementById("planCheckoutManagement"),once=document.getElementById("planCheckoutModeOnce"),rec=document.getElementById("planCheckoutModeRecurring"),monthlyBtn=document.getElementById("planCheckoutCycleMonthly"),annualBtn=document.getElementById("planCheckoutCycleAnnual"),saving=document.getElementById("planCheckoutAnnualSaving");
  if(title)title.textContent=(isCurrent?"Administrar ":"Comprar ")+(p.name||"Plan");
  if(subtitle)subtitle.textContent=isCurrent?"Revisa tu plan actual, renueva o administra la renovación automática.":"Revisa los detalles antes de continuar al pago.";
  if(priceEl)priceEl.textContent=localPrice;
- if(ref)ref.textContent=(usd?"Referencia: "+usd+" USD · tasa informativa":"")+(Number(p.days||0)?" · "+Number(p.days)+" días":"");
+ if(ref)ref.textContent=(usd?"Referencia: "+usd+" USD · tasa informativa":"")+" · "+(annual?"Plan anual":"Plan mensual");
  if(features)features.innerHTML=modules.length?modules.map(m=>'<div class="plan-checkout-feature"><i>✓</i><span>'+esc(labels[m]||m)+'</span></div>').join(""):'<div class="mut">Este plan todavía no tiene módulos configurados.</div>';
  if(once)once.classList.toggle("active",planCheckoutMode==="one_time");
  if(rec)rec.classList.toggle("active",planCheckoutMode==="recurring");
- if(summary)summary.innerHTML='<div><span>Paga hoy</span><b>'+esc(localPrice)+'</b></div><div><span>Acceso</span><b>'+Number(p.days||0)+' días</b></div><div><span>Modalidad</span><b>'+(planCheckoutMode==="recurring"?"Automática":"Pago único")+'</b></div><div><span>'+(planCheckoutMode==="recurring"?"Renovación estimada":"Próxima renovación")+'</span><b>'+(planCheckoutMode==="recurring"?esc(renewalDate):"No automática")+'</b></div>';
+ if(monthlyBtn)monthlyBtn.classList.toggle("active",!annual);
+ if(annualBtn){annualBtn.classList.toggle("active",annual);annualBtn.disabled=!p.annual_enabled;annualBtn.title=p.annual_enabled?"12 meses con descuento":"Plan anual no habilitado"}
+ if(saving){saving.style.display=annual?"block":"none";saving.innerHTML=annual?'<strong>🎁 '+bonus+' '+(bonus===1?'mes gratis':'meses gratis')+'</strong>Pagas el equivalente a '+charged+' meses y recibes 12 meses de acceso.':""}
+ if(summary)summary.innerHTML='<div><span>Paga hoy</span><b>'+esc(localPrice)+'</b></div><div><span>Acceso</span><b>'+(annual?'12 meses':accessDays+' días')+'</b></div><div><span>Periodo</span><b>'+(annual?'Anual':'Mensual')+'</b></div><div><span>'+(planCheckoutMode==="recurring"?'Próxima renovación':'Renovación')+'</span><b>'+(planCheckoutMode==="recurring"?esc(renewalDate):'No automática')+'</b></div>';
  if(note)note.innerHTML=planCheckoutMode==="recurring"
-   ?'<b>Renovación automática</b><br>Se renovará según el ciclo del plan. Puedes detener la renovación cuando quieras y mantendrás acceso hasta el final del período ya pagado.'
-   :'<b>Pago único</b><br>No se realizarán cobros automáticos. Cuando venza el plan podrás renovarlo nuevamente desde esta misma sección.';
+   ?'<b>Renovación automática '+(annual?'anual':'mensual')+'</b><br>Se renovará cada '+(annual?'12 meses':'ciclo mensual')+'. Puedes detener la renovación cuando quieras y mantendrás acceso hasta el final del período ya pagado.'
+   :'<b>Pago único '+(annual?'anual':'mensual')+'</b><br>No se realizarán cobros automáticos. Cuando venza el plan podrás renovarlo nuevamente desde esta misma sección.';
  let html="";
  if(planCheckoutMode==="one_time"){
-   if(canMp)html+=planProviderButton("mercadopago","Pagar con Mercado Pago","Pago único · checkout seguro","closePlanPurchaseModal();paySubscriptionPlanOnce("+Number(p.id)+")");
-   if(canFlow)html+=planProviderButton("flow","Pagar con Flow","Pago único · checkout seguro","closePlanPurchaseModal();paySubscriptionPlanFlow("+Number(p.id)+")");
+   if(canMp)html+=planProviderButton("mercadopago","Pagar con Mercado Pago",(annual?"Plan anual":"Plan mensual")+" · pago único","closePlanPurchaseModal();paySubscriptionPlanOnce("+Number(p.id)+",'"+planCheckoutCycle+"')");
+   if(canFlow)html+=planProviderButton("flow","Pagar con Flow",(annual?"Plan anual":"Plan mensual")+" · pago único","closePlanPurchaseModal();paySubscriptionPlanFlow("+Number(p.id)+",'"+planCheckoutCycle+"')");
  }else{
+   const currentCycle=String(restaurant?.subscription_billing_cycle||"monthly");
    if(canMp){
-     if(isCurrent&&mpPaused)html+=planProviderButton("mercadopago","Reactivar con Mercado Pago","Renovación pausada · reactívala sin crear otra suscripción","manageRecurringSubscription('mercadopago','reactivate')");
+     if(isCurrent&&mpPaused&&currentCycle===planCheckoutCycle)html+=planProviderButton("mercadopago","Reactivar con Mercado Pago","Renovación pausada · mismo ciclo "+(annual?"anual":"mensual"),"manageRecurringSubscription('mercadopago','reactivate')");
      else if(isCurrent&&mpActive)html+=planProviderButton("mercadopago","Mercado Pago","Tu renovación automática ya está activa","",true);
-     else html+=planProviderButton("mercadopago","Suscribirme con Mercado Pago","Renovación automática · puedes pausarla cuando quieras","closePlanPurchaseModal();paySubscriptionPlan("+Number(p.id)+")");
+     else html+=planProviderButton("mercadopago","Suscribirme con Mercado Pago","Renovación automática "+(annual?"anual":"mensual")+" · puedes pausarla cuando quieras","closePlanPurchaseModal();paySubscriptionPlan("+Number(p.id)+",'"+planCheckoutCycle+"')");
    }
    if(canFlow){
      if(isCurrent&&flowActive)html+=planProviderButton("flow","Flow","Tu suscripción automática ya está activa","",true);
      else if(isCurrent&&flowCancelScheduled)html+=planProviderButton("flow","Flow","Cancelación programada al finalizar el período","",true);
-     else html+=planProviderButton("flow","Suscribirme con Flow","Renovación automática mediante Flow","closePlanPurchaseModal();payFlowRecurringSubscription("+Number(p.id)+")");
+     else html+=planProviderButton("flow","Suscribirme con Flow","Renovación automática "+(annual?"anual":"mensual")+" mediante Flow","closePlanPurchaseModal();payFlowRecurringSubscription("+Number(p.id)+",'"+planCheckoutCycle+"')");
    }
  }
  if(!(canMp||canFlow))html='<a class="billing-whatsapp-link" target="_blank" rel="noopener" href="https://wa.me/56982807639?text=Hola%2C%20necesito%20activar%20mi%20plan%20de%20YummyPro.">Solicitar activación por WhatsApp</a>';
