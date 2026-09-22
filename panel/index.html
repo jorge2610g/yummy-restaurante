@@ -622,11 +622,12 @@ async function loadSubscriptionModuleAccess(){
  if(currentRole!=="restaurant"&&currentRole!=="manager"){subscriptionModuleAccess=null;return}
  const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));
  if(!subscriptionIsUsable(r)){subscriptionModuleAccess=[];return}
- const extra=Array.isArray(r.subscription_module_overrides)?r.subscription_module_overrides:[];
+ const stored=Array.isArray(r.subscription_module_overrides)?r.subscription_module_overrides:[];
+ const customized=r.subscription_modules_customized===true;
  const isTrial=String(r.subscription_status||"").toLowerCase()==="trial"||(!r.subscription_plan_id&&String(r.subscription_plan||"").toLowerCase().includes("prueba"));
  let baseModules=[];
  if(isTrial){
-  baseModules=["products","categories","qr","settings"];
+  baseModules=["dashboard","products","categories","qr","settings"];
  }else{
   const planId=Number(r.subscription_plan_id||0),name=String(r.subscription_plan||"").trim();
   if(planId||name){
@@ -636,7 +637,7 @@ async function loadSubscriptionModuleAccess(){
    else baseModules=Array.isArray(data?.modules)?data.modules:[];
   }
  }
- subscriptionModuleAccess=[...new Set(["dashboard",...baseModules,...extra])];
+ subscriptionModuleAccess=customized?[...new Set(stored)]:[...new Set([...baseModules,...stored])];
 }
 let subscriptionAccessChannel=null;
 function startSubscriptionAccessRealtime(){
@@ -650,7 +651,7 @@ function startSubscriptionAccessRealtime(){
    toast("Tus accesos de suscripción fueron actualizados");
   }).subscribe();
 }
-function effectiveTabs(){if(adminPreviewMode)return roleTabs.restaurant;const byRole=roleTabs[currentRole]||["dashboard"];if(currentRole!=="restaurant"&&currentRole!=="manager")return byRole;if(subscriptionModuleAccess===null)return byRole;const set=new Set(subscriptionModuleAccess);const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));if(subscriptionIsUsable(r))set.add("dashboard");return byRole.filter(x=>x==="plans"||set.has(x))}
+function effectiveTabs(){if(adminPreviewMode)return roleTabs.restaurant;const byRole=roleTabs[currentRole]||["dashboard"];if(currentRole!=="restaurant"&&currentRole!=="manager")return byRole;if(subscriptionModuleAccess===null)return byRole;const set=new Set(subscriptionModuleAccess);return byRole.filter(x=>x==="plans"||set.has(x))}
 function applyRoleAccess(){
  const allowed=effectiveTabs(),tabs=[...document.querySelectorAll(".tab")],activeTab=document.querySelector(".tab.active")?.dataset.tab;
  tabs.forEach(tab=>{const visible=allowed.includes(tab.dataset.tab);tab.hidden=!visible;tab.classList.toggle("role-hidden",!visible);tab.setAttribute("aria-hidden",visible?"false":"true");tab.style.setProperty("display",visible?"":"none",visible?"":"important");tab.classList.remove("active")});
@@ -1303,7 +1304,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.33</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.34</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
