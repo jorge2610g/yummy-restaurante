@@ -2028,7 +2028,7 @@ async function enter(user){
     const {data:menuRestaurant}=await sb.from("restaurants").select("slug").eq("id",currentRestaurant).single();
     const menuLink=document.getElementById("viewMenuLink");
     if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(menuRestaurant?.slug||currentRestaurant);menuLink.style.display=currentRole==="restaurant"?"":"none"}
-    enableRestaurantNotifications();restoreAutoPrintOrders();setTimeout(startRestaurantOrderRealtime,0);setTimeout(startSubscriptionAccessRealtime,0);
+    enableRestaurantNotifications();restoreAutoPrintOrders();setTimeout(startRestaurantOrderRealtime,0);setTimeout(startWaiterReadyReminderLoop,0);setTimeout(startSubscriptionAccessRealtime,0);
     await loadRestaurants();
     await Promise.allSettled([loadSubscriptionPlans(),loadSubscriptionModuleAccess()]);
     applyRoleAccess();
@@ -2496,6 +2496,7 @@ function restaurantOrderAlert(row){
 let restaurantOrdersChannel=null;
 const notifiedRestaurantOrders=new Set();
 const notifiedWaiterReadyOrders=new Set();
+let waiterReadyReminderTimer=null;
 function waiterReadyAlert(row){
  try{
   if("Notification" in window&&Notification.permission==="granted")new Notification("🍽️ Pedido listo",{body:"#"+(row.order_code||row.id)+" · "+(row.table_reference||row.customer_name||"Retirar en cocina"),tag:"waiter-ready-"+row.id,renotify:true,requireInteraction:true});
@@ -2510,6 +2511,24 @@ async function enableWaiterNotifications(){
  if(Notification.permission==="denied")return toast("Las notificaciones están bloqueadas. Actívalas en los permisos del navegador.");
  if(Notification.permission==="granted")return toast("🔔 Avisos del mesero activados.");
  toast("Permite las notificaciones del navegador para recibir el aviso de pedido listo.");
+}
+async function checkWaiterReadyReminders(){
+ if(currentRole!=="waiter"||!currentRestaurant||!currentUserId)return;
+ const {data,error}=await sb.from("restaurant_orders")
+   .select("id,order_code,table_reference,customer_name,status,payment_status,order_source,created_by")
+   .eq("restaurant_id",currentRestaurant)
+   .eq("order_source","waiter")
+   .eq("created_by",currentUserId)
+   .eq("status","listo")
+   .neq("payment_status","approved");
+ if(error){console.error("No se pudieron revisar recordatorios del mesero",error);return}
+ for(const row of data||[])waiterReadyAlert(row);
+}
+function startWaiterReadyReminderLoop(){
+ if(waiterReadyReminderTimer){clearInterval(waiterReadyReminderTimer);waiterReadyReminderTimer=null}
+ if(currentRole!=="waiter")return;
+ setTimeout(checkWaiterReadyReminders,1200);
+ waiterReadyReminderTimer=setInterval(checkWaiterReadyReminders,30000);
 }
 function isApprovedMercadoPagoOrder(row){const approved=String(row?.payment_status||"").trim().toLowerCase()==="approved",source=String(row?.order_source||"online").toLowerCase(),method=String(row?.payment_method||"").trim().toLowerCase();if(source==="table_qr")return method==="mercado pago"?approved:true;return approved&&source==="online"}
 function startRestaurantOrderRealtime(){
@@ -2573,7 +2592,7 @@ async function loadKitchen(){
   loadStaffDirectory()
  ]);
  if(error)return toast(error.message);
- const rows=(data||[]).filter(o=>o.order_source==="waiter"||(o.order_source==="table_qr"&&(String(o.payment_method||"").toLowerCase()!=="mercado pago"||o.payment_status==="approved"))||(o.order_source==="online"&&o.payment_status==="approved")),board=document.getElementById("kitchenBoard");if(!board)return;
+ const rows=(data||[]).filter(o=>(o.order_source==="waiter"&&String(o.payment_status||"").toLowerCase()!=="approved")||(o.order_source==="table_qr"&&(String(o.payment_method||"").toLowerCase()!=="mercado pago"||o.payment_status==="approved"))||(o.order_source==="online"&&o.payment_status==="approved")),board=document.getElementById("kitchenBoard");if(!board)return;
  rows.forEach(row=>{if(!orders.some(o=>String(o.id)===String(row.id)))orders.push(row)});
  const columns=[{status:"recibido",title:"Nuevos",action:"preparacion",button:"Preparar"},{status:"preparacion",title:"En preparación",action:"listo",button:"Marcar listo"},{status:"listo",title:"Listos",action:null,button:"Esperando retiro del mesero"}];
  board.innerHTML=columns.map(col=>{const list=rows.filter(o=>o.status===col.status);return `<div class="kds-column"><div class="kds-column-head"><h3>${col.title}</h3><span class="pill">${list.length}</span></div>${list.map(o=>{const items=Array.isArray(o.items)?o.items:[],minutes=Math.max(0,Math.floor((Date.now()-new Date(o.created_at).getTime())/60000));return `<article class="kds-ticket"><div class="row between"><b>#${esc(o.order_code)}</b><span class="pill">${minutes} min</span></div><div class="mut">${esc(o.order_source==="waiter"?(o.table_reference||"Pedido en local"):o.order_source==="table_qr"?(o.table_reference||"Mesa"):o.order_type)} · ${esc(o.customer_name||"Cliente")}${o.order_source==="waiter"?` · Mesero: ${esc(staffNameByUserId(o.created_by,"Sin identificar"))}`:o.order_source==="table_qr"?" · QR de mesa":""}</div><div class="kds-ticket-items">${items.map(x=>`<div><b>${Number(x.qty||1)}× ${esc(x.name||"Producto")}</b>${x.note?`<div class="mut">${esc(x.note)}</div>`:""}${Array.isArray(x.extras)&&x.extras.length?`<div class="mut">+ ${x.extras.map(e=>esc(e.name||e)).join(" · ")}</div>`:""}</div>`).join("")||"Sin detalle"}</div><div class="actions"><button class="ghost" onclick="printOrderCommand(${o.id})" title="Imprimir en cocina">🖨️ Imprimir</button>${col.action?`<button class="primary" onclick="setOrderStatus(${o.id},'${col.action}').then(loadKitchen)">${col.button}</button>`:`<span class="pill">✓ ${col.button}</span>`}</div></article>`}).join("")||'<p class="mut">Sin pedidos.</p>'}</div>`}).join("");
@@ -2943,6 +2962,7 @@ async function loadPosOrders(){
  const [{data,error},{data:staff}]=await Promise.all([orderQuery,sb.from("restaurant_staff").select("user_id,email,display_name,role").eq("restaurant_id",currentRestaurant)]);
  if(error)return toast(error.message);
  posOrders=data||[];staffMembers=staff||staffMembers;
+ if(currentRole==="waiter")setTimeout(checkWaiterReadyReminders,250);
  posOrders.forEach(row=>{const i=orders.findIndex(o=>String(o.id)===String(row.id));if(i<0)orders.push(row);else orders[i]=row});
  renderPosOrders();
 }
@@ -3381,7 +3401,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.70</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.71</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
