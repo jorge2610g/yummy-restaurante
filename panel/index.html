@@ -1682,7 +1682,7 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b){const next=theme==="dark"?"claro":"oscuro",icon=theme==="dark"?"☀️":"🌙";b.innerHTML='<span class="header-action-icon" aria-hidden="true">'+icon+'</span><span class="action-label">Modo '+next+'</span>';b.setAttribute("aria-label","Activar modo "+next);b.title="Activar modo "+next}}
 function toggleAdminTheme(){applyAdminTheme(document.documentElement.dataset.theme==="light"?"dark":"light")}
 applyAdminTheme(localStorage.getItem("admin_theme")||"dark");setTimeout(bindRestaurantMpButtons,0);
-let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",posCart={},subscriptionFxRates={},posOrders=[],posOrderDateFilter="today",cashDateFilter="today",cashPaidOrderDateFilter="today",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[];
+let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",posCart={},subscriptionFxRates={},posOrders=[],posOrderDateFilter="today",cashDateFilter="today",cashPaidOrderDateFilter="today",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[];
 function matchesPeriod(value,period,fromId,toId){const date=new Date(value);if(Number.isNaN(date.getTime()))return false;if(period==="all")return true;const now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),now.getDate()),end=new Date(start);end.setDate(end.getDate()+1);if(period==="week")start.setDate(start.getDate()-6);if(period==="month")start.setDate(1);if(period==="custom"){const from=document.getElementById(fromId)?.value,to=document.getElementById(toId)?.value;if(from)start.setTime(new Date(from+"T00:00:00").getTime());else start.setTime(0);if(to)end.setTime(new Date(to+"T23:59:59.999").getTime());else end.setTime(8640000000000000)}return date>=start&&date<end}
 function activatePeriodButtons(attribute,value){document.querySelectorAll(`[${attribute}]`).forEach(button=>{const active=button.getAttribute(attribute)===value;button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active))})}
 function resetPeriodToToday(tab){
@@ -1788,13 +1788,13 @@ async function enter(user){
     // Solo respetamos enlaces directos a otras secciones; un tab=plans antiguo no debe dominar el login.
     const restaurantRow=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));
     const homeTab=subscriptionIsUsable(restaurantRow)&&allowedTabs.includes("dashboard")?"dashboard":(allowedTabs[0]||"plans");
-    const initialTab=requestedTab&&requestedTab!=="plans"&&allowedTabs.includes(requestedTab)?requestedTab:homeTab;
+    const paymentReturn=urlParams.has("flow")||urlParams.has("payment")||urlParams.has("subscription")||urlParams.has("plan");const initialTab=requestedTab&&allowedTabs.includes(requestedTab)&&(requestedTab!=="plans"||paymentReturn)?requestedTab:homeTab;
     document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
     document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
     document.querySelector('.tab[data-tab="'+initialTab+'"]')?.classList.add("active");
     document.getElementById(initialTab)?.classList.add("active");
     syncSubscriptionBannerForActiveTab();
-    if(urlParams.get("tab")==="plans"&&!urlParams.get("plan")){
+    if(urlParams.get("tab")==="plans"&&!paymentReturn){
       urlParams.delete("tab");const clean=location.pathname+(urlParams.toString()?"?"+urlParams.toString():"")+location.hash;history.replaceState(null,"",clean);
     }
     msg.textContent="";
@@ -1901,18 +1901,28 @@ async function refreshAll(){
 }
 async function refreshRestaurantDashboard(){await Promise.allSettled([loadProducts(),loadDashboardOrders()]);renderStats()}
 async function loadDashboardOrders(){if(!currentRestaurant)return;const {data,error}=await sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(500);if(error)return toast(error.message);orders=(data||[]).filter(o=>o.order_source==="waiter"||(o.order_source==="online"&&o.payment_status==="approved")||(o.order_source==="table_qr"&&(String(o.payment_method||"").trim().toLowerCase()!=="mercado pago"||o.payment_status==="approved")))}
+async function loadFlowPaymentStatus(){
+ flowPaymentConfigured=false;flowPaymentEnvironment="sandbox";
+ if(!currentRestaurant)return;
+ try{
+  const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return;
+  const res=await fetch(SB_URL+"/functions/v1/subscription-flow-settings",{headers:{"apikey":SB_KEY,"Authorization":"Bearer "+session.access_token}});
+  const d=await res.json();if(!res.ok)return;
+  flowPaymentConfigured=!!d.configured;flowPaymentEnvironment=d.environment||"sandbox";
+ }catch(e){console.error("Flow settings",e)}
+}
 async function loadSubscriptionPlans(){
  const {data,error}=await sb.from("subscription_plans").select("*").eq("active",true).eq("is_default_trial",false).order("amount",{ascending:true});
  if(error){console.error("Error cargando planes",error);subscriptionPlans=[];renderRestaurantPlans();renderBillingSummary();return}
  subscriptionPlans=data||[];
- await Promise.allSettled([loadSubscriptionExchangeRates(),loadSubscriptionHistory()]);
- renderRestaurantPlans();renderBillingSummary();renderBillingPaymentMethods();
+ await Promise.allSettled([loadSubscriptionExchangeRates(),loadSubscriptionHistory(),loadFlowPaymentStatus()]);
+ renderRestaurantPlans();renderBillingSummary();renderBillingPaymentMethods();showFlowReturnMessage();
 }
 async function loadSubscriptionHistory(){
  if(!currentRestaurant)return;
  const box=document.getElementById("subscriptionPaymentHistory");
  if(box)box.innerHTML='<div class="billing-loading">Cargando historial…</div>';
- const {data,error}=await sb.from("subscription_payments").select("id,restaurant_id,plan_id,amount,status,created_at,paid_at,payment_type,provider,currency_code,mp_payment_id,mp_subscription_id").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(50);
+ const {data,error}=await sb.from("subscription_payments").select("id,restaurant_id,plan_id,amount,status,created_at,paid_at,payment_type,provider,currency_code,mp_payment_id,mp_subscription_id,provider_order_id,provider_token,checkout_url").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(50);
  if(error){console.error("No se pudo cargar el historial de suscripciones",error);subscriptionPayments=[];if(box)box.innerHTML='<div class="item"><b>No se pudo cargar el historial</b><div class="mut">'+esc(error.message||"Intenta nuevamente.")+'</div></div>';return}
  subscriptionPayments=data||[];renderSubscriptionHistory();
 }
@@ -1931,10 +1941,16 @@ function renderSubscriptionHistory(){
  box.innerHTML=subscriptionPayments.map(p=>{
   const plan=plans.get(Number(p.plan_id))||"Plan YummyPro",date=new Date(p.paid_at||p.created_at),locale=currentRestaurantConfig?.locale||"es-CL";
   const amount=money(p.amount,p.currency_code||currentRestaurantConfig?.currency_code,locale),type=p.payment_type==="recurring"?"Suscripción automática":"Pago único";
-  const pending=String(p.status||"pending").toLowerCase()==="pending";
-  const pendingActions=pending?'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'resume\')">Continuar pago</button><button class="danger" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'cancel\')">Cancelar</button></div>':'';
-  return '<div class="billing-history-row '+(pending?'has-actions':'')+'"><div><b>'+esc(plan)+'</b><div class="mut">'+esc(type)+' · '+esc(p.provider==="mercadopago"?"Mercado Pago":(p.provider||"Pago"))+'</div></div><div class="billing-history-date">'+esc(date.toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}))+'</div><div class="billing-history-amount">'+esc(amount)+'</div><span class="billing-status '+billingStatusClass(p.status)+'">'+esc(billingStatusLabel(p.status))+'</span>'+pendingActions+'</div>';
+  const pending=String(p.status||"pending").toLowerCase()==="pending",provider=String(p.provider||"");
+  const providerName=provider==="mercadopago"?"Mercado Pago":provider==="flow"?"Flow":(provider||"Pago");
+  const pendingActions=pending?(provider==="flow"?'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="resumeFlowPaymentHistory('+Number(p.id)+')">Continuar pago</button></div>':'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'resume\')">Continuar pago</button><button class="danger" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'cancel\')">Cancelar</button></div>'):'';
+  return '<div class="billing-history-row '+(pending?'has-actions':'')+'"><div><b>'+esc(plan)+'</b><div class="mut">'+esc(type)+' · '+esc(providerName)+'</div></div><div class="billing-history-date">'+esc(date.toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}))+'</div><div class="billing-history-amount">'+esc(amount)+'</div><span class="billing-status '+billingStatusClass(p.status)+'">'+esc(billingStatusLabel(p.status))+'</span>'+pendingActions+'</div>';
  }).join("");
+}
+function resumeFlowPaymentHistory(paymentId){
+ const payment=subscriptionPayments.find(x=>Number(x.id)===Number(paymentId));if(!payment)return toast("Pago no encontrado");
+ if(!payment.checkout_url)return toast("Este enlace de Flow ya no está disponible");
+ window.location.assign(payment.checkout_url);
 }
 async function managePendingSubscriptionPayment(paymentId,action){
  const payment=subscriptionPayments.find(x=>Number(x.id)===Number(paymentId));if(!payment)return toast("Pago no encontrado");
@@ -1964,11 +1980,12 @@ function renderBillingSummary(){
 }
 function renderBillingPaymentMethods(){
  const box=document.getElementById("billingPaymentMethods");if(!box)return;
- const cfg=currentRestaurantConfig||countryByCode("CL"),country=countryByCode(cfg.country_code||"CL"),isChile=String(country.code||"CL")==="CL",mpAvailable=!!country.mercadopago_enabled&&isChile;
+ const cfg=currentRestaurantConfig||countryByCode("CL"),country=countryByCode(cfg.country_code||"CL"),isChile=String(country.code||"CL")==="CL",mpAvailable=!!country.mercadopago_enabled&&isChile,flowAvailable=flowPaymentConfigured&&isChile;
  const alternatives=Array.isArray(country.alternative_payments)?country.alternative_payments:[];
  const names={bank_transfer:"Transferencia bancaria",qr_bank:"Pago por QR",yape:"Yape",plin:"Plin",pix:"Pix",yappy:"Yappy",mobile_payment:"Pago móvil"};
  const altText=alternatives.map(x=>names[x]||x).join(" · ");
- box.innerHTML='<div class="billing-kicker">MEDIOS DE PAGO</div><h3 style="margin:8px 0 4px">'+esc(country.name||cfg.country_code||"Tu país")+'</h3>'+(mpAvailable?'<div class="billing-method-ok">✓ Mercado Pago habilitado</div><p class="mut">Puedes realizar pago único o activar la suscripción automática.</p>':'<div class="billing-method-assisted">Activación asistida</div><p class="mut">Mercado Pago para suscripciones no está habilitado en este país.</p>')+(altText?'<div class="billing-alt-methods"><b>Alternativas configuradas</b><div class="mut">'+esc(altText)+'</div></div>':'')+(!mpAvailable?'<a class="billing-whatsapp-link" target="_blank" rel="noopener" href="https://wa.me/56982807639?text=Hola%2C%20necesito%20activar%20mi%20plan%20de%20YummyPro.">Contactar para activar</a>':'');
+ const providers=(mpAvailable?'<div class="billing-method-ok">✓ Mercado Pago habilitado</div>':'')+(flowAvailable?'<div class="billing-method-ok">✓ Flow habilitado · '+esc(flowPaymentEnvironment==="production"?"Producción":"Sandbox")+'</div>':'');
+ box.innerHTML='<div class="billing-kicker">MEDIOS DE PAGO</div><h3 style="margin:8px 0 4px">'+esc(country.name||cfg.country_code||"Tu país")+'</h3>'+providers+((mpAvailable||flowAvailable)?'<p class="mut">Elige la pasarela disponible al pagar tu plan.</p>':'<div class="billing-method-assisted">Activación asistida</div><p class="mut">No hay una pasarela online habilitada para este país.</p>')+(altText?'<div class="billing-alt-methods"><b>Alternativas configuradas</b><div class="mut">'+esc(altText)+'</div></div>':'')+(!(mpAvailable||flowAvailable)?'<a class="billing-whatsapp-link" target="_blank" rel="noopener" href="https://wa.me/56982807639?text=Hola%2C%20necesito%20activar%20mi%20plan%20de%20YummyPro.">Contactar para activar</a>':'');
 }
 async function refreshBillingCenter(){await Promise.allSettled([loadRestaurants(),loadSubscriptionPlans()]);renderBillingSummary();renderBillingPaymentMethods();}
 async function loadSubscriptionExchangeRates(){
@@ -2612,7 +2629,7 @@ function renderQrPanel(){
 function renderRestaurantPlans(){
  const box=document.getElementById("restaurantPlans");if(!box)return;
  const labels={dashboard:"Dashboard",products:"Gestión de productos",categories:"Gestión de categorías",qr:"Código QR del menú",table_qr:"QR de Mesa",settings:"Configuración del sitio y abrir/cerrar",orders:"Pedidos online",pos:"Meseros / POS",cash:"Caja",kitchen:"Pantalla de cocina",inventory:"Inventario",staff:"Gestión de personal",promotions:"Promociones",reviews:"Reseñas"};
- const cfg=currentRestaurantConfig||countryByCode("CL"),country=countryByCode(cfg.country_code||"CL"),canPay=country.mercadopago_enabled&&String(country.code)==="CL"&&!adminPreviewMode;
+ const cfg=currentRestaurantConfig||countryByCode("CL"),country=countryByCode(cfg.country_code||"CL"),isChile=String(country.code||"CL")==="CL",canMp=country.mercadopago_enabled&&isChile&&!adminPreviewMode,canFlow=flowPaymentConfigured&&isChile&&!adminPreviewMode;
  const restaurant=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));
  const recurringStatus=String(restaurant?.mp_subscription_status||"").toLowerCase();
  const recurringActive=["authorized","active"].includes(recurringStatus);
@@ -2624,13 +2641,18 @@ function renderRestaurantPlans(){
   let actions="";
   if(adminPreviewMode){
    actions='<div class="plan-admin-note"><b>Vista administrativa</b><span>Los botones de compra aparecen solo al restaurante.</span></div>';
-  }else if(canPay){
+  }else if(canMp||canFlow){
+   const buttons=[];
    if(isCurrent){
-    const recurringButton=recurringActive?'<button class="ghost plan-action-btn" type="button" disabled>Renovación automática activa</button>':'<button class="ghost plan-action-btn" type="button" onclick="paySubscriptionPlan('+p.id+')">Activar renovación automática</button>';
-    actions='<div class="plan-actions"><button class="primary plan-action-btn current-plan-btn" type="button" disabled>Tu plan actual</button>'+recurringButton+'</div>';
+    buttons.push('<button class="primary plan-action-btn current-plan-btn" type="button" disabled>Tu plan actual</button>');
+    if(canFlow)buttons.push('<button class="ghost plan-action-btn" type="button" onclick="paySubscriptionPlanFlow('+p.id+')">Renovar con Flow</button>');
+    if(canMp)buttons.push(recurringActive?'<button class="ghost plan-action-btn" type="button" disabled>Renovación automática activa</button>':'<button class="ghost plan-action-btn" type="button" onclick="paySubscriptionPlan('+p.id+')">Activar renovación automática</button>');
    }else{
-    actions='<div class="plan-actions"><button class="ghost plan-action-btn" type="button" onclick="paySubscriptionPlanOnce('+p.id+')">Pagar plan</button><button class="primary plan-action-btn" type="button" onclick="paySubscriptionPlan('+p.id+')">Suscripción automática</button></div>';
+    if(canMp)buttons.push('<button class="ghost plan-action-btn" type="button" onclick="paySubscriptionPlanOnce('+p.id+')">Pagar con Mercado Pago</button>');
+    if(canFlow)buttons.push('<button class="ghost plan-action-btn" type="button" onclick="paySubscriptionPlanFlow('+p.id+')">Pagar con Flow</button>');
+    if(canMp)buttons.push('<button class="primary plan-action-btn" type="button" onclick="paySubscriptionPlan('+p.id+')">Suscripción automática</button>');
    }
+   actions='<div class="plan-actions">'+buttons.join("")+'</div>';
   }else{
    actions='<div class="plan-assisted"><b>Activación asistida</b><span>Te ayudamos con el pago y la activación en tu país.</span><a target="_blank" rel="noopener" href="https://wa.me/56982807639?text='+helpMessage+'">Escríbenos por WhatsApp</a></div>';
   }
@@ -2646,6 +2668,22 @@ async function paySubscriptionPlanOnce(id){
   const data=await res.json();if(!res.ok||!data?.init_point)return toast(data?.error||"No se pudo iniciar el pago");
   window.location.assign(data.init_point);
  }catch(e){console.error(e);toast("No se pudo conectar con Mercado Pago");}
+}
+async function paySubscriptionPlanFlow(id){
+ const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
+ try{
+  const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return toast("Tu sesión venció. Vuelve a iniciar sesión.");
+  toast("Preparando pago con Flow…");
+  const res=await fetch(SB_URL+"/functions/v1/create-flow-subscription-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({plan_id:p.id,restaurant_id:currentRestaurant})});
+  const data=await res.json();if(!res.ok||!data?.init_point)return toast(data?.error||"No se pudo iniciar el pago con Flow");
+  window.location.assign(data.init_point);
+ }catch(e){console.error(e);toast("No se pudo conectar con Flow")}
+}
+function showFlowReturnMessage(){
+ const params=new URLSearchParams(location.search),state=params.get("flow");if(!state)return;
+ const labels={success:"Pago Flow aprobado. Tu plan se está actualizando.",pending:"El pago Flow todavía está pendiente.",rejected:"El pago Flow fue rechazado.",cancelled:"El pago Flow fue anulado.",error:"No se pudo verificar el retorno de Flow."};
+ toast(labels[state]||"Estado de Flow actualizado.");
+ params.delete("flow");params.delete("tab");const clean=location.pathname+(params.toString()?"?"+params.toString():"")+location.hash;history.replaceState(null,"",clean);
 }
 async function paySubscriptionPlan(id){
  const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
@@ -2708,7 +2746,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.55</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.56</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
