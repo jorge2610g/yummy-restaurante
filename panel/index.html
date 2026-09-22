@@ -1360,6 +1360,12 @@ html[data-theme="light"] .side-menu .tab.active .nav-icon{
 #plans .plan-assisted a{display:flex;justify-content:center;align-items:center;min-height:42px;margin-top:5px;border-radius:11px;background:#25D366;color:#fff;text-decoration:none;font-weight:900}
 @media(max-width:1050px){#plans .billing-plan-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:820px}}
 @media(max-width:680px){#plans .billing-plans-card{padding:18px 14px}#plans .billing-plan-grid{grid-template-columns:1fr;max-width:520px;gap:14px}#plans .plan-card-body{padding:22px 20px 20px}#plans .plan-name{font-size:22px}#plans .plan-price{font-size:34px}#plans .plan-features{font-size:14px}}
+</style><style id="billing-pending-actions-v2454">
+#plans .billing-history-row.has-actions{grid-template-columns:minmax(180px,1fr) minmax(130px,.6fr) minmax(110px,.4fr) auto auto}
+#plans .billing-pending-actions{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap}
+#plans .billing-pending-actions button{min-height:36px;padding:8px 11px;font-size:11px;font-weight:900;white-space:nowrap}
+@media(max-width:1050px){#plans .billing-history-row.has-actions{grid-template-columns:minmax(0,1fr) auto}.billing-pending-actions{grid-column:1/-1;justify-content:flex-start!important}}
+@media(max-width:520px){#plans .billing-pending-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}#plans .billing-pending-actions button{width:100%}}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -1924,8 +1930,27 @@ function renderSubscriptionHistory(){
  box.innerHTML=subscriptionPayments.map(p=>{
   const plan=plans.get(Number(p.plan_id))||"Plan YummyPro",date=new Date(p.paid_at||p.created_at),locale=currentRestaurantConfig?.locale||"es-CL";
   const amount=money(p.amount,p.currency_code||currentRestaurantConfig?.currency_code,locale),type=p.payment_type==="recurring"?"Suscripción automática":"Pago único";
-  return '<div class="billing-history-row"><div><b>'+esc(plan)+'</b><div class="mut">'+esc(type)+' · '+esc(p.provider==="mercadopago"?"Mercado Pago":(p.provider||"Pago"))+'</div></div><div class="billing-history-date">'+esc(date.toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}))+'</div><div class="billing-history-amount">'+esc(amount)+'</div><span class="billing-status '+billingStatusClass(p.status)+'">'+esc(billingStatusLabel(p.status))+'</span></div>';
+  const pending=String(p.status||"pending").toLowerCase()==="pending";
+  const pendingActions=pending?'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'resume\')">Continuar pago</button><button class="danger" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'cancel\')">Cancelar</button></div>':'';
+  return '<div class="billing-history-row '+(pending?'has-actions':'')+'"><div><b>'+esc(plan)+'</b><div class="mut">'+esc(type)+' · '+esc(p.provider==="mercadopago"?"Mercado Pago":(p.provider||"Pago"))+'</div></div><div class="billing-history-date">'+esc(date.toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}))+'</div><div class="billing-history-amount">'+esc(amount)+'</div><span class="billing-status '+billingStatusClass(p.status)+'">'+esc(billingStatusLabel(p.status))+'</span>'+pendingActions+'</div>';
  }).join("");
+}
+async function managePendingSubscriptionPayment(paymentId,action){
+ const payment=subscriptionPayments.find(x=>Number(x.id)===Number(paymentId));if(!payment)return toast("Pago no encontrado");
+ if(String(payment.status||"").toLowerCase()!=="pending")return toast("Este pago ya no está pendiente");
+ if(action==="cancel"&&!confirm("¿Cancelar este intento de pago? Dejará de aparecer como pendiente."))return;
+ try{
+  const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return toast("Tu sesión venció. Vuelve a iniciar sesión.");
+  toast(action==="resume"?"Recuperando enlace de pago…":"Cancelando pago pendiente…");
+  const res=await fetch(SB_URL+"/functions/v1/manage-pending-subscription-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({payment_id:Number(paymentId),action})});
+  const data=await res.json();if(!res.ok)return toast(data?.error||"No se pudo gestionar el pago");
+  if(action==="resume"){
+   if(!data?.init_point)return toast("No se pudo recuperar el enlace de Mercado Pago");
+   window.location.assign(data.init_point);return;
+  }
+  const i=subscriptionPayments.findIndex(x=>Number(x.id)===Number(paymentId));if(i>=0)subscriptionPayments[i]={...subscriptionPayments[i],status:"cancelled"};
+  renderSubscriptionHistory();await loadRestaurants();renderBillingSummary();toast("Pago pendiente cancelado");
+ }catch(e){console.error(e);toast(action==="resume"?"No se pudo recuperar el pago":"No se pudo cancelar el pago")}
 }
 function renderBillingSummary(){
  const box=document.getElementById("billingCurrentPlan");if(!box)return;
@@ -2682,7 +2707,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.53</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.54</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
