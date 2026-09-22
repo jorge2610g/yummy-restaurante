@@ -32,3 +32,5 @@ test('incluye modal profesional para comprar planes',async({page})=>{await page.
 test('mantiene módulos permitidos juntos sin huecos',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('syncSidebarGroupVisibility');expect(html).toContain('grid-auto-rows:max-content');expect(html).toContain('align-content:start')});
 
 test('no renderiza el contador dentro de Plan y facturación',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('subscriptionBannerShouldShow');expect(html).toContain('activeTab!=="plans"');expect(html).toContain('banner.innerHTML=""')});
+
+test('usa la misma escala visual del menú admin',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('restaurant-admin-sidebar-scale-v2464');expect(html).toContain('font-size:15px!important;font-weight:720!important');expect(html).toContain('width:44px!important;height:44px!important')});
