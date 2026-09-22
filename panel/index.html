@@ -1953,10 +1953,14 @@ function startSubscriptionAccessRealtime(){
 function effectiveTabs(){if(adminPreviewMode)return roleTabs.restaurant;const byRole=roleTabs[currentRole]||["dashboard"];if(currentRole!=="restaurant"&&currentRole!=="manager")return byRole;if(subscriptionModuleAccess===null)return byRole;const set=new Set(subscriptionModuleAccess);return byRole.filter(x=>x==="plans"||set.has(x))}
 function syncSubscriptionBannerForActiveTab(){
  const banner=document.getElementById("subscriptionBanner");if(!banner)return;
- const activeTab=document.querySelector(".section.active")?.id||document.querySelector(".tab.active")?.dataset.tab||"dashboard";
- if(currentRole!=="restaurant"||activeTab==="plans"){banner.style.setProperty("display","none","important");return}
- banner.style.removeProperty("display");
- const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));if(r)renderSubscriptionBanner(r);
+ if(!subscriptionBannerShouldShow()){
+  if(subscriptionCountdownTimer){clearInterval(subscriptionCountdownTimer);subscriptionCountdownTimer=null}
+  banner.innerHTML="";
+  banner.style.setProperty("display","none","important");
+  return
+ }
+ const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));
+ if(r)renderSubscriptionBanner(r);
 }
 function syncSidebarGroupVisibility(){
  const root=document.querySelector(".side-menu .tabs");if(!root)return;
@@ -2177,18 +2181,26 @@ function planPriceInfo(p){
  return {amount:local,currency:target,usd};
 }
 let subscriptionCountdownTimer=null;
+function subscriptionBannerShouldShow(){
+ const activeTab=document.querySelector(".section.active")?.id||document.querySelector(".tab.active")?.dataset.tab||"dashboard";
+ return currentRole==="restaurant"&&activeTab!=="plans";
+}
 function renderSubscriptionBanner(r){
  const el=document.getElementById("subscriptionBanner");
  if(!el||!r)return;
  if(subscriptionCountdownTimer){clearInterval(subscriptionCountdownTimer);subscriptionCountdownTimer=null}
- if(currentRole!=="restaurant"){el.style.display="none";return}
+ if(!subscriptionBannerShouldShow()){
+  el.innerHTML="";
+  el.style.setProperty("display","none","important");
+  return
+ }
  const status=String(r.subscription_status||"").toLowerCase(),start=r.subscription_started_at?new Date(r.subscription_started_at):null,expires=r.subscription_expires_at?new Date(r.subscription_expires_at):null;
  const now=Date.now(),totalMs=start&&expires?Math.max(1,expires.getTime()-start.getTime()):null,remainingMs=expires?Math.max(0,expires.getTime()-now):null,pct=totalMs!=null&&remainingMs!=null?Math.max(0,Math.min(100,remainingMs/totalMs*100)):100;
  const plan=r.subscription_plan||(status==="trial"?"Prueba":"Plan activo"),label=status==="trial"?"Periodo de prueba":status==="active"?"Suscripción activa":status==="suspended"?"Suscripción suspendida":"Suscripción vencida",cls=status==="trial"?"subscription-trial":status==="active"?"subscription-active":"subscription-expired";
  const expiry=expires?expires.toLocaleString("es-CL",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}):"Sin fecha de vencimiento",price=r.subscription_price!=null?money(r.subscription_price):"";
  const timer=expires?'<div class="subscription-countdown" aria-label="Tiempo restante"><div class="countdown-unit"><strong id="subDays">00</strong><small>Días</small></div><div class="countdown-unit"><strong id="subHours">00</strong><small>Horas</small></div><div class="countdown-unit"><strong id="subMinutes">00</strong><small>Minutos</small></div><div class="countdown-unit"><strong id="subSeconds">00</strong><small>Segundos</small></div></div>':'';
  el.innerHTML='<div class="subscription-banner-content"><div class="row between subscription-banner-row" style="gap:14px;align-items:flex-start"><div><div class="'+cls+'" style="font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase">'+esc(label)+'</div><div class="subscription-plan-name">'+esc(plan)+'</div><div class="subscription-meta"><span>🗓 Vence: '+esc(expiry)+'</span>'+(price?'<span>💳 '+esc(price)+'</span>':'')+'</div></div><button class="ghost header-action" type="button" id="subscriptionBannerPlansBtn" aria-label="Ver planes" title="Ver planes"><span class="header-action-icon" aria-hidden="true">💳</span><span class="action-label">Ver planes</span></button></div>'+timer+(remainingMs!=null?'<div class="sub-progress" title="Progreso de la suscripción"><i id="subscriptionProgress" style="width:'+pct.toFixed(2)+'%"></i></div>':'')+'</div>';
- el.style.display="";
+ el.style.removeProperty("display");
  document.getElementById("subscriptionBannerPlansBtn")?.addEventListener("click",()=>document.querySelector('.tab[data-tab="plans"]')?.click());
  if(expires){
   const updateCountdown=()=>{const left=Math.max(0,expires.getTime()-Date.now()),days=Math.floor(left/86400000),hours=Math.floor(left%86400000/3600000),minutes=Math.floor(left%3600000/60000),seconds=Math.floor(left%60000/1000),set=(id,value)=>{const node=document.getElementById(id);if(node)node.textContent=String(value).padStart(2,"0")};set("subDays",days);set("subHours",hours);set("subMinutes",minutes);set("subSeconds",seconds);const bar=document.getElementById("subscriptionProgress");if(bar&&totalMs)bar.style.width=Math.max(0,Math.min(100,left/totalMs*100)).toFixed(2)+"%";if(left<=0&&subscriptionCountdownTimer){clearInterval(subscriptionCountdownTimer);subscriptionCountdownTimer=null}};
@@ -3001,7 +3013,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.62</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.63</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
