@@ -1948,6 +1948,7 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
     <button class="settings-tab" type="button" data-settings-tab="alternative" onclick="showSettingsPanel('alternative',this)"><span>6</span><b>Pagos alternativos</b></button>
     <button class="settings-tab" type="button" data-settings-tab="store" onclick="showSettingsPanel('store',this)"><span>7</span><b>Estado del local</b></button>
     <button class="settings-tab" type="button" data-settings-tab="mercadopago" onclick="showSettingsPanel('mercadopago',this)"><span>8</span><b>Mercado Pago</b></button>
+    <button class="settings-tab" type="button" data-settings-tab="veripagos" onclick="showSettingsPanel('veripagos',this)" hidden><span>9</span><b>QR Bolivia</b></button>
   </div>
 
   <div class="settings-panel-wrap">
@@ -2036,12 +2037,28 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
       <div class="actions" style="margin-top:12px"><button type="button" class="primary" id="saveRestaurantMpBtn">Guardar y validar credenciales</button><button type="button" class="ghost" id="verifyRestaurantMpBtn">Verificar conexión ahora</button></div>
       <div id="restaurantMpStatus" class="mp-status-card">Estado: pendiente de verificación.</div>
     </div>
+
+    <div class="card settings-panel" data-settings-panel="veripagos" id="restaurantVeripagosSettings" hidden>
+      <div class="settings-panel-head"><span class="settings-step">9</span><div><h2>QR Bolivia · VeriPagos</h2><p class="mut">Conecta las credenciales propias del restaurante para cobrar pedidos mediante QR dinámico en bolivianos.</p></div></div>
+      <div class="two">
+        <div><label>Usuario Basic Auth</label><input id="restaurantVeripagosUser" autocomplete="off" placeholder="Usuario proporcionado por VeriPagos"></div>
+        <div><label>Contraseña Basic Auth</label><input id="restaurantVeripagosPassword" type="password" autocomplete="new-password" placeholder="Déjala vacía para conservarla"><div class="mut" id="restaurantVeripagosPasswordHint" style="font-size:12px;margin-top:5px"></div></div>
+      </div>
+      <div class="two">
+        <div><label>Secret Key</label><input id="restaurantVeripagosSecret" type="password" autocomplete="new-password" placeholder="Secret Key"><div class="mut" id="restaurantVeripagosSecretHint" style="font-size:12px;margin-top:5px"></div></div>
+        <div><label>Vigencia del QR</label><input id="restaurantVeripagosVigencia" value="0/00:15" placeholder="0/00:15"><div class="mut" style="font-size:12px;margin-top:5px">Formato día/hora:minuto. Ejemplo: 0/00:15.</div></div>
+      </div>
+      <label class="item" style="display:flex;align-items:center;gap:10px;margin-top:10px"><input id="restaurantVeripagosEnabled" type="checkbox" style="width:auto" checked> Habilitar QR Bolivia en el menú y pedidos QR</label>
+      <div class="actions" style="margin-top:12px"><button type="button" class="primary" onclick="saveRestaurantVeripagosSettings()">Guardar QR Bolivia</button><button type="button" class="ghost" onclick="loadRestaurantVeripagosSettings()">Cargar estado</button></div>
+      <div id="restaurantVeripagosStatus" class="mp-status-card">Estado: sin configurar.</div>
+      <div class="item" style="margin-top:12px"><b>Webhook de VeriPagos</b><div class="mut" style="word-break:break-all;margin-top:5px">https://gulctljitzlwokqydigx.supabase.co/functions/v1/veripagos-restaurant-webhook</div><div class="mut" style="margin-top:5px">Configura esta URL como callback/webhook en VeriPagos usando las mismas credenciales Basic Auth del restaurante.</div></div>
+    </div>
   </div>
 
   <div class="settings-footer-save"><button class="primary full" type="button" onclick="saveSettings()">Guardar configuración general</button></div>
 </div>
 </section>
-</div><div id="waiterQrReadyModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closeWaiterQrReady()"></div><div class="card product-modal-card waiter-qr-modal-card"><div class="module-head"><div><h2>Pedidos QR listos</h2><p class="mut">Todos los meseros ven esta misma lista. El primero que retire un pedido lo quita de Cocina.</p></div><button class="ghost modal-close" type="button" onclick="closeWaiterQrReady()" aria-label="Cerrar">✕</button></div><div id="waiterQrReadyList" class="list" style="margin-top:14px"></div><div class="waiter-qr-paid-section"><div class="module-head"><div><h3>QR pagados atendidos</h3><p class="mut">Aquí quedan los pedidos QR pagados con Mercado Pago que tú retiraste. Confirma cuando los entregues en la mesa.</p></div><button class="ghost" type="button" onclick="loadWaiterPaidQrOrders()">↻ Actualizar</button></div><div class="order-status-filters qr-paid-view-filters" aria-label="Pedidos QR pagados atendidos"><button class="summary-chip active" type="button" data-paid-qr-view="pending" onclick="setPaidQrView('pending')"><span>Por entregar</span><b id="posPaidQrPendingCount">0</b></button><button class="summary-chip" type="button" data-paid-qr-view="completed" onclick="setPaidQrView('completed')"><span>Entregados</span><b id="posPaidQrCompletedCount">0</b></button></div><div id="posPaidQrList" class="list" style="margin-top:14px"></div></div></div></div><div id="posOrderModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closePosOrderModal()"></div><div class="card product-modal-card"><div class="module-head"><div><h2 id="posOrderModalTitle">Pedido en mesa</h2><p id="posOrderPaymentState" class="mut"></p><p id="posOrderWorkflowState" class="mut" style="margin-top:5px"></p></div><button class="ghost" type="button" onclick="closePosOrderModal()">✕</button></div><label>Cliente <span style="color:var(--bad)">*</span><input id="posEditCustomer" required></label><label>Mesa <span style="color:var(--bad)">*</span><select id="posEditTable" required><option value="">Selecciona una mesa</option></select></label><label>Observaciones<textarea id="posEditNotes"></textarea></label><h3 style="margin-top:16px">Productos del pedido</h3><div id="posEditItems" class="list"></div><div id="posEditCatalogWrap"><div class="row between" style="margin-top:18px"><h3>Agregar productos</h3><span class="mut">Toca + para agregar</span></div><input id="posEditProductSearch" type="search" placeholder="Buscar producto" oninput="renderPosEditCatalog(this.value)" aria-label="Buscar producto para agregar"><div class="pos-category-wrap"><div class="pos-category-label">Categorías</div><div id="posEditCategoryTabs" class="pos-category-tabs" aria-label="Categorías para agregar productos"></div></div><div id="posEditProductCatalog" class="pos-edit-catalog"></div></div><div class="row between" style="margin-top:14px"><b>Total</b><strong id="posEditTotal" class="price">$0</strong></div><div id="posEditActions" class="actions" style="margin-top:14px"><button id="posSaveOrderBtn" class="ghost" type="button" onclick="savePosOrderEdit()">Guardar cambios</button><button id="posWithdrawOrderBtn" class="primary hidden" type="button" onclick="withdrawPosOrder()">🍽️ Retirar pedido</button><button id="posPayOrderBtn" class="primary hidden" type="button" onclick="showPosPayment()">💳 Cobrar cuenta</button></div><div id="posPaymentPanel" class="item pos-payment-panel hidden" style="margin-top:14px"><h3>¿Cómo pagará el cliente?</h3><p class="mut">Selecciona el método de pago para completar la cuenta.</p><div class="pos-payment-actions"><button class="primary" type="button" onclick="payPosOrder('Efectivo')">💵 Efectivo</button><button class="primary" type="button" onclick="payPosOrder('Tarjeta POS')">💳 Tarjeta POS</button><button class="ghost" type="button" onclick="hidePosPayment()">← Volver</button></div></div></div></div><div id="cashMovementModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closeCashMovementDetail()"></div><div class="card product-modal-card"><div class="module-head"><div><h2>Detalle de la transacción</h2><p id="cashMovementDetailSubtitle" class="mut"></p></div><button class="ghost" type="button" onclick="closeCashMovementDetail()">✕</button></div><div id="cashMovementDetailBody"></div></div></div><div id="toast" class="toast"></div>
+</div><div id="waiterQrReadyModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closeWaiterQrReady()"></div><div class="card product-modal-card waiter-qr-modal-card"><div class="module-head"><div><h2>Pedidos QR listos</h2><p class="mut">Todos los meseros ven esta misma lista. El primero que retire un pedido lo quita de Cocina.</p></div><button class="ghost modal-close" type="button" onclick="closeWaiterQrReady()" aria-label="Cerrar">✕</button></div><div id="waiterQrReadyList" class="list" style="margin-top:14px"></div><div class="waiter-qr-paid-section"><div class="module-head"><div><h3>QR pagados atendidos</h3><p class="mut">Aquí quedan los pedidos QR pagados en línea que tú retiraste. Confirma cuando los entregues en la mesa. Confirma cuando los entregues en la mesa.</p></div><button class="ghost" type="button" onclick="loadWaiterPaidQrOrders()">↻ Actualizar</button></div><div class="order-status-filters qr-paid-view-filters" aria-label="Pedidos QR pagados atendidos"><button class="summary-chip active" type="button" data-paid-qr-view="pending" onclick="setPaidQrView('pending')"><span>Por entregar</span><b id="posPaidQrPendingCount">0</b></button><button class="summary-chip" type="button" data-paid-qr-view="completed" onclick="setPaidQrView('completed')"><span>Entregados</span><b id="posPaidQrCompletedCount">0</b></button></div><div id="posPaidQrList" class="list" style="margin-top:14px"></div></div></div></div><div id="posOrderModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closePosOrderModal()"></div><div class="card product-modal-card"><div class="module-head"><div><h2 id="posOrderModalTitle">Pedido en mesa</h2><p id="posOrderPaymentState" class="mut"></p><p id="posOrderWorkflowState" class="mut" style="margin-top:5px"></p></div><button class="ghost" type="button" onclick="closePosOrderModal()">✕</button></div><label>Cliente <span style="color:var(--bad)">*</span><input id="posEditCustomer" required></label><label>Mesa <span style="color:var(--bad)">*</span><select id="posEditTable" required><option value="">Selecciona una mesa</option></select></label><label>Observaciones<textarea id="posEditNotes"></textarea></label><h3 style="margin-top:16px">Productos del pedido</h3><div id="posEditItems" class="list"></div><div id="posEditCatalogWrap"><div class="row between" style="margin-top:18px"><h3>Agregar productos</h3><span class="mut">Toca + para agregar</span></div><input id="posEditProductSearch" type="search" placeholder="Buscar producto" oninput="renderPosEditCatalog(this.value)" aria-label="Buscar producto para agregar"><div class="pos-category-wrap"><div class="pos-category-label">Categorías</div><div id="posEditCategoryTabs" class="pos-category-tabs" aria-label="Categorías para agregar productos"></div></div><div id="posEditProductCatalog" class="pos-edit-catalog"></div></div><div class="row between" style="margin-top:14px"><b>Total</b><strong id="posEditTotal" class="price">$0</strong></div><div id="posEditActions" class="actions" style="margin-top:14px"><button id="posSaveOrderBtn" class="ghost" type="button" onclick="savePosOrderEdit()">Guardar cambios</button><button id="posWithdrawOrderBtn" class="primary hidden" type="button" onclick="withdrawPosOrder()">🍽️ Retirar pedido</button><button id="posPayOrderBtn" class="primary hidden" type="button" onclick="showPosPayment()">💳 Cobrar cuenta</button></div><div id="posPaymentPanel" class="item pos-payment-panel hidden" style="margin-top:14px"><h3>¿Cómo pagará el cliente?</h3><p class="mut">Selecciona el método de pago para completar la cuenta.</p><div class="pos-payment-actions"><button class="primary" type="button" onclick="payPosOrder('Efectivo')">💵 Efectivo</button><button class="primary" type="button" onclick="payPosOrder('Tarjeta POS')">💳 Tarjeta POS</button><button class="ghost" type="button" onclick="hidePosPayment()">← Volver</button></div></div></div></div><div id="cashMovementModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closeCashMovementDetail()"></div><div class="card product-modal-card"><div class="module-head"><div><h2>Detalle de la transacción</h2><p id="cashMovementDetailSubtitle" class="mut"></p></div><button class="ghost" type="button" onclick="closeCashMovementDetail()">✕</button></div><div id="cashMovementDetailBody"></div></div></div><div id="toast" class="toast"></div>
 
 <script>
 const SB_URL="https://gulctljitzlwokqydigx.supabase.co";
@@ -2050,7 +2067,7 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b){const next=theme==="dark"?"claro":"oscuro",icon=theme==="dark"?"☀️":"🌙";b.innerHTML='<span class="header-action-icon" aria-hidden="true">'+icon+'</span><span class="action-label">Modo '+next+'</span>';b.setAttribute("aria-label","Activar modo "+next);b.title="Activar modo "+next}}
 function toggleAdminTheme(){applyAdminTheme(document.documentElement.dataset.theme==="light"?"dark":"light")}
 applyAdminTheme(localStorage.getItem("admin_theme")||"dark");setTimeout(bindRestaurantMpButtons,0);
-let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[];
+let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",veripagosSubscriptionConfigured=false,veripagosRestaurantConfigured=false,currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[];
 function matchesPeriod(value,period,fromId,toId){const date=new Date(value);if(Number.isNaN(date.getTime()))return false;if(period==="all")return true;const now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),now.getDate()),end=new Date(start);end.setDate(end.getDate()+1);if(period==="week")start.setDate(start.getDate()-6);if(period==="month")start.setDate(1);if(period==="custom"){const from=document.getElementById(fromId)?.value,to=document.getElementById(toId)?.value;if(from)start.setTime(new Date(from+"T00:00:00").getTime());else start.setTime(0);if(to)end.setTime(new Date(to+"T23:59:59.999").getTime());else end.setTime(8640000000000000)}return date>=start&&date<end}
 function activatePeriodButtons(attribute,value){document.querySelectorAll(`[${attribute}]`).forEach(button=>{const active=button.getAttribute(attribute)===value;button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active))})}
 function resetPeriodToToday(tab){
@@ -2067,7 +2084,7 @@ const money=(n,currency,locale)=>{const cfg=currentRestaurantConfig||countryByCo
 window.togglePassword=function(id,btn){const el=document.getElementById(id);if(!el)return false;const show=el.getAttribute("type")==="password";el.setAttribute("type",show?"text":"password");btn.textContent=show?"Ocultar":"Ver";btn.setAttribute("aria-pressed",show?"true":"false");return false}
 function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2500)}
 async function loadPlatformCountries(){const {data,error}=await sb.from("platform_countries").select("*").eq("active",true).order("sort_order");if(error)return toast(error.message);platformCountries=data||[];if(window.scountry)scountry.innerHTML=platformCountries.map(c=>`<option value="${c.code}">${esc(c.name)} · ${c.currency_code}</option>`).join("")}
-function applyCountrySelection(code){const c=countryByCode(code);if(window.scurrency)scurrency.value=c.currency_code;if(window.stimezone)stimezone.value=c.timezone;const mp=document.getElementById("restaurantMpSettings"),mpTab=document.querySelector('.settings-tab[data-settings-tab="mercadopago"]');if(mp)mp.hidden=!c.mercadopago_enabled;if(mpTab)mpTab.hidden=!c.mercadopago_enabled;if(!c.mercadopago_enabled&&currentSettingsPanel==="mercadopago")showSettingsPanel("country");if(window.altMethodType&&Array.isArray(c.alternative_payments)&&c.alternative_payments.length)altMethodType.value=c.alternative_payments[0];if(window.altMethodType)updateAlternativePaymentForm()}
+function applyCountrySelection(code){const c=countryByCode(code);if(window.scurrency)scurrency.value=c.currency_code;if(window.stimezone)stimezone.value=c.timezone;const mp=document.getElementById("restaurantMpSettings"),mpTab=document.querySelector('.settings-tab[data-settings-tab="mercadopago"]'),vp=document.getElementById("restaurantVeripagosSettings"),vpTab=document.querySelector('.settings-tab[data-settings-tab="veripagos"]'),isBolivia=String(c.code||"")==="BO";if(mp)mp.hidden=!c.mercadopago_enabled;if(mpTab)mpTab.hidden=!c.mercadopago_enabled;if(vp)vp.hidden=!isBolivia;if(vpTab)vpTab.hidden=!isBolivia;if(!c.mercadopago_enabled&&currentSettingsPanel==="mercadopago")showSettingsPanel("country");if(!isBolivia&&currentSettingsPanel==="veripagos")showSettingsPanel("country");if(window.altMethodType&&Array.isArray(c.alternative_payments)&&c.alternative_payments.length)altMethodType.value=c.alternative_payments[0];if(window.altMethodType)updateAlternativePaymentForm()}
 const qrPaymentTypes=new Set(["qr_bank","yape","plin","pix","yappy","mobile_payment"]);
 function updateAlternativePaymentForm(){const isQr=qrPaymentTypes.has(altMethodType.value);document.querySelectorAll(".alt-qr-field").forEach(x=>x.hidden=!isQr);document.querySelectorAll(".alt-transfer-field").forEach(x=>x.hidden=isQr);document.querySelectorAll(".alt-account-field").forEach(x=>x.hidden=false);if(!altMethodLabel.value)altMethodLabel.placeholder=isQr?"Ej: Pago QR Banco Nacional":"Ej: Transferencia Banco Nacional"}
 async function uploadRestaurantAsset(file,kind){if(!currentRestaurant||!file)throw new Error("Selecciona una imagen");if(!["image/jpeg","image/png","image/webp"].includes(file.type))throw new Error("Usa una imagen JPG, PNG o WEBP");if(file.size>5*1024*1024)throw new Error("La imagen no puede superar 5 MB");const ext=({"image/jpeg":"jpg","image/png":"png","image/webp":"webp"})[file.type],path=currentRestaurant+"/"+kind+"-"+Date.now()+"."+ext;const {error}=await sb.storage.from("restaurant-assets").upload(path,file,{cacheControl:"3600",upsert:false,contentType:file.type});if(error)throw error;return sb.storage.from("restaurant-assets").getPublicUrl(path).data.publicUrl}
@@ -2096,6 +2113,32 @@ function setMpConnectionStatus(type,message){const box=document.getElementById("
 async function loadRestaurantMercadoPago(){if(!currentRestaurant)return;const {data,error}=await sb.from("restaurants").select("mercadopago_public_key").eq("id",currentRestaurant).single();if(error)return setMpConnectionStatus("error","❌ No se pudo consultar la configuración: "+error.message);restaurantMpPublicKey.value=data?.mercadopago_public_key||"";setMpConnectionStatus(data?.mercadopago_public_key?"checking":"",data?.mercadopago_public_key?"Public Key guardada. Pulsa Verificar conexión para comprobar también el Access Token.":"Mercado Pago todavía no está configurado para este restaurante.")}
 async function saveRestaurantMercadoPago(){if(!currentRestaurant)return toast("No hay restaurante seleccionado");const key=restaurantMpPublicKey.value.trim(),token=restaurantMpAccessToken.value.trim();if(!key||!token)return toast("Ingresa Public Key y Access Token");setMpConnectionStatus("checking","⏳ Guardando y validando credenciales con Mercado Pago…");const {error:ke}=await sb.from("restaurants").update({mercadopago_public_key:key}).eq("id",currentRestaurant);if(ke)return setMpConnectionStatus("error","❌ No se guardó la Public Key: "+ke.message);const {data,error}=await sb.functions.invoke("restaurant-save-mp-token",{body:{restaurant_id:currentRestaurant,access_token:token}});if(error||data?.error)return setMpConnectionStatus("error","❌ "+(data?.error||error.message));restaurantMpAccessToken.value="";toast("Credenciales guardadas");await verifyRestaurantMercadoPago()}
 async function verifyRestaurantMercadoPago(){if(!currentRestaurant)return toast("No hay restaurante seleccionado");setMpConnectionStatus("checking","⏳ Verificando la cuenta directamente con Mercado Pago…");try{const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return setMpConnectionStatus("error","❌ Tu sesión venció. Vuelve a iniciar sesión.");const res=await fetch(SB_URL+"/functions/v1/verify-restaurant-mercadopago",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({restaurant_id:currentRestaurant})});const data=await res.json();const time=new Date().toLocaleString("es-CL");if(res.ok&&data.ok)setMpConnectionStatus("connected","✅ Conexión verificada correctamente con Mercado Pago · "+time);else setMpConnectionStatus("error","❌ "+(data.error||data.message||"Mercado Pago rechazó las credenciales."));}catch(e){setMpConnectionStatus("error","❌ No se pudo contactar el verificador de Mercado Pago. Intenta nuevamente.")}}
+async function loadRestaurantVeripagosSettings(){
+ if(!currentRestaurant)return;
+ const status=document.getElementById("restaurantVeripagosStatus");
+ try{
+  const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return;
+  const res=await fetch(SB_URL+"/functions/v1/restaurant-veripagos-settings?restaurant_id="+encodeURIComponent(currentRestaurant),{headers:{"apikey":SB_KEY,"Authorization":"Bearer "+session.access_token}});
+  const d=await res.json();if(!res.ok){if(status)status.textContent="❌ "+(d.error||"No se pudo cargar QR Bolivia");return}
+  veripagosRestaurantConfigured=!!d.configured;
+  const user=document.getElementById("restaurantVeripagosUser"),enabled=document.getElementById("restaurantVeripagosEnabled"),vig=document.getElementById("restaurantVeripagosVigencia"),ph=document.getElementById("restaurantVeripagosPasswordHint"),sh=document.getElementById("restaurantVeripagosSecretHint");
+  if(user)user.value=d.basic_username||"";if(enabled)enabled.checked=d.enabled!==false;if(vig)vig.value=d.vigencia||"0/00:15";
+  if(ph)ph.textContent=d.has_basic_password?"Contraseña guardada. Déjala vacía para conservarla.":"Falta la contraseña Basic Auth.";
+  if(sh)sh.textContent=d.has_secret_key?"Secret Key guardada. Déjala vacía para conservarla.":"Falta la Secret Key.";
+  if(status)status.textContent=d.configured?"✅ QR Bolivia conectado y disponible para este restaurante.":(d.available===false?"QR Bolivia solo se habilita cuando el país es Bolivia.":"VeriPagos todavía no está completamente configurado.");
+ }catch(e){if(status)status.textContent="❌ No se pudo cargar QR Bolivia."}
+}
+async function saveRestaurantVeripagosSettings(){
+ if(!currentRestaurant)return toast("No hay restaurante seleccionado");
+ try{
+  const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return toast("Tu sesión venció.");
+  const body={restaurant_id:currentRestaurant,basic_username:document.getElementById("restaurantVeripagosUser")?.value.trim()||"",basic_password:document.getElementById("restaurantVeripagosPassword")?.value||"",secret_key:document.getElementById("restaurantVeripagosSecret")?.value||"",vigencia:document.getElementById("restaurantVeripagosVigencia")?.value.trim()||"0/00:15",enabled:!!document.getElementById("restaurantVeripagosEnabled")?.checked};
+  const res=await fetch(SB_URL+"/functions/v1/restaurant-veripagos-settings",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify(body)});
+  const d=await res.json();if(!res.ok)return toast(d.error||"No se pudo guardar QR Bolivia");
+  const p=document.getElementById("restaurantVeripagosPassword"),s=document.getElementById("restaurantVeripagosSecret");if(p)p.value="";if(s)s.value="";
+  toast(d.message||"QR Bolivia guardado.");await loadRestaurantVeripagosSettings();
+ }catch(e){toast("No se pudo guardar QR Bolivia.")}
+}
 async function logout(){await sb.auth.signOut();window.location.replace("https://web.yummypro.online/")}
 async function enter(user){
   currentUserId=user?.id||null;
@@ -2316,7 +2359,7 @@ async function refreshAll(){
  renderStats();
 }
 async function refreshRestaurantDashboard(){await Promise.allSettled([loadProducts(),loadDashboardOrders()]);renderStats()}
-async function loadDashboardOrders(){if(!currentRestaurant)return;const {data,error}=await sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(500);if(error)return toast(error.message);orders=(data||[]).filter(o=>o.order_source==="waiter"||(o.order_source==="online"&&o.payment_status==="approved")||(o.order_source==="table_qr"&&(String(o.payment_method||"").trim().toLowerCase()!=="mercado pago"||o.payment_status==="approved")))}
+async function loadDashboardOrders(){if(!currentRestaurant)return;const {data,error}=await sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(500);if(error)return toast(error.message);orders=(data||[]).filter(o=>o.order_source==="waiter"||(o.order_source==="online"&&o.payment_status==="approved")||(o.order_source==="table_qr"&&(!["mercado pago","qr bolivia"].includes(String(o.payment_method||"").trim().toLowerCase())||o.payment_status==="approved")))}
 async function loadFlowPaymentStatus(){
  flowPaymentConfigured=false;flowPaymentEnvironment="sandbox";
  if(!currentRestaurant)return;
@@ -2326,6 +2369,16 @@ async function loadFlowPaymentStatus(){
   const d=await res.json();if(!res.ok)return;
   flowPaymentConfigured=!!d.configured;flowPaymentEnvironment=d.environment||"sandbox";
  }catch(e){console.error("Flow settings",e)}
+}
+async function loadVeripagosSubscriptionStatus(){
+ veripagosSubscriptionConfigured=false;
+ if(!currentRestaurant)return;
+ try{
+  const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return;
+  const res=await fetch(SB_URL+"/functions/v1/subscription-veripagos-settings",{headers:{"apikey":SB_KEY,"Authorization":"Bearer "+session.access_token}});
+  const d=await res.json();if(!res.ok)return;
+  veripagosSubscriptionConfigured=!!d.configured;
+ }catch(e){console.error("VeriPagos suscripciones",e)}
 }
 async function syncMercadoPagoSubscription(){
  if(!currentRestaurant)return null;
@@ -2354,7 +2407,7 @@ async function loadSubscriptionPlans(){
  if(error){console.error("Error cargando planes",error);subscriptionPlans=[];renderRestaurantPlans();renderBillingSummary();return}
  subscriptionPlans=data||[];
  await Promise.allSettled([loadSubscriptionExchangeRates(),syncMercadoPagoSubscription(),syncFlowSubscription()]);
- await Promise.allSettled([loadSubscriptionHistory(),loadFlowPaymentStatus()]);
+ await Promise.allSettled([loadSubscriptionHistory(),loadFlowPaymentStatus(),loadVeripagosSubscriptionStatus()]);
  renderRestaurantPlans();renderBillingSummary();renderBillingPaymentMethods();showFlowReturnMessage();
 }
 async function loadSubscriptionHistory(){
@@ -2381,8 +2434,8 @@ function renderSubscriptionHistory(){
   const plan=plans.get(Number(p.plan_id))||"Plan YummyPro",date=new Date(p.paid_at||p.created_at),locale=currentRestaurantConfig?.locale||"es-CL";
   const amount=money(p.amount,p.currency_code||currentRestaurantConfig?.currency_code,locale),type=(p.payment_type==="recurring"?"Suscripción automática":"Pago único")+" · "+(p.billing_cycle==="annual"?"Anual":"Mensual");
   const pending=String(p.status||"pending").toLowerCase()==="pending",provider=String(p.provider||"");
-  const providerName=provider==="mercadopago"?"Mercado Pago":provider==="flow"?"Flow":(provider||"Pago");
-  const pendingActions=pending?(provider==="flow"?'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="manageFlowPendingPayment('+Number(p.id)+',\'resume\')">Continuar pago</button><button class="danger" type="button" onclick="manageFlowPendingPayment('+Number(p.id)+',\'cancel\')">Cancelar</button></div>':'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'resume\')">Continuar pago</button><button class="danger" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'cancel\')">Cancelar</button></div>'):'';
+  const providerName=provider==="mercadopago"?"Mercado Pago":provider==="flow"?"Flow":provider==="veripagos"?"QR Bolivia":(provider||"Pago");
+  const pendingActions=pending?(provider==="flow"?'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="manageFlowPendingPayment('+Number(p.id)+',\'resume\')">Continuar pago</button><button class="danger" type="button" onclick="manageFlowPendingPayment('+Number(p.id)+',\'cancel\')">Cancelar</button></div>':provider==="veripagos"?'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="manageVeripagosPendingPayment('+Number(p.id)+')">Ver QR / verificar pago</button></div>':'<div class="billing-pending-actions"><button class="ghost" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'resume\')">Continuar pago</button><button class="danger" type="button" onclick="managePendingSubscriptionPayment('+Number(p.id)+',\'cancel\')">Cancelar</button></div>'):'';
   return '<div class="billing-history-row '+(pending?'has-actions':'')+'"><div><b>'+esc(plan)+'</b><div class="mut">'+esc(type)+' · '+esc(providerName)+'</div></div><div class="billing-history-date">'+esc(date.toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}))+'</div><div class="billing-history-amount">'+esc(amount)+'</div><span class="billing-status '+billingStatusClass(p.status)+'">'+esc(billingStatusLabel(p.status))+'</span>'+pendingActions+'</div>';
  }).join("");
 }
@@ -2441,12 +2494,13 @@ function renderBillingSummary(){
 }
 function renderBillingPaymentMethods(){
  const box=document.getElementById("billingPaymentMethods");if(!box)return;
- const cfg=currentRestaurantConfig||countryByCode("CL"),country=countryByCode(cfg.country_code||"CL"),isChile=String(country.code||"CL")==="CL",mpAvailable=!!country.mercadopago_enabled&&isChile,flowAvailable=flowPaymentConfigured&&isChile;
+ const cfg=currentRestaurantConfig||countryByCode("CL"),country=countryByCode(cfg.country_code||"CL"),isChile=String(country.code||"CL")==="CL",isBolivia=String(country.code||"")==="BO",mpAvailable=!!country.mercadopago_enabled&&isChile,flowAvailable=flowPaymentConfigured&&isChile,veripagosAvailable=veripagosSubscriptionConfigured&&isBolivia;
  const alternatives=Array.isArray(country.alternative_payments)?country.alternative_payments:[];
  const names={bank_transfer:"Transferencia bancaria",qr_bank:"Pago por QR",yape:"Yape",plin:"Plin",pix:"Pix",yappy:"Yappy",mobile_payment:"Pago móvil"};
  const altText=alternatives.map(x=>names[x]||x).join(" · ");
- const providers=(mpAvailable?'<div class="billing-method-ok">✓ Mercado Pago · pago único y suscripción automática</div>':'')+(flowAvailable?'<div class="billing-method-ok">✓ Flow · pago único y suscripción automática · '+esc(flowPaymentEnvironment==="production"?"Producción":"Sandbox")+'</div>':'');
- box.innerHTML='<div class="billing-kicker">MEDIOS DE PAGO</div><h3 style="margin:8px 0 4px">'+esc(country.name||cfg.country_code||"Tu país")+'</h3>'+providers+((mpAvailable||flowAvailable)?'<p class="mut">Elige la pasarela disponible al pagar tu plan.</p>':'<div class="billing-method-assisted">Activación asistida</div><p class="mut">No hay una pasarela online habilitada para este país.</p>')+(altText?'<div class="billing-alt-methods"><b>Alternativas configuradas</b><div class="mut">'+esc(altText)+'</div></div>':'')+(!(mpAvailable||flowAvailable)?'<a class="billing-whatsapp-link" target="_blank" rel="noopener" href="https://wa.me/56982807639?text=Hola%2C%20necesito%20activar%20mi%20plan%20de%20YummyPro.">Contactar para activar</a>':'');
+ const providers=(mpAvailable?'<div class="billing-method-ok">✓ Mercado Pago · pago único y suscripción automática</div>':'')+(flowAvailable?'<div class="billing-method-ok">✓ Flow · pago único y suscripción automática · '+esc(flowPaymentEnvironment==="production"?"Producción":"Sandbox")+'</div>':'')+(veripagosAvailable?'<div class="billing-method-ok">✓ QR Bolivia · VeriPagos · pago único</div>':'');
+ const onlineAvailable=mpAvailable||flowAvailable||veripagosAvailable;
+ box.innerHTML='<div class="billing-kicker">MEDIOS DE PAGO</div><h3 style="margin:8px 0 4px">'+esc(country.name||cfg.country_code||"Tu país")+'</h3>'+providers+(onlineAvailable?'<p class="mut">Elige la pasarela disponible al pagar tu plan.</p>':'<div class="billing-method-assisted">Activación asistida</div><p class="mut">No hay una pasarela online habilitada para este país.</p>')+(altText?'<div class="billing-alt-methods"><b>Alternativas configuradas</b><div class="mut">'+esc(altText)+'</div></div>':'')+(!onlineAvailable?'<a class="billing-whatsapp-link" target="_blank" rel="noopener" href="https://wa.me/56982807639?text=Hola%2C%20necesito%20activar%20mi%20plan%20de%20YummyPro.">Contactar para activar</a>':'');
 }
 async function refreshBillingCenter(){await Promise.allSettled([loadRestaurants(),loadSubscriptionPlans()]);renderBillingSummary();renderBillingPaymentMethods();}
 async function loadSubscriptionExchangeRates(){
@@ -2746,7 +2800,7 @@ function isOnlineKitchenNewForPrint(order){
  const status=String(order?.status||"").trim().toLowerCase();
  const payment=String(order?.payment_status||"").trim().toLowerCase();
  const method=String(order?.payment_method||"").trim().toLowerCase();
- return source==="online"&&payment==="approved"&&method==="mercado pago"&&["nuevo","recibido"].includes(status);
+ return source==="online"&&payment==="approved"&&["mercado pago","qr bolivia"].includes(method)&&["nuevo","recibido"].includes(status);
 }
 function isLocalKitchenPreparationForPrint(order){
  const source=String(order?.order_source||"").trim().toLowerCase();
@@ -2804,7 +2858,7 @@ function testRestaurantPrint(){
 }
 function restaurantOrderAlert(row){
  try{
-  if("Notification" in window&&Notification.permission==="granted")new Notification("🚨 Nuevo pedido Mercado Pago",{body:"#"+(row.order_code||row.id)+" · "+money(row.total||0)+" · Aceptar en Cocina",tag:"restaurant-order-"+row.id,renotify:true,requireInteraction:true});
+  if("Notification" in window&&Notification.permission==="granted")new Notification("🚨 Nuevo pedido online",{body:"#"+(row.order_code||row.id)+" · "+money(row.total||0)+" · Aceptar en Cocina",tag:"restaurant-order-"+row.id,renotify:true,requireInteraction:true});
  }catch(e){}
  playUrgentAlertSound("kitchen");
  toast("🚨 Nuevo pedido online esperando preparación");
@@ -2858,7 +2912,7 @@ function renderWaiterQrReadyOrders(){
  const btn=document.getElementById("waiterQrReadyBtn"),count=document.getElementById("waiterQrReadyCount"),root=document.getElementById("waiterQrReadyList");
  if(count)count.textContent=qrReadyOrders.length;if(btn)btn.classList.toggle("zero",qrReadyOrders.length===0);
  if(!root)return;
- root.innerHTML=qrReadyOrders.map(o=>{const items=Array.isArray(o.items)?o.items:[],mins=Math.max(0,Math.floor((Date.now()-new Date(o.ready_at||o.created_at).getTime())/60000));return `<article class="item"><div><div class="row between"><b>🍽️ ${esc(o.table_reference||"Mesa")} · #${esc(o.order_code)}</b><span class="pill">${mins} min</span></div><div class="mut">${esc(o.customer_name||"Cliente")}</div><div style="margin-top:8px">${items.map(x=>`<div><b>${Number(x.qty||1)}× ${esc(x.name||"Producto")}</b></div>`).join("")||"Sin detalle"}</div><div class="price">${money(o.total||0)}</div><div class="${o.paid_online?"pos-paid":"mut"}" style="margin-top:6px">${o.paid_online?"✓ Pagado por Mercado Pago":"Pendiente de cobro · "+esc(o.payment_method||"")}</div><button class="primary full" style="margin-top:12px" type="button" onclick="withdrawReadyTableQrOrder(${Number(o.id)})">🍽️ Retirar pedido para ${esc(o.table_reference||"mesa")}</button></div></article>`}).join("")||'<p class="filter-empty">No hay pedidos QR listos para llevar a mesa.</p>';
+ root.innerHTML=qrReadyOrders.map(o=>{const items=Array.isArray(o.items)?o.items:[],mins=Math.max(0,Math.floor((Date.now()-new Date(o.ready_at||o.created_at).getTime())/60000));return `<article class="item"><div><div class="row between"><b>🍽️ ${esc(o.table_reference||"Mesa")} · #${esc(o.order_code)}</b><span class="pill">${mins} min</span></div><div class="mut">${esc(o.customer_name||"Cliente")}</div><div style="margin-top:8px">${items.map(x=>`<div><b>${Number(x.qty||1)}× ${esc(x.name||"Producto")}</b></div>`).join("")||"Sin detalle"}</div><div class="price">${money(o.total||0)}</div><div class="${o.paid_online?"pos-paid":"mut"}" style="margin-top:6px">${o.paid_online?"✓ Pago online confirmado · "+esc(o.payment_method||""):"Pendiente de cobro · "+esc(o.payment_method||"")}</div><button class="primary full" style="margin-top:12px" type="button" onclick="withdrawReadyTableQrOrder(${Number(o.id)})">🍽️ Retirar pedido para ${esc(o.table_reference||"mesa")}</button></div></article>`}).join("")||'<p class="filter-empty">No hay pedidos QR listos para llevar a mesa.</p>';
 }
 async function openWaiterQrReady(){
  await Promise.all([loadWaiterQrReadyOrders(),loadWaiterPaidQrOrders()]);
@@ -2873,7 +2927,7 @@ async function withdrawReadyTableQrOrder(id){
  try{await sb.functions.invoke("send-order-push",{body:{order_id:Number(id),kind:"table_customer"}})}catch(e){console.error("No se pudo notificar al cliente QR",e)}
  await Promise.all([loadWaiterQrReadyOrders(),loadPosOrders(),loadWaiterPaidQrOrders()]);
  if(document.getElementById("kitchen")?.classList.contains("active"))await loadKitchen();
- const paidOnline=String(order?.payment_method||"").trim().toLowerCase()==="mercado pago"&&String(order?.payment_status||"").trim().toLowerCase()==="approved";
+ const paidOnline=["mercado pago","qr bolivia"].includes(String(order?.payment_method||"").trim().toLowerCase())&&String(order?.payment_status||"").trim().toLowerCase()==="approved";
  if(paidOnline){paidQrView="pending";document.querySelectorAll("[data-paid-qr-view]").forEach(btn=>btn.classList.toggle("active",btn.dataset.paidQrView==="pending"));renderWaiterPaidQrOrders();toast("✓ QR pagado retirado. Ahora confirma “Pedido entregado en mesa” cuando lo entregues.");}
  else{posOrderView="withdrawn";document.querySelectorAll("[data-pos-view]").forEach(btn=>btn.classList.toggle("active",btn.dataset.posView==="withdrawn"));renderPosOrders();toast("✓ Pedido QR retirado. Pasó a tus pedidos normales para cobrarlo en efectivo o POS.");}
 }
@@ -2891,7 +2945,7 @@ function renderWaiterPaidQrOrders(){
  if(sourceCount)sourceCount.textContent=periodRows.length;if(pendingCount)pendingCount.textContent=pending.length;if(completedCount)completedCount.textContent=completed.length;
  if(!root)return;
  const rows=paidQrView==="completed"?completed:pending;
- root.innerHTML=rows.map(o=>{const items=Array.isArray(o.items)?o.items:[];const delivered=String(o.status||"").toLowerCase()==="entregado";return `<article class="item"><div><div class="row between"><div><b>📱 QR pagado · ${esc(o.table_reference||"Mesa")}</b><div class="mut">#${esc(o.order_code)} · ${new Date(o.kitchen_picked_up_at||o.created_at).toLocaleString("es-CL")}</div></div><span class="pill">${delivered?"Entregado":"Por entregar"}</span></div><div style="margin-top:8px">${items.map(x=>`<div>${Number(x.qty||1)}× ${esc(x.name||"Producto")}</div>`).join("")}</div><div class="price">${money(o.total||0)}</div><div class="pos-paid">✓ Mercado Pago aprobado</div>${delivered?'<div class="mut" style="margin-top:8px">Pedido entregado en mesa.</div>':`<button class="primary full" style="margin-top:12px" type="button" onclick="completePaidTableQrDelivery(${Number(o.id)})">✓ Pedido entregado en mesa</button>`}</div></article>`}).join("")||(paidQrView==="completed"?'<p class="filter-empty">No tienes QR pagados entregados en este periodo.</p>':'<p class="filter-empty">No tienes QR pagados pendientes de entregar en mesa.</p>');
+ root.innerHTML=rows.map(o=>{const items=Array.isArray(o.items)?o.items:[];const delivered=String(o.status||"").toLowerCase()==="entregado";return `<article class="item"><div><div class="row between"><div><b>📱 QR pagado · ${esc(o.table_reference||"Mesa")}</b><div class="mut">#${esc(o.order_code)} · ${new Date(o.kitchen_picked_up_at||o.created_at).toLocaleString("es-CL")}</div></div><span class="pill">${delivered?"Entregado":"Por entregar"}</span></div><div style="margin-top:8px">${items.map(x=>`<div>${Number(x.qty||1)}× ${esc(x.name||"Producto")}</div>`).join("")}</div><div class="price">${money(o.total||0)}</div><div class="pos-paid">✓ Pago online aprobado · ${esc(o.payment_method||"")}</div>${delivered?'<div class="mut" style="margin-top:8px">Pedido entregado en mesa.</div>':`<button class="primary full" style="margin-top:12px" type="button" onclick="completePaidTableQrDelivery(${Number(o.id)})">✓ Pedido entregado en mesa</button>`}</div></article>`}).join("")||(paidQrView==="completed"?'<p class="filter-empty">No tienes QR pagados entregados en este periodo.</p>':'<p class="filter-empty">No tienes QR pagados pendientes de entregar en mesa.</p>');
 }
 async function completePaidTableQrDelivery(id){
  if(!id)return;if(!confirm("¿Confirmar que este pedido ya fue entregado en la mesa?"))return;
@@ -2977,7 +3031,7 @@ async function checkKitchenNewOrderReminders(){
    .eq("restaurant_id",currentRestaurant)
    .eq("order_source","online")
    .eq("payment_status","approved")
-   .eq("payment_method","Mercado Pago")
+   .in("payment_method",["Mercado Pago","QR Bolivia"])
    .in("status",["nuevo","recibido"])
    .order("created_at",{ascending:true})
    .limit(25);
@@ -2985,7 +3039,7 @@ async function checkKitchenNewOrderReminders(){
  const rows=data||[];if(!rows.length)return;
  const first=rows[0];
  try{
-  if("Notification" in window&&Notification.permission==="granted")new Notification(rows.length>1?"🚨 "+rows.length+" pedidos nuevos en Cocina":"🚨 Pedido nuevo en Cocina",{body:"#"+(first.order_code||first.id)+" · Mercado Pago aprobado · pendiente de aceptar",tag:"kitchen-new-reminder",renotify:true,requireInteraction:true});
+  if("Notification" in window&&Notification.permission==="granted")new Notification(rows.length>1?"🚨 "+rows.length+" pedidos nuevos en Cocina":"🚨 Pedido nuevo en Cocina",{body:"#"+(first.order_code||first.id)+" · Pago online aprobado · pendiente de aceptar",tag:"kitchen-new-reminder",renotify:true,requireInteraction:true});
  }catch(e){}
  playUrgentAlertSound("kitchen");
  toast(rows.length>1?"🚨 Hay "+rows.length+" pedidos nuevos esperando preparación":"🚨 Pedido nuevo esperando preparación");
@@ -2995,7 +3049,7 @@ function startKitchenNewOrderReminderLoop(){
  setTimeout(checkKitchenNewOrderReminders,1800);
  kitchenNewReminderTimer=setInterval(checkKitchenNewOrderReminders,30000);
 }
-function isApprovedMercadoPagoOrder(row){const approved=String(row?.payment_status||"").trim().toLowerCase()==="approved",source=String(row?.order_source||"online").toLowerCase(),method=String(row?.payment_method||"").trim().toLowerCase();if(source==="table_qr")return method==="mercado pago"?approved:true;return approved&&source==="online"}
+function isApprovedMercadoPagoOrder(row){const approved=String(row?.payment_status||"").trim().toLowerCase()==="approved",source=String(row?.order_source||"online").toLowerCase(),method=String(row?.payment_method||"").trim().toLowerCase(),online=["mercado pago","qr bolivia"].includes(method);if(source==="table_qr")return online?approved:true;return approved&&source==="online"&&online}
 function startRestaurantOrderRealtime(){
  if(restaurantOrdersChannel){sb.removeChannel(restaurantOrdersChannel);restaurantOrdersChannel=null;}
  if(!currentRestaurant)return;
@@ -3011,7 +3065,7 @@ function startRestaurantOrderRealtime(){
    if(document.getElementById("orders")?.classList.contains("active"))await loadOrders();
    if(document.getElementById("pos")?.classList.contains("active")){await loadPosOrders();if(currentRole==="waiter")await Promise.all([loadWaiterQrReadyOrders(),loadWaiterPaidQrOrders()]);}
    if(document.getElementById("kitchen")?.classList.contains("active"))await loadKitchen();
-   const tableQrVisible=row.order_source==="table_qr"&&(String(row.payment_method||"").trim().toLowerCase()!=="mercado pago"||String(row.payment_status||"").trim().toLowerCase()==="approved");
+   const tableQrVisible=row.order_source==="table_qr"&&(!["mercado pago","qr bolivia"].includes(String(row.payment_method||"").trim().toLowerCase())||String(row.payment_status||"").trim().toLowerCase()==="approved");
    if(document.getElementById("cash")?.classList.contains("active")&&(tableQrVisible||row.status==="entregado")){await loadCash();if(document.getElementById("cashSalesHistoryModal")?.classList.contains("open"))await loadCashPaidOrders();}
   }).subscribe();
 }
@@ -3058,13 +3112,13 @@ async function loadKitchen(){
   loadStaffDirectory()
  ]);
  if(error)return toast(error.message);
- const isOnlineNew=o=>String(o.order_source||"").toLowerCase()==="online"&&String(o.payment_status||"").toLowerCase()==="approved"&&String(o.payment_method||"").trim().toLowerCase()==="mercado pago"&&["nuevo","recibido"].includes(String(o.status||"").toLowerCase());
+ const isOnlineNew=o=>String(o.order_source||"").toLowerCase()==="online"&&String(o.payment_status||"").toLowerCase()==="approved"&&["mercado pago","qr bolivia"].includes(String(o.payment_method||"").trim().toLowerCase())&&["nuevo","recibido"].includes(String(o.status||"").toLowerCase());
  const rows=(data||[]).filter(o=>isOnlineNew(o)||String(o.status||"").toLowerCase()==="preparacion"||String(o.status||"").toLowerCase()==="listo").filter(o=>{
    if(String(o.status||"").toLowerCase()==="preparacion"||String(o.status||"").toLowerCase()==="listo"){
     const source=String(o.order_source||"").toLowerCase();
     if(source==="online")return String(o.payment_status||"").toLowerCase()==="approved";
     if(source==="waiter")return String(o.payment_status||"").toLowerCase()!=="approved";
-    if(source==="table_qr")return true;
+    if(source==="table_qr"){const method=String(o.payment_method||"").trim().toLowerCase();return !["mercado pago","qr bolivia"].includes(method)||String(o.payment_status||"").toLowerCase()==="approved";}
    }
    return true;
  }),board=document.getElementById("kitchenBoard");if(!board)return;
@@ -3075,7 +3129,7 @@ async function loadKitchen(){
   {key:"preparacion",title:"En preparación",action:"listo",button:"Marcar listo",match:o=>String(o.status||"").toLowerCase()==="preparacion"},
   {key:"listo",title:"Listos",action:null,button:"Esperando retiro del mesero",match:o=>String(o.status||"").toLowerCase()==="listo"}
  ];
- board.innerHTML=columns.map(col=>{const list=rows.filter(col.match);return `<div class="kds-column"><div class="kds-column-head"><h3>${col.title}</h3><span class="pill">${list.length}</span></div><div class="kds-column-scroll">${list.map(o=>{const items=Array.isArray(o.items)?o.items:[],minutes=Math.max(0,Math.floor((Date.now()-new Date(o.created_at).getTime())/60000));const source=String(o.order_source||"").toLowerCase();return `<article class="kds-ticket"><div class="row between"><b>#${esc(o.order_code)}</b><span class="pill">${minutes} min</span></div><div class="mut">${esc(source==="waiter"?(o.table_reference||"Pedido en local"):source==="table_qr"?(o.order_type==="Retiro"?"Retiro mostrador":(o.table_reference||"Mesa")):o.order_type)} · ${esc(o.customer_name||"Cliente")}${source==="waiter"?` · Mesero: ${esc(staffNameByUserId(o.created_by,"Sin identificar"))}`:source==="table_qr"?(o.order_type==="Retiro"?" · QR · Mostrador":" · QR de mesa"):source==="online"?" · Online · Mercado Pago":""}</div><div class="kds-ticket-items">${items.map(x=>`<div><b>${Number(x.qty||1)}× ${esc(x.name||"Producto")}</b>${x.note?`<div class="mut">${esc(x.note)}</div>`:""}${Array.isArray(x.extras)&&x.extras.length?`<div class="mut">+ ${x.extras.map(e=>esc(e.name||e)).join(" · ")}</div>`:""}</div>`).join("")||"Sin detalle"}</div><div class="actions"><button class="ghost" onclick="printKitchenOrderWithRetry(orders.find(x=>String(x.id)===String(${o.id})),{manual:true})" title="Imprimir en cocina">🖨️ Imprimir</button>${col.action?`<button class="primary" onclick="setOrderStatus(${o.id},'${col.action}').then(loadKitchen)">${col.button}</button>`:`<span class="pill">✓ ${source==="table_qr"&&o.order_type==="Retiro"?"Esperando retiro en mostrador":col.button}</span>`}</div></article>`}).join("")||'<p class="mut">Sin pedidos.</p>'}</div></div>`}).join("");
+ board.innerHTML=columns.map(col=>{const list=rows.filter(col.match);return `<div class="kds-column"><div class="kds-column-head"><h3>${col.title}</h3><span class="pill">${list.length}</span></div><div class="kds-column-scroll">${list.map(o=>{const items=Array.isArray(o.items)?o.items:[],minutes=Math.max(0,Math.floor((Date.now()-new Date(o.created_at).getTime())/60000));const source=String(o.order_source||"").toLowerCase();return `<article class="kds-ticket"><div class="row between"><b>#${esc(o.order_code)}</b><span class="pill">${minutes} min</span></div><div class="mut">${esc(source==="waiter"?(o.table_reference||"Pedido en local"):source==="table_qr"?(o.order_type==="Retiro"?"Retiro mostrador":(o.table_reference||"Mesa")):o.order_type)} · ${esc(o.customer_name||"Cliente")}${source==="waiter"?` · Mesero: ${esc(staffNameByUserId(o.created_by,"Sin identificar"))}`:source==="table_qr"?(o.order_type==="Retiro"?" · QR · Mostrador":" · QR de mesa"):source==="online"?" · Online · "+esc(String(o.payment_method||"Pago online")):""}</div><div class="kds-ticket-items">${items.map(x=>`<div><b>${Number(x.qty||1)}× ${esc(x.name||"Producto")}</b>${x.note?`<div class="mut">${esc(x.note)}</div>`:""}${Array.isArray(x.extras)&&x.extras.length?`<div class="mut">+ ${x.extras.map(e=>esc(e.name||e)).join(" · ")}</div>`:""}</div>`).join("")||"Sin detalle"}</div><div class="actions"><button class="ghost" onclick="printKitchenOrderWithRetry(orders.find(x=>String(x.id)===String(${o.id})),{manual:true})" title="Imprimir en cocina">🖨️ Imprimir</button>${col.action?`<button class="primary" onclick="setOrderStatus(${o.id},'${col.action}').then(loadKitchen)">${col.button}</button>`:`<span class="pill">✓ ${source==="table_qr"&&o.order_type==="Retiro"?"Esperando retiro en mostrador":col.button}</span>`}</div></article>`}).join("")||'<p class="mut">Sin pedidos.</p>'}</div></div>`}).join("");
 }
 function openCashActionModal(id){if(id!=="cashSalesHistoryModal"&&!cashSession)return toast("Primero abre la caja");const modal=document.getElementById(id);if(!modal)return;modal.classList.add("open");modal.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";if(id==="cashQuickSaleModal")loadCashSaleData()}function closeCashActionModal(id){const modal=document.getElementById(id);if(!modal)return;modal.classList.remove("open");modal.setAttribute("aria-hidden","true");document.body.style.overflow=""}
 function openCashNewOrder(){if(!cashSession){toast("Primero abre la caja para crear un pedido");document.getElementById("cashClosedPanel")?.scrollIntoView({behavior:"smooth",block:"center"});document.getElementById("cashOpeningAmount")?.focus();return}openCashActionModal("cashQuickSaleModal")}
@@ -3088,7 +3142,7 @@ async function loadCash(){
   sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).eq("order_source","table_qr").in("status",["recibido","preparacion","listo"]).order("created_at",{ascending:false}).limit(100)
  ]);
  if(error)return toast(error.message);if(qrError)console.error("No se pudieron cargar pedidos QR",qrError);
- cashSessions=sessions||[];staffMembers=staff||staffMembers;tableQrCashOrders=(qrOrders||[]).filter(o=>{const mp=String(o.payment_method||"").trim().toLowerCase()==="mercado pago";return String(o.order_type||"")==="Mesa"&&!mp&&String(o.payment_status||"").trim().toLowerCase()!=="approved"});cashSession=cashSessions.find(s=>s.status==="open")||null;cashMovements=[];
+ cashSessions=sessions||[];staffMembers=staff||staffMembers;tableQrCashOrders=(qrOrders||[]).filter(o=>{const online=["mercado pago","qr bolivia"].includes(String(o.payment_method||"").trim().toLowerCase());return String(o.order_type||"")==="Mesa"&&!online&&String(o.payment_status||"").trim().toLowerCase()!=="approved"});cashSession=cashSessions.find(s=>s.status==="open")||null;cashMovements=[];
  if(cashSession){const r=await sb.from("restaurant_cash_movements").select("*").eq("session_id",cashSession.id).order("created_at",{ascending:false});if(r.error)return toast(r.error.message);cashMovements=r.data||[]}
  renderCash();
  renderTableQrCashOrders();
@@ -3232,8 +3286,8 @@ async function loadCounterQrReadyOrders(){
 function renderCounterQrReadyOrders(){
  const root=document.getElementById("counterQrReadyList");if(!root)return;
  root.innerHTML=counterQrReadyOrders.map(o=>{
-  const items=Array.isArray(o.items)?o.items:[],paid=String(o.payment_status||"").trim().toLowerCase()==="approved",mp=String(o.payment_method||"").trim().toLowerCase()==="mercado pago",canComplete=paid||!!cashSession;
-  const paymentText=paid?(mp?"✓ Mercado Pago aprobado":"✓ Pago confirmado"):("Pendiente de cobro · "+(o.payment_method||"Método no informado"));
+  const items=Array.isArray(o.items)?o.items:[],paid=String(o.payment_status||"").trim().toLowerCase()==="approved",method=String(o.payment_method||"").trim().toLowerCase(),online=["mercado pago","qr bolivia"].includes(method),canComplete=paid||(!online&&!!cashSession);
+  const paymentText=paid?("✓ Pago confirmado · "+(o.payment_method||"Online")):("Pendiente de cobro · "+(o.payment_method||"Método no informado"));
   const buttonText=paid?"✓ Entregar en mostrador":"💵 Cobrar y entregar";
   return `<article class="item"><div class="row between" style="align-items:flex-start;gap:12px;flex-wrap:wrap"><div style="min-width:0;flex:1"><div class="row between"><b>🛍️ #${esc(o.order_code)} · Retiro en mostrador</b><span class="pill">Listo</span></div><div class="mut">${esc(o.customer_name||"Cliente")} · ${new Date(o.ready_at||o.created_at).toLocaleString("es-CL")}</div><div style="margin-top:8px">${items.map(x=>`<div><b>${Number(x.qty||1)}× ${esc(x.name||"Producto")}</b></div>`).join("")||"Sin detalle"}</div><div class="price">${money(o.total||0)}</div><div class="${paid?"pos-paid":"mut"}" style="margin-top:6px">${esc(paymentText)}</div></div><div class="actions"><button class="primary" type="button" onclick="completeCounterQrOrder(${Number(o.id)})" ${canComplete?"":"disabled"}>${canComplete?buttonText:"Abre caja para cobrar"}</button><button class="ghost" type="button" onclick="printOrderCommand(${Number(o.id)})">🖨️ Comanda</button></div></div></article>`;
  }).join("")||'<p class="mut">No hay pedidos QR listos para retirar en mostrador.</p>';
@@ -3633,7 +3687,7 @@ async function loadPosOrders(){
  posOrders=(data||[]).filter(o=>{
    const source=String(o.order_source||"").toLowerCase();
    if(source==="waiter")return true;
-   const paidOnline=String(o.payment_method||"").trim().toLowerCase()==="mercado pago"&&String(o.payment_status||"").trim().toLowerCase()==="approved";
+   const paidOnline=["mercado pago","qr bolivia"].includes(String(o.payment_method||"").trim().toLowerCase())&&String(o.payment_status||"").trim().toLowerCase()==="approved";
    return source==="table_qr"&&!paidOnline&&!!o.created_by&&["retirado_mesa","entregado","cancelado"].includes(String(o.status||"").toLowerCase());
  });
  staffMembers=staff||staffMembers;
@@ -3694,14 +3748,22 @@ async function setOrderStatus(id,status){
  const order=orders.find(o=>String(o.id)===String(id));if(!order)return;
  const previousStatus=order.status;
  if(status==="cancelado"){
-  if(!confirm("Al cancelar este pedido se solicitará la devolución total del pago al cliente mediante Mercado Pago. ¿Continuar?"))return loadOrders();
-  toast("Procesando devolución en Mercado Pago…");
-  const {data:{session}}=await sb.auth.getSession();
-  try{
-   const res=await fetch(SB_URL+"/functions/v1/refund-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({order_id:id})});
-   const data=await res.json();if(!res.ok)throw new Error(data.error||"No se pudo devolver el pago");
-   toast("Pedido cancelado y devolución solicitada correctamente.");
-  }catch(e){toast(e.message);return loadOrders();}
+  const method=String(order.payment_method||"").trim().toLowerCase(),paid=String(order.payment_status||"").trim().toLowerCase()==="approved";
+  if(method==="mercado pago"&&paid){
+   if(!confirm("Al cancelar este pedido se solicitará la devolución total del pago al cliente mediante Mercado Pago. ¿Continuar?"))return loadOrders();
+   toast("Procesando devolución en Mercado Pago…");
+   const {data:{session}}=await sb.auth.getSession();
+   try{
+    const res=await fetch(SB_URL+"/functions/v1/refund-restaurant-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({order_id:id})});
+    const data=await res.json();if(!res.ok)throw new Error(data.error||"No se pudo devolver el pago");
+    toast("Pedido cancelado y devolución solicitada correctamente.");
+   }catch(e){toast(e.message);return loadOrders();}
+  }else{
+   if(method==="qr bolivia"&&paid&&!confirm("Este pedido fue pagado por QR Bolivia. VeriPagos no proporcionó una API de reembolso en la documentación actual, por lo que la devolución debe gestionarse por separado. ¿Cancelar igualmente el pedido?"))return loadOrders();
+   const {error}=await sb.from("restaurant_orders").update({status:"cancelado",updated_at:new Date().toISOString()}).eq("id",id).eq("restaurant_id",currentRestaurant);
+   if(error)return toast(error.message);
+   toast(method==="qr bolivia"&&paid?"Pedido cancelado. Reembolso QR pendiente de gestión externa.":"Pedido cancelado.");
+  }
  }else{
   const {error}=await sb.from("restaurant_orders").update({status,updated_at:new Date().toISOString()}).eq("id",id).eq("restaurant_id",currentRestaurant);
   if(error)return toast(error.message);
@@ -3906,7 +3968,7 @@ function setPlanPurchaseCycle(cycle){
  planCheckoutCycle=cycle==="annual"&&p?.annual_enabled?"annual":"monthly";renderPlanPurchaseModal();
 }
 function planProviderButton(provider,label,sub,onclick,disabled=false){
- const logo=provider==="mercadopago"?'<span class="plan-provider-logo mp" aria-label="Mercado Pago"></span>':'<span class="plan-provider-logo flow" aria-label="Flow">flow</span>';
+ const logo=provider==="mercadopago"?'<span class="plan-provider-logo mp" aria-label="Mercado Pago"></span>':provider==="flow"?'<span class="plan-provider-logo flow" aria-label="Flow">flow</span>':'<span class="plan-provider-logo" aria-label="QR Bolivia" style="display:grid;place-items:center;font-size:13px;font-weight:900">QR</span>';
  return '<button class="plan-provider-btn" type="button" '+(disabled?'disabled':'onclick="'+onclick+'"')+'>'+logo+'<span><span class="plan-provider-name">'+esc(label)+'</span><span class="plan-provider-sub">'+esc(sub)+'</span></span><span class="plan-provider-arrow">›</span></button>';
 }
 function renderPlanPurchaseModal(){
@@ -3915,7 +3977,7 @@ function renderPlanPurchaseModal(){
  const cfg=currentRestaurantConfig||countryByCode("CL"),country=countryByCode(cfg.country_code||"CL"),restaurant=restaurants.find(x=>Number(x.id)===Number(currentRestaurant)),labels=planCheckoutModuleLabels();
  const price=planPriceInfo(p,planCheckoutCycle),localPrice=Number.isFinite(price.amount)&&price.amount>0?money(price.amount,price.currency,cfg.locale):"Precio por confirmar",usd=Number.isFinite(price.usd)&&price.usd>0?new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(price.usd):"";
  const annual=planCheckoutCycle==="annual",accessDays=annual?Number(p.annual_days||365):Number(p.days||30),bonus=annual?Number(p.annual_bonus_months||0):0,charged=annual?planChargedMonths(p):1;
- const modules=Array.isArray(p.modules)?p.modules:[],isChile=String(country.code||"CL")==="CL",canMp=!!country.mercadopago_enabled&&isChile&&!adminPreviewMode,canFlow=flowPaymentConfigured&&isChile&&!adminPreviewMode&&!annual,isCurrent=subscriptionIsUsable(restaurant)&&Number(restaurant?.subscription_plan_id)===Number(p.id);
+ const modules=Array.isArray(p.modules)?p.modules:[],isChile=String(country.code||"CL")==="CL",isBolivia=String(country.code||"")==="BO",canMp=!!country.mercadopago_enabled&&isChile&&!adminPreviewMode,canFlow=flowPaymentConfigured&&isChile&&!adminPreviewMode&&!annual,canVeripagos=veripagosSubscriptionConfigured&&isBolivia&&!adminPreviewMode,isCurrent=subscriptionIsUsable(restaurant)&&Number(restaurant?.subscription_plan_id)===Number(p.id);if(isBolivia&&planCheckoutMode==="recurring")planCheckoutMode="one_time";
  const mpStatus=String(restaurant?.mp_subscription_status||"").toLowerCase(),mpActive=!!restaurant?.mp_subscription_id&&["authorized","active"].includes(mpStatus),mpPaused=!!restaurant?.mp_subscription_id&&mpStatus==="paused";
  const flowStatus=String(restaurant?.flow_subscription_status||"").toLowerCase(),flowActive=!!restaurant?.flow_subscription_id&&["active","1"].includes(flowStatus),flowCancelScheduled=!!restaurant?.flow_subscription_id&&flowStatus==="cancel_at_period_end";
  const locale=cfg.locale||"es-CL",renewal=new Date();renewal.setDate(renewal.getDate()+accessDays);
@@ -3927,7 +3989,7 @@ function renderPlanPurchaseModal(){
  if(ref)ref.textContent=(usd?"Referencia: "+usd+" USD · tasa informativa":"")+" · "+(annual?"Plan anual":"Plan mensual");
  if(features)features.innerHTML=modules.length?modules.map(m=>'<div class="plan-checkout-feature"><i>✓</i><span>'+esc(labels[m]||m)+'</span></div>').join(""):'<div class="mut">Este plan todavía no tiene módulos configurados.</div>';
  if(once)once.classList.toggle("active",planCheckoutMode==="one_time");
- if(rec)rec.classList.toggle("active",planCheckoutMode==="recurring");
+ if(rec){rec.classList.toggle("active",planCheckoutMode==="recurring");rec.disabled=isBolivia;rec.title=isBolivia?"QR Bolivia no ofrece renovación automática. Usa Pago único.":""}
  if(monthlyBtn)monthlyBtn.classList.toggle("active",!annual);
  if(annualBtn){annualBtn.classList.toggle("active",annual);annualBtn.disabled=!p.annual_enabled;annualBtn.title=p.annual_enabled?"12 meses con descuento":"Plan anual no habilitado"}
  if(saving){saving.style.display=annual?"block":"none";saving.innerHTML=annual?'<strong>🎁 '+bonus+' '+(bonus===1?'mes gratis':'meses gratis')+'</strong>Pagas el equivalente a '+charged+' meses y recibes 12 meses de acceso.':""}
@@ -3939,6 +4001,7 @@ function renderPlanPurchaseModal(){
  if(planCheckoutMode==="one_time"){
    if(canMp)html+=planProviderButton("mercadopago","Pagar con Mercado Pago",(annual?"Plan anual":"Plan mensual")+" · pago único","closePlanPurchaseModal();paySubscriptionPlanOnce("+Number(p.id)+",'"+planCheckoutCycle+"')");
    if(canFlow)html+=planProviderButton("flow","Pagar con Flow",(annual?"Plan anual":"Plan mensual")+" · pago único","closePlanPurchaseModal();paySubscriptionPlanFlow("+Number(p.id)+",'"+planCheckoutCycle+"')");
+   if(canVeripagos)html+=planProviderButton("veripagos","Pagar con QR Bolivia",(annual?"Plan anual":"Plan mensual")+" · pago único · sin renovación automática","closePlanPurchaseModal();paySubscriptionPlanVeripagos("+Number(p.id)+",'"+planCheckoutCycle+"')");
  }else{
    const currentCycle=String(restaurant?.subscription_billing_cycle||"monthly");
    if(canMp){
@@ -3953,7 +4016,7 @@ function renderPlanPurchaseModal(){
    }
  }
  if(annual&&flowPaymentConfigured&&!canMp)html+='<div class="plan-checkout-management"><strong>Flow anual</strong>Por seguridad, Flow queda disponible por ahora solo para mensual mientras terminamos su ciclo anual.</div>';
- if(!(canMp||canFlow))html+='<a class="billing-whatsapp-link" target="_blank" rel="noopener" href="https://wa.me/56982807639?text=Hola%2C%20necesito%20activar%20mi%20plan%20de%20YummyPro.">Solicitar activación por WhatsApp</a>';
+ if(!(canMp||canFlow||canVeripagos))html+='<a class="billing-whatsapp-link" target="_blank" rel="noopener" href="https://wa.me/56982807639?text=Hola%2C%20necesito%20activar%20mi%20plan%20de%20YummyPro.">Solicitar activación por WhatsApp</a>';
  if(providers)providers.innerHTML=html;
  let manage="";
  if(isCurrent&&mpPaused)manage='<div class="plan-checkout-management"><strong>Renovación de Mercado Pago pausada</strong>Puedes reactivarla en cualquier momento desde este mismo pop-up. Mientras esté pausada no se generan nuevos cobros.</div>';
@@ -3972,6 +4035,49 @@ async function paySubscriptionPlanOnce(id,billingCycle="monthly"){
   window.location.assign(data.init_point);
  }catch(e){console.error(e);toast("No se pudo conectar con Mercado Pago");}
 }
+let veripagosSubscriptionPollTimer=null,veripagosSubscriptionActivePaymentId=null;
+function ensureVeripagosSubscriptionModal(){
+ let modal=document.getElementById("veripagosSubscriptionModal");if(modal)return modal;
+ modal=document.createElement("div");modal.id="veripagosSubscriptionModal";modal.className="product-modal";modal.setAttribute("aria-hidden","true");
+ modal.innerHTML='<div class="product-modal-backdrop" onclick="closeVeripagosSubscriptionModal()"></div><div class="card product-modal-card" style="max-width:520px;text-align:center"><div class="module-head"><div style="text-align:left"><h2>QR Bolivia · VeriPagos</h2><p class="mut">Escanea y paga desde tu banco. YummyPro verificará el pago automáticamente.</p></div><button class="ghost" type="button" onclick="closeVeripagosSubscriptionModal()">✕</button></div><img id="veripagosSubscriptionQr" alt="QR de pago" style="display:block;width:min(330px,90%);margin:18px auto;background:#fff;padding:10px;border-radius:16px"><div id="veripagosSubscriptionAmount" class="price" style="font-size:26px"></div><div id="veripagosSubscriptionState" class="item" style="margin-top:14px">Esperando pago…</div><button class="primary full" type="button" style="margin-top:14px" onclick="verifyVeripagosSubscriptionNow()">Ya pagué · verificar ahora</button><p class="mut" style="margin-top:10px">Si sales a la aplicación de tu banco, al volver a YummyPro volveremos a verificar automáticamente.</p></div>';
+ document.body.appendChild(modal);return modal;
+}
+function openVeripagosSubscriptionModal(data){
+ const modal=ensureVeripagosSubscriptionModal(),img=document.getElementById("veripagosSubscriptionQr"),amount=document.getElementById("veripagosSubscriptionAmount"),state=document.getElementById("veripagosSubscriptionState");
+ veripagosSubscriptionActivePaymentId=Number(data.payment_id);if(img&&data.qr)img.src=data.qr;if(amount)amount.textContent=money(Number(data.amount||0),data.currency_code||"BOB","es-BO");if(state)state.textContent="QR generado · esperando confirmación del banco.";
+ modal.classList.add("open");modal.setAttribute("aria-hidden","false");if(veripagosSubscriptionPollTimer)clearInterval(veripagosSubscriptionPollTimer);veripagosSubscriptionPollTimer=setInterval(verifyVeripagosSubscriptionNow,3500);
+}
+function closeVeripagosSubscriptionModal(){const modal=document.getElementById("veripagosSubscriptionModal");modal?.classList.remove("open");modal?.setAttribute("aria-hidden","true");if(veripagosSubscriptionPollTimer){clearInterval(veripagosSubscriptionPollTimer);veripagosSubscriptionPollTimer=null}}
+async function verifyVeripagosSubscriptionNow(){
+ if(!veripagosSubscriptionActivePaymentId)return;
+ const state=document.getElementById("veripagosSubscriptionState");
+ try{
+  const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return;
+  const res=await fetch(SB_URL+"/functions/v1/verify-veripagos-subscription-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({payment_id:veripagosSubscriptionActivePaymentId})});
+  const d=await res.json();if(!res.ok){if(state)state.textContent="No se pudo verificar todavía: "+(d.error||"intenta nuevamente");return}
+  if(d.qr){const img=document.getElementById("veripagosSubscriptionQr");if(img)img.src=d.qr}
+  if(!d.approved){if(state)state.textContent="Pago todavía pendiente · "+(d.status||"esperando confirmación");return}
+  if(state)state.innerHTML="<b>✅ Pago confirmado. Suscripción activada.</b>";
+  if(veripagosSubscriptionPollTimer){clearInterval(veripagosSubscriptionPollTimer);veripagosSubscriptionPollTimer=null}
+  await refreshBillingCenter();setTimeout(closeVeripagosSubscriptionModal,1000);toast("✅ Pago QR confirmado. Tu suscripción ya está activa.");
+ }catch(e){if(state)state.textContent="No se pudo verificar todavía. Intenta nuevamente."}
+}
+async function paySubscriptionPlanVeripagos(id,billingCycle="monthly"){
+ const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
+ try{
+  const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)return toast("Tu sesión venció. Vuelve a iniciar sesión.");
+  toast("Generando QR Bolivia…");
+  const res=await fetch(SB_URL+"/functions/v1/create-veripagos-subscription-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({plan_id:p.id,restaurant_id:currentRestaurant,billing_cycle:billingCycle})});
+  const d=await res.json();if(!res.ok||!d?.qr)return toast(d?.error||"No se pudo generar el QR Bolivia");
+  openVeripagosSubscriptionModal(d);
+ }catch(e){console.error(e);toast("No se pudo generar el QR Bolivia")}
+}
+async function manageVeripagosPendingPayment(paymentId){
+ veripagosSubscriptionActivePaymentId=Number(paymentId);ensureVeripagosSubscriptionModal().classList.add("open");document.getElementById("veripagosSubscriptionModal").setAttribute("aria-hidden","false");
+ const state=document.getElementById("veripagosSubscriptionState");if(state)state.textContent="Recuperando y verificando QR…";
+ await verifyVeripagosSubscriptionNow();if(!veripagosSubscriptionPollTimer)veripagosSubscriptionPollTimer=setInterval(verifyVeripagosSubscriptionNow,3500);
+}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&veripagosSubscriptionActivePaymentId)verifyVeripagosSubscriptionNow()});
 async function paySubscriptionPlanFlow(id,billingCycle="monthly"){
  const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
  try{
@@ -4049,7 +4155,7 @@ function restoreSettingsPanel(){
  if(!document.querySelector('.settings-panel[data-settings-panel="'+saved+'"]'))saved="general";
  showSettingsPanel(saved);
 }
-async function loadSettings(){if(!currentRestaurant)return;if(!platformCountries.length)await loadPlatformCountries();const {data,error}=await sb.from("restaurants").select("*").eq("id",currentRestaurant).single();if(error)return toast(error.message);currentRestaurantConfig=data;scountry.value=data.country_code||"CL";applyCountrySelection(scountry.value);sname.value=data.name||"";swhatsapp.value=data.whatsapp||"";saddress.value=data.address||"";const sma=document.getElementById("smapaddress");if(sma)sma.value=data.address||"";sopen.value=(data.open_time||"").slice(0,5);sclose.value=(data.close_time||"").slice(0,5);sinstagram.value=data.instagram||"";spickup.value=data.pickup_eta||"";sdelivery.value=data.delivery_eta||"";sdeliverynote.value=data.delivery_note||"";const scp=document.getElementById("scolorPrimary"),scs=document.getElementById("scolorSecondary"),sct=document.getElementById("scolorText"),sl=document.getElementById("slogo"),slp=document.getElementById("slogoPreview");if(scp)scp.value=data.theme_primary_color||"#ffc21a";if(scs)scs.value=data.theme_secondary_color||"#1e1f24";if(sct)sct.value=data.theme_text_color||"#1e1f24";if(sl)sl.value=data.logo_url||"";if(slp){if(data.logo_url){slp.src=data.logo_url;slp.hidden=false}else{slp.removeAttribute("src");slp.hidden=true}}sdeliverymode.value=data.delivery_pricing_mode||"fixed";sdeliveryprice.value=Number(data.delivery_fixed_price||0);slat.value=data.latitude??"";slng.value=data.longitude??"";setDeliveryZones(Array.isArray(data.delivery_zones)?data.delivery_zones:[]);await Promise.all([loadAlternativePaymentMethods(),loadPaymentProofs()]);const mst=document.getElementById("manualOpenStatusText");if(mst)mst.textContent=data.manual_open_status==="open"?"🟢 Local forzado como ABIERTO":data.manual_open_status==="closed"?"🔴 Local forzado como CERRADO":"🕒 Funcionando según el horario programado";restoreSettingsPanel()}
+async function loadSettings(){if(!currentRestaurant)return;if(!platformCountries.length)await loadPlatformCountries();const {data,error}=await sb.from("restaurants").select("*").eq("id",currentRestaurant).single();if(error)return toast(error.message);currentRestaurantConfig=data;scountry.value=data.country_code||"CL";applyCountrySelection(scountry.value);sname.value=data.name||"";swhatsapp.value=data.whatsapp||"";saddress.value=data.address||"";const sma=document.getElementById("smapaddress");if(sma)sma.value=data.address||"";sopen.value=(data.open_time||"").slice(0,5);sclose.value=(data.close_time||"").slice(0,5);sinstagram.value=data.instagram||"";spickup.value=data.pickup_eta||"";sdelivery.value=data.delivery_eta||"";sdeliverynote.value=data.delivery_note||"";const scp=document.getElementById("scolorPrimary"),scs=document.getElementById("scolorSecondary"),sct=document.getElementById("scolorText"),sl=document.getElementById("slogo"),slp=document.getElementById("slogoPreview");if(scp)scp.value=data.theme_primary_color||"#ffc21a";if(scs)scs.value=data.theme_secondary_color||"#1e1f24";if(sct)sct.value=data.theme_text_color||"#1e1f24";if(sl)sl.value=data.logo_url||"";if(slp){if(data.logo_url){slp.src=data.logo_url;slp.hidden=false}else{slp.removeAttribute("src");slp.hidden=true}}sdeliverymode.value=data.delivery_pricing_mode||"fixed";sdeliveryprice.value=Number(data.delivery_fixed_price||0);slat.value=data.latitude??"";slng.value=data.longitude??"";setDeliveryZones(Array.isArray(data.delivery_zones)?data.delivery_zones:[]);await Promise.all([loadAlternativePaymentMethods(),loadPaymentProofs(),loadRestaurantVeripagosSettings()]);const mst=document.getElementById("manualOpenStatusText");if(mst)mst.textContent=data.manual_open_status==="open"?"🟢 Local forzado como ABIERTO":data.manual_open_status==="closed"?"🔴 Local forzado como CERRADO":"🕒 Funcionando según el horario programado";restoreSettingsPanel()}
 async function saveSettings(){if(!currentRestaurant)return toast("No hay restaurante seleccionado");const country=countryByCode(scountry.value);const row={name:sname.value.trim(),whatsapp:swhatsapp.value.trim(),address:saddress.value.trim(),country_code:country.code,currency_code:country.currency_code,locale:country.locale,timezone:country.timezone,open_time:sopen.value,close_time:sclose.value,instagram:sinstagram.value.trim(),pickup_eta:spickup.value.trim(),delivery_eta:sdelivery.value.trim(),delivery_note:sdeliverynote.value.trim(),theme_primary_color:document.getElementById("scolorPrimary")?.value||"#ffc21a",theme_secondary_color:document.getElementById("scolorSecondary")?.value||"#1e1f24",theme_text_color:document.getElementById("scolorText")?.value||"#1e1f24",logo_url:document.getElementById("slogo")?.value||null,delivery_pricing_mode:sdeliverymode.value,delivery_fixed_price:Number(sdeliveryprice.value||0),latitude:slat.value===""?null:Number(slat.value),longitude:slng.value===""?null:Number(slng.value),delivery_zones:sdeliveryzones.value.split(/\n+/).map(x=>x.trim()).filter(Boolean).map(x=>{const p=x.split("=");return {max_km:Number(p[0]),price:Number(p[1])}}).filter(z=>Number.isFinite(z.max_km)&&z.max_km>0&&Number.isFinite(z.price)&&z.price>=0).sort((x,y)=>x.max_km-y.max_km),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurants").update(row).eq("id",currentRestaurant);if(error)return toast(error.message);currentRestaurantConfig={...(currentRestaurantConfig||{}),...row};await loadRestaurants();await loadSettings();renderRestaurantContent();renderQrPanel();toast("País, moneda y configuración actualizados")}
 async function setManualOpenStatus(status){if(!currentRestaurant)return;const {error}=await sb.from("restaurants").update({manual_open_status:status,updated_at:new Date().toISOString()}).eq("id",currentRestaurant);if(error)return toast(error.message);await loadSettings();toast(status==="open"?"Local forzado como ABIERTO":status==="closed"?"Local forzado como CERRADO":"Se volvió al horario predeterminado")}
 function renderStats(){const valid=orders.filter(o=>o.status!=="cancelado"&&String(o.payment_status||"approved").toLowerCase()!=="rejected"),today=new Date().toDateString(),todayOrders=valid.filter(o=>new Date(o.created_at).toDateString()===today),salesToday=todayOrders.reduce((a,o)=>a+Number(o.total||0),0);const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value};set("statProducts",products.filter(p=>p.available).length);set("statOrdersToday",todayOrders.length);set("statSalesToday",money(salesToday));set("statAverage",money(todayOrders.length?salesToday/todayOrders.length:0));renderAnalytics(valid)}
@@ -4076,7 +4182,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v2.4.94</footer></main></div><script>
+</script><footer class="admin-version">Versión v2.4.95</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
