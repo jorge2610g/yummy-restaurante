@@ -3098,22 +3098,33 @@ async function loadPos(){
  renderPosCart();
  await loadPosOrders();
 }
-function renderPosTableSelectors(editSelected=null){
- const build=(select,selected,isEdit=false)=>{
-  if(!select)return;
-  const previous=selected!==null?String(selected||""):String(select.value||"");
-  select.innerHTML='<option value="">Selecciona una mesa</option>'+posTables.map(t=>`<option value="${esc(t.name)}">${esc(t.name)}</option>`).join("");
+function renderPosTableSelectors(editSelected=undefined){
+ const main=document.getElementById("posTableReference");
+ if(main){
+  const previous=String(main.value||"");
+  main.innerHTML='<option value="">Selecciona una mesa</option>'+posTables.map(t=>`<option value="${esc(t.name)}">${esc(t.name)}</option>`).join("");
   const exact=posTables.find(t=>String(t.name)===previous);
-  if(exact)select.value=exact.name;
-  else if(posTables.length===1)select.value=posTables[0].name;
-  else select.value="";
-  select.disabled=posTables.length===0;
- };
- build(document.getElementById("posTableReference"),null,false);
+  if(exact)main.value=exact.name;
+  else if(posTables.length===1)main.value=posTables[0].name;
+  else main.value="";
+  main.disabled=posTables.length===0;
+ }
  const edit=document.getElementById("posEditTable");
- if(edit)build(edit,editSelected,true);
+ if(edit&&editSelected!==undefined){
+  const previous=editSelected==null?"":String(editSelected);
+  let options='<option value="">Selecciona una mesa</option>'+posTables.map(t=>`<option value="${esc(t.name)}">${esc(t.name)}</option>`).join("");
+  const exact=posTables.find(t=>String(t.name)===previous);
+  if(!previous){
+   options='<option value="__legacy_none__">Sin mesa · pedido antiguo</option>'+options;
+  }else if(!exact){
+   options=`<option value="${esc(previous)}">${esc(previous)} · mesa original</option>`+options;
+  }
+  edit.innerHTML=options;
+  if(!previous)edit.value="__legacy_none__";
+  else edit.value=previous;
+ }
  const hint=document.getElementById("posTableHint");
- if(hint)hint.textContent=posTables.length? (posTables.length===1?"Mesa asignada automáticamente: "+posTables[0].name:"Selecciona una de las "+posTables.length+" mesas creadas por el restaurante.") :"⚠️ No hay mesas activas. El restaurante debe crear al menos una mesa en QR de Mesa antes de ingresar pedidos.";
+ if(hint)hint.textContent=posTables.length?(posTables.length===1?"Mesa asignada automáticamente: "+posTables[0].name:"Selecciona una de las "+posTables.length+" mesas creadas por el restaurante."):"⚠️ No hay mesas activas. El restaurante debe crear al menos una mesa en QR de Mesa antes de ingresar pedidos.";
  const submit=document.getElementById("posSubmitOrderBtn");
  if(submit)submit.disabled=!posCashOpen||posTables.length===0||Object.keys(posCart).length===0;
 }
@@ -3195,37 +3206,58 @@ function renderPosOrders(){
   const waiter=staffMembers.find(s=>String(s.user_id)===String(o.created_by)),isPaid=paid(o),status=String(o.status||"").trim().toLowerCase();
   const paymentText=isPaid?"✓ Pagado · "+esc(o.payment_method||"Método registrado"):status==="entregado"?"Pendiente de pago · pedido retirado":"Pendiente de pago";
   const canWithdraw=!isPaid&&status==="listo"&&String(o.order_source||"").trim().toLowerCase()==="waiter";
-  return `<article class="item pos-order-clickable" onclick="openPosOrderModal(${o.id})"><div class="row between"><div><b>#${esc(o.order_code)} · ${esc(o.table_reference||"Pedido en local")}</b><div class="mut">${esc(o.customer_name)} · ${new Date(o.created_at).toLocaleString("es-CL")}</div><div class="mut">Atendido por: <b>${esc(waiter?.display_name||waiter?.email||"Usuario no identificado")}</b></div><div class="price">${money(o.total)}</div><div class="${isPaid?"pos-paid":"mut"}">${paymentText}</div></div><span class="pill">${labels[status]||esc(status)}</span></div><div class="actions" style="margin-top:10px">${canWithdraw?`<button class="primary" type="button" onclick="event.stopPropagation();withdrawWaiterOrder(${o.id})">🍽️ Retirar pedido</button>`:""}${["restaurant","manager","kitchen"].includes(currentRole)?`<button class="ghost" onclick="event.stopPropagation();printOrderCommand(${o.id})">🖨️ Imprimir en cocina</button>`:""}</div></article>`;
+  const canAdd=!isPaid&&status==="entregado"&&String(o.order_source||"").trim().toLowerCase()==="waiter";
+  return `<article class="item pos-order-clickable" onclick="openPosOrderModal(${o.id})"><div class="row between"><div><b>#${esc(o.order_code)} · ${esc(o.table_reference||"Pedido en local")}</b><div class="mut">${esc(o.customer_name)} · ${new Date(o.created_at).toLocaleString("es-CL")}</div><div class="mut">Atendido por: <b>${esc(waiter?.display_name||waiter?.email||"Usuario no identificado")}</b></div><div class="price">${money(o.total)}</div><div class="${isPaid?"pos-paid":"mut"}">${paymentText}</div></div><span class="pill">${labels[status]||esc(status)}</span></div><div class="actions" style="margin-top:10px">${canWithdraw?`<button class="primary" type="button" onclick="event.stopPropagation();withdrawWaiterOrder(${o.id})">🍽️ Retirar pedido</button>`:""}${canAdd?`<button class="ghost" type="button" onclick="event.stopPropagation();openPosOrderModal(${o.id})">✏️ Agregar productos</button>`:""}${["restaurant","manager","kitchen"].includes(currentRole)?`<button class="ghost" onclick="event.stopPropagation();printOrderCommand(${o.id})">🖨️ Imprimir en cocina</button>`:""}</div></article>`;
  }).join("")||(posOrderView==="completed"?'<p class="filter-empty">No hay pedidos culminados en este periodo.</p>':posOrderView==="withdrawn"?'<p class="filter-empty">No hay pedidos retirados pendientes de pago en este periodo.</p>':'<p class="filter-empty">No hay pedidos vigentes por retirar en este periodo.</p>');
 }
-let editingPosOrderId=null,editingPosItems=[];
+let editingPosOrderId=null,editingPosItems=[],editingPosOriginalQty={},editingPosAddOnly=false;
 function openPosOrderModal(id){
  const o=posOrders.find(x=>String(x.id)===String(id));if(!o)return toast("Pedido no encontrado");
  editingPosOrderId=o.id;
  editingPosItems=(Array.isArray(o.items)?o.items:[]).map(x=>({product_id:Number(x.product_id),name:x.name||"Producto",qty:Number(x.qty||1),unit_price:Number(x.unit_price||x.price||0)}));
- posEditCustomer.value=o.customer_name||"";renderPosTableSelectors(o.table_reference||"");posEditNotes.value=o.notes||"";
+ editingPosOriginalQty={};
+ editingPosItems.forEach(x=>{const key=String(x.product_id);editingPosOriginalQty[key]=(editingPosOriginalQty[key]||0)+Number(x.qty||0)});
+ posEditCustomer.value=o.customer_name||"";renderPosTableSelectors(o.table_reference??null);posEditNotes.value=o.notes||"";
  posOrderModalTitle.textContent="#"+o.order_code+" · "+(o.table_reference||"Pedido en local");
  const paid=String(o.payment_status||"").trim().toLowerCase()==="approved",status=String(o.status||"").trim().toLowerCase();
- const workflowLabels={recibido:"Enviado a cocina · esperando preparación.",preparacion:"Cocina está preparando este pedido.",listo:"🍽️ Pedido listo · retíralo en cocina.",entregado:"Pedido retirado de cocina · listo para cobrar cuando pidan la cuenta.",cancelado:"Pedido cancelado."};
+ editingPosAddOnly=!paid&&status==="entregado";
+ const workflowLabels={recibido:"Enviado a cocina · esperando preparación.",preparacion:"Cocina está preparando este pedido.",listo:"🍽️ Pedido listo · retíralo en cocina.",entregado:"Pedido retirado de cocina · puedes agregar productos antes de cobrar la cuenta.",cancelado:"Pedido cancelado."};
  posOrderPaymentState.textContent=paid?"✓ Pagado con "+(o.payment_method||"método registrado"):"Pendiente de pago";
  posOrderPaymentState.className=paid?"pos-paid":"mut";
  const workflow=document.getElementById("posOrderWorkflowState");if(workflow)workflow.textContent=paid?"✓ Pedido culminado.":(workflowLabels[status]||"");
- const frozen=paid||["listo","entregado","cancelado"].includes(status);
- posEditCustomer.disabled=frozen;posEditTable.disabled=frozen||posTables.length===0;posEditNotes.disabled=frozen;
+ const detailsFrozen=paid||["listo","entregado","cancelado"].includes(status);
+ const itemsFrozen=paid||["listo","cancelado"].includes(status);
+ posEditCustomer.disabled=detailsFrozen;posEditTable.disabled=detailsFrozen||posTables.length===0;posEditNotes.disabled=detailsFrozen;
  const saveBtn=document.getElementById("posSaveOrderBtn"),withdrawBtn=document.getElementById("posWithdrawOrderBtn"),payBtn=document.getElementById("posPayOrderBtn");
- if(saveBtn)saveBtn.classList.toggle("hidden",frozen);
+ if(saveBtn){saveBtn.classList.toggle("hidden",itemsFrozen);saveBtn.textContent=editingPosAddOnly?"＋ Guardar productos agregados":"Guardar cambios"}
  if(withdrawBtn)withdrawBtn.classList.toggle("hidden",paid||status!=="listo"||String(o.order_source||"").trim().toLowerCase()!=="waiter");
  if(payBtn)payBtn.classList.toggle("hidden",paid||status!=="entregado");
  posEditActions.classList.toggle("hidden",paid||status==="cancelado");
- posEditCatalogWrap.classList.toggle("hidden",frozen);
- hidePosPayment();renderPosEditItems(frozen);
- if(posEditProductSearch)posEditProductSearch.value="";const validEditCategory=posCategories.some(cat=>String(cat.id)===String(posCategoryFilter));posEditCategoryFilter=validEditCategory?String(posCategoryFilter):(posCategories.find(cat=>products.some(p=>String(p.category_id)===String(cat.id)))?.id?.toString()||"all");renderPosEditCategories();renderPosEditCatalog("");
+ posEditCatalogWrap.classList.toggle("hidden",itemsFrozen);
+ hidePosPayment();renderPosEditItems(itemsFrozen,editingPosAddOnly);
+ if(posEditProductSearch)posEditProductSearch.value="";
+ const validEditCategory=posCategories.some(cat=>String(cat.id)===String(posCategoryFilter));
+ posEditCategoryFilter=validEditCategory?String(posCategoryFilter):(posCategories.find(cat=>products.some(p=>String(p.category_id)===String(cat.id)))?.id?.toString()||"all");
+ renderPosEditCategories();renderPosEditCatalog("");
  posOrderModal.style.display="flex";posOrderModal.setAttribute("aria-hidden","false");
  const fab=document.getElementById("posCartFab");if(fab)fab.classList.add("hidden");
 }
-function closePosOrderModal(){posOrderModal.style.display="none";posOrderModal.setAttribute("aria-hidden","true");editingPosOrderId=null;editingPosItems=[];renderPosCart()}
-function renderPosEditItems(locked=false){posEditItems.innerHTML=editingPosItems.map((x,i)=>`<div class="item pos-edit-row"><div><b>${esc(x.name)}</b><div class="mut">${money(x.unit_price*x.qty)}</div></div><div class="pos-edit-qty">${locked?"":`<button class="ghost" onclick="changePosEditQty(${i},-1)">−</button>`}<b>${x.qty}</b>${locked?"":`<button class="ghost" onclick="changePosEditQty(${i},1)">＋</button>`}</div></div>`).join("")||'<p class="mut">Sin productos.</p>';posEditTotal.textContent=money(editingPosItems.reduce((s,x)=>s+x.unit_price*x.qty,0))}
-function changePosEditQty(index,delta){const x=editingPosItems[index];if(!x)return;x.qty+=delta;if(x.qty<=0)editingPosItems.splice(index,1);renderPosEditItems(false)}
+function closePosOrderModal(){posOrderModal.style.display="none";posOrderModal.setAttribute("aria-hidden","true");editingPosOrderId=null;editingPosItems=[];editingPosOriginalQty={};editingPosAddOnly=false;renderPosCart()}
+function renderPosEditItems(locked=false,addOnly=editingPosAddOnly){
+ posEditItems.innerHTML=editingPosItems.map((x,i)=>{
+  const base=Number(editingPosOriginalQty[String(x.product_id)]||0),canMinus=!locked&&(!addOnly||Number(x.qty)>base);
+  return `<div class="item pos-edit-row"><div><b>${esc(x.name)}</b><div class="mut">${money(x.unit_price*x.qty)}${addOnly&&base>0?'<br><small>Ya entregado: '+base+'</small>':""}</div></div><div class="pos-edit-qty">${locked?"":`<button class="ghost" onclick="changePosEditQty(${i},-1)" ${canMinus?"":"disabled"}>−</button>`}<b>${x.qty}</b>${locked?"":`<button class="ghost" onclick="changePosEditQty(${i},1)">＋</button>`}</div></div>`;
+ }).join("")||'<p class="mut">Sin productos.</p>';
+ posEditTotal.textContent=money(editingPosItems.reduce((s,x)=>s+x.unit_price*x.qty,0));
+}
+function changePosEditQty(index,delta){
+ const x=editingPosItems[index];if(!x)return;
+ const base=Number(editingPosOriginalQty[String(x.product_id)]||0);
+ if(editingPosAddOnly&&delta<0&&Number(x.qty)<=base)return toast("Lo ya entregado no se puede quitar; solo puedes agregar productos o aumentar cantidades");
+ x.qty+=delta;
+ if(x.qty<=0)editingPosItems.splice(index,1);
+ renderPosEditItems(false,editingPosAddOnly);
+}
 function renderPosEditCategories(){
  const root=document.getElementById("posEditCategoryTabs");if(!root)return;
  const countBy=id=>products.filter(p=>String(p.category_id||"")===String(id)).length;
@@ -3252,9 +3284,9 @@ function renderPosEditCatalog(search=""){
  });
  root.innerHTML=rows.map(p=>`<div class="pos-edit-product">${p.image_url?`<img src="${esc(p.image_url)}" alt="">`:'<div class="product-fallback">🍽️</div>'}<div><b>${esc(p.name)}</b><div class="mut">${money(p.price)}</div></div><button class="primary" type="button" onclick="addProductToPosEdit(${p.id})" aria-label="Agregar ${esc(p.name)}">＋</button></div>`).join("")||'<p class="filter-empty">No hay productos en esta categoría con ese criterio de búsqueda.</p>';
 }
-function addProductToPosEdit(productId){const p=products.find(x=>String(x.id)===String(productId));if(!p)return toast("Producto no encontrado");const current=editingPosItems.find(x=>String(x.product_id)===String(productId));if(current)current.qty+=1;else editingPosItems.push({product_id:Number(p.id),name:p.name,qty:1,unit_price:Number(p.price||0)});renderPosEditItems(false)}
+function addProductToPosEdit(productId){const p=products.find(x=>String(x.id)===String(productId));if(!p)return toast("Producto no encontrado");const current=editingPosItems.find(x=>String(x.product_id)===String(productId));if(current)current.qty+=1;else editingPosItems.push({product_id:Number(p.id),name:p.name,qty:1,unit_price:Number(p.price||0)});renderPosEditItems(false,editingPosAddOnly)}
 
-async function savePosOrderEdit(){if(!editingPosOrderId)return;const customer=posEditCustomer.value.trim(),table=posEditTable.value.trim(),items=editingPosItems.map(x=>({product_id:x.product_id,qty:x.qty}));if(!customer){posEditCustomer.focus();return toast("El nombre del cliente es obligatorio")}if(!table){posEditTable.focus();return toast("Selecciona una mesa")}if(!items.length)return toast("El pedido debe tener al menos un producto");const {error}=await sb.rpc("update_waiter_order",{p_order_id:editingPosOrderId,p_customer_name:customer,p_table_reference:table,p_notes:posEditNotes.value.trim(),p_items:items});if(error)return toast(error.message);await loadPosOrders();const id=editingPosOrderId;closePosOrderModal();openPosOrderModal(id);toast("Pedido actualizado")}
+async function savePosOrderEdit(){if(!editingPosOrderId)return;const customer=posEditCustomer.value.trim(),rawTable=posEditTable.value,table=rawTable==="__legacy_none__"?"":rawTable.trim(),items=editingPosItems.map(x=>({product_id:x.product_id,qty:x.qty}));if(!customer){posEditCustomer.focus();return toast("El nombre del cliente es obligatorio")}if(!table&&rawTable!=="__legacy_none__"){posEditTable.focus();return toast("Selecciona una mesa")}if(!items.length)return toast("El pedido debe tener al menos un producto");const wasAddOnly=editingPosAddOnly;const {error}=await sb.rpc("update_waiter_order",{p_order_id:editingPosOrderId,p_customer_name:customer,p_table_reference:table,p_notes:posEditNotes.value.trim(),p_items:items});if(error)return toast(error.message);await loadPosOrders();const id=editingPosOrderId;closePosOrderModal();openPosOrderModal(id);toast(wasAddOnly?"Productos agregados a la cuenta":"Pedido actualizado")}
 function showPosPayment(){
  const o=posOrders.find(x=>String(x.id)===String(editingPosOrderId));
  if(!o||String(o.status||"")!=="entregado")return toast("Primero retira el pedido de cocina");
@@ -3728,7 +3760,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.80</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.81</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
