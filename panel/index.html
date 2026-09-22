@@ -2028,7 +2028,7 @@ async function enter(user){
     const {data:menuRestaurant}=await sb.from("restaurants").select("slug").eq("id",currentRestaurant).single();
     const menuLink=document.getElementById("viewMenuLink");
     if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(menuRestaurant?.slug||currentRestaurant);menuLink.style.display=currentRole==="restaurant"?"":"none"}
-    enableRestaurantNotifications();restoreAutoPrintOrders();setTimeout(startRestaurantOrderRealtime,0);setTimeout(startWaiterReadyReminderLoop,0);setTimeout(startKitchenNewOrderReminderLoop,0);setTimeout(startSubscriptionAccessRealtime,0);
+    enableRestaurantNotifications();restoreAutoPrintOrders();setTimeout(startRestaurantOrderRealtime,0);setTimeout(startWaiterReadyReminderLoop,0);setTimeout(startWaiterPosRefreshLoop,0);setTimeout(startKitchenNewOrderReminderLoop,0);setTimeout(startSubscriptionAccessRealtime,0);
     await loadRestaurants();
     await Promise.allSettled([loadSubscriptionPlans(),loadSubscriptionModuleAccess()]);
     applyRoleAccess();
@@ -2665,7 +2665,7 @@ function restaurantOrderAlert(row){
 let restaurantOrdersChannel=null;
 const notifiedRestaurantOrders=new Set();
 const notifiedWaiterReadyOrders=new Set();
-let waiterReadyReminderTimer=null,kitchenNewReminderTimer=null,kitchenUsbDevice=null,kitchenUsbEndpoint=null,kitchenUsbInterface=null,kitchenPrintInFlight=new Set();
+let waiterReadyReminderTimer=null,waiterPosRefreshTimer=null,kitchenNewReminderTimer=null,kitchenUsbDevice=null,kitchenUsbEndpoint=null,kitchenUsbInterface=null,kitchenPrintInFlight=new Set();
 function waiterReadyAlert(row){
  try{
   if("Notification" in window&&Notification.permission==="granted")new Notification("🍽️ Pedido listo para retirar",{body:"#"+(row.order_code||row.id)+" · "+(row.table_reference||row.customer_name||"Retirar en cocina"),tag:"waiter-ready-"+row.id,renotify:true,requireInteraction:true});
@@ -2698,6 +2698,18 @@ function startWaiterReadyReminderLoop(){
  if(currentRole!=="waiter")return;
  setTimeout(checkWaiterReadyReminders,1200);
  waiterReadyReminderTimer=setInterval(checkWaiterReadyReminders,30000);
+}
+async function refreshWaiterPosState(){
+ if(currentRole!=="waiter"||!currentRestaurant)return;
+ const pos=document.getElementById("pos");
+ if(!pos?.classList.contains("active"))return;
+ try{await loadPosOrders()}catch(e){console.error("No se pudo refrescar el estado del POS",e)}
+}
+function startWaiterPosRefreshLoop(){
+ if(waiterPosRefreshTimer){clearInterval(waiterPosRefreshTimer);waiterPosRefreshTimer=null}
+ if(currentRole!=="waiter")return;
+ setTimeout(refreshWaiterPosState,1500);
+ waiterPosRefreshTimer=setInterval(refreshWaiterPosState,5000);
 }
 function canReceiveKitchenNewAlerts(){
  try{return !!currentRestaurant&&effectiveTabs().includes("kitchen")}catch(_){return ["restaurant","manager","editor","kitchen"].includes(currentRole)}
@@ -3180,9 +3192,9 @@ function renderPosOrders(){
  if(completedCount)completedCount.textContent=completedRows.length;
  const rows=posOrderView==="completed"?completedRows:posOrderView==="withdrawn"?withdrawnRows:activeRows;
  root.innerHTML=rows.map(o=>{
-  const waiter=staffMembers.find(s=>String(s.user_id)===String(o.created_by)),isPaid=paid(o),status=String(o.status||"");
+  const waiter=staffMembers.find(s=>String(s.user_id)===String(o.created_by)),isPaid=paid(o),status=String(o.status||"").trim().toLowerCase();
   const paymentText=isPaid?"✓ Pagado · "+esc(o.payment_method||"Método registrado"):status==="entregado"?"Pendiente de pago · pedido retirado":"Pendiente de pago";
-  const canWithdraw=!isPaid&&status==="listo"&&(currentRole==="waiter"||adminPreviewMode);
+  const canWithdraw=!isPaid&&status==="listo"&&String(o.order_source||"").trim().toLowerCase()==="waiter";
   return `<article class="item pos-order-clickable" onclick="openPosOrderModal(${o.id})"><div class="row between"><div><b>#${esc(o.order_code)} · ${esc(o.table_reference||"Pedido en local")}</b><div class="mut">${esc(o.customer_name)} · ${new Date(o.created_at).toLocaleString("es-CL")}</div><div class="mut">Atendido por: <b>${esc(waiter?.display_name||waiter?.email||"Usuario no identificado")}</b></div><div class="price">${money(o.total)}</div><div class="${isPaid?"pos-paid":"mut"}">${paymentText}</div></div><span class="pill">${labels[status]||esc(status)}</span></div><div class="actions" style="margin-top:10px">${canWithdraw?`<button class="primary" type="button" onclick="event.stopPropagation();withdrawWaiterOrder(${o.id})">🍽️ Retirar pedido</button>`:""}${["restaurant","manager","kitchen"].includes(currentRole)?`<button class="ghost" onclick="event.stopPropagation();printOrderCommand(${o.id})">🖨️ Imprimir en cocina</button>`:""}</div></article>`;
  }).join("")||(posOrderView==="completed"?'<p class="filter-empty">No hay pedidos culminados en este periodo.</p>':posOrderView==="withdrawn"?'<p class="filter-empty">No hay pedidos retirados pendientes de pago en este periodo.</p>':'<p class="filter-empty">No hay pedidos vigentes por retirar en este periodo.</p>');
 }
@@ -3193,7 +3205,7 @@ function openPosOrderModal(id){
  editingPosItems=(Array.isArray(o.items)?o.items:[]).map(x=>({product_id:Number(x.product_id),name:x.name||"Producto",qty:Number(x.qty||1),unit_price:Number(x.unit_price||x.price||0)}));
  posEditCustomer.value=o.customer_name||"";renderPosTableSelectors(o.table_reference||"");posEditNotes.value=o.notes||"";
  posOrderModalTitle.textContent="#"+o.order_code+" · "+(o.table_reference||"Pedido en local");
- const paid=String(o.payment_status||"").toLowerCase()==="approved",status=String(o.status||"");
+ const paid=String(o.payment_status||"").trim().toLowerCase()==="approved",status=String(o.status||"").trim().toLowerCase();
  const workflowLabels={recibido:"Enviado a cocina · esperando preparación.",preparacion:"Cocina está preparando este pedido.",listo:"🍽️ Pedido listo · retíralo en cocina.",entregado:"Pedido retirado de cocina · listo para cobrar cuando pidan la cuenta.",cancelado:"Pedido cancelado."};
  posOrderPaymentState.textContent=paid?"✓ Pagado con "+(o.payment_method||"método registrado"):"Pendiente de pago";
  posOrderPaymentState.className=paid?"pos-paid":"mut";
@@ -3202,7 +3214,7 @@ function openPosOrderModal(id){
  posEditCustomer.disabled=frozen;posEditTable.disabled=frozen||posTables.length===0;posEditNotes.disabled=frozen;
  const saveBtn=document.getElementById("posSaveOrderBtn"),withdrawBtn=document.getElementById("posWithdrawOrderBtn"),payBtn=document.getElementById("posPayOrderBtn");
  if(saveBtn)saveBtn.classList.toggle("hidden",frozen);
- if(withdrawBtn)withdrawBtn.classList.toggle("hidden",paid||status!=="listo"||!(currentRole==="waiter"||adminPreviewMode));
+ if(withdrawBtn)withdrawBtn.classList.toggle("hidden",paid||status!=="listo"||String(o.order_source||"").trim().toLowerCase()!=="waiter");
  if(payBtn)payBtn.classList.toggle("hidden",paid||status!=="entregado");
  posEditActions.classList.toggle("hidden",paid||status==="cancelado");
  posEditCatalogWrap.classList.toggle("hidden",frozen);
@@ -3280,7 +3292,6 @@ async function loadPosOrders(){
  const [{data,error},{data:staff}]=await Promise.all([orderQuery,sb.from("restaurant_staff").select("user_id,email,display_name,role").eq("restaurant_id",currentRestaurant)]);
  if(error)return toast(error.message);
  posOrders=data||[];staffMembers=staff||staffMembers;
- if(currentRole==="waiter")setTimeout(checkWaiterReadyReminders,250);
  posOrders.forEach(row=>{const i=orders.findIndex(o=>String(o.id)===String(row.id));if(i<0)orders.push(row);else orders[i]=row});
  renderPosOrders();
 }
@@ -3717,7 +3728,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.79</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.80</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
