@@ -1794,6 +1794,13 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
         <h3>Resumen de compra</h3>
         <p>Elige cómo quieres pagar tu plan.</p>
         <div id="planCheckoutSummary" class="plan-checkout-summary"></div>
+        <div class="plan-checkout-provider-title" style="margin-top:16px">Periodo del plan</div>
+        <div class="plan-checkout-mode" role="tablist" aria-label="Periodo del plan">
+          <button id="planCheckoutCycleMonthly" type="button" onclick="setPlanPurchaseCycle('monthly')">Mensual</button>
+          <button id="planCheckoutCycleAnnual" type="button" onclick="setPlanPurchaseCycle('annual')">Anual</button>
+        </div>
+        <div id="planCheckoutAnnualSaving" class="plan-checkout-management" style="display:none"></div>
+        <div class="plan-checkout-provider-title" style="margin-top:16px">Modalidad de pago</div>
         <div class="plan-checkout-mode" role="tablist" aria-label="Modalidad de pago">
           <button id="planCheckoutModeOnce" type="button" onclick="setPlanPurchaseMode('one_time')">Pago único</button>
           <button id="planCheckoutModeRecurring" type="button" onclick="setPlanPurchaseMode('recurring')">Suscripción automática</button>
@@ -2326,10 +2333,15 @@ async function loadSubscriptionExchangeRates(){
  const bases=[...new Set((subscriptionPlans||[]).map(p=>String(p.currency_code||"CLP").toUpperCase()))];
  await Promise.all(bases.map(async base=>{if(subscriptionFxRates[base])return;try{const res=await fetch("https://open.er-api.com/v6/latest/"+encodeURIComponent(base));const data=await res.json();if(res.ok&&data?.rates)subscriptionFxRates[base]={rates:data.rates,updated:data.time_last_update_utc||null}}catch(e){console.error("No se pudo obtener la referencia cambiaria",base,e)}}));
 }
-function planPriceInfo(p){
- const cfg=currentRestaurantConfig||countryByCode("CL"),country=cfg.country_code||"CL",target=String(cfg.currency_code||"CLP").toUpperCase(),base=String(p.currency_code||"CLP").toUpperCase(),custom=p.country_prices?.[country];
- if(custom!=null){const amount=Number(typeof custom==="object"?(custom.amount??custom.price):custom),currency=String(typeof custom==="object"?(custom.currency_code??custom.currency):target).toUpperCase();return {amount,currency,usd:currency==="USD"?amount:amount/Number(subscriptionFxRates[currency]?.rates?.[currency]||1)*Number(subscriptionFxRates[currency]?.rates?.USD||0)}}
- const rates=subscriptionFxRates[base]?.rates||{},local=base===target?Number(p.amount):Number(p.amount)*Number(rates[target]||0),usd=base==="USD"?Number(p.amount):Number(p.amount)*Number(rates.USD||0);
+function planChargedMonths(p){return Math.max(1,12-Math.max(0,Math.min(11,Number(p?.annual_bonus_months||0))))}
+function planPriceInfo(p,cycle="monthly"){
+ const annual=cycle==="annual",cfg=currentRestaurantConfig||countryByCode("CL"),country=cfg.country_code||"CL",target=String(cfg.currency_code||"CLP").toUpperCase(),base=String(p.currency_code||"CLP").toUpperCase(),custom=p.country_prices?.[country],charged=planChargedMonths(p);
+ if(custom!=null){
+  const currency=String(typeof custom==="object"?(custom.currency_code??custom.currency):target).toUpperCase(),monthly=Number(typeof custom==="object"?(custom.amount??custom.price):custom),customAnnual=typeof custom==="object"?(custom.annual_amount??custom.annual_price):null;
+  const amount=annual?(customAnnual!=null?Number(customAnnual):(p.annual_amount!=null&&base===currency?Number(p.annual_amount):monthly*charged)):monthly;
+  const usd=currency==="USD"?amount:amount/Number(subscriptionFxRates[currency]?.rates?.[currency]||1)*Number(subscriptionFxRates[currency]?.rates?.USD||0);return {amount,currency,usd}
+ }
+ const baseMonthly=Number(p.amount||0),baseAmount=annual?(p.annual_amount!=null?Number(p.annual_amount):baseMonthly*charged):baseMonthly,rates=subscriptionFxRates[base]?.rates||{},local=base===target?baseAmount:baseAmount*Number(rates[target]||0),usd=base==="USD"?baseAmount:baseAmount*Number(rates.USD||0);
  return {amount:local,currency:target,usd};
 }
 let subscriptionCountdownTimer=null;
@@ -3010,13 +3022,13 @@ function renderRestaurantPlans(){
  }).join("")||"<p class='mut'>No hay planes disponibles en este momento.</p>";
 }
 
-let planCheckoutPlanId=null,planCheckoutMode="one_time";
+let planCheckoutPlanId=null,planCheckoutMode="one_time",planCheckoutCycle="monthly";
 function planCheckoutModuleLabels(){
  return {dashboard:"Dashboard",products:"Gestión de productos",categories:"Gestión de categorías",qr:"Código QR del menú",table_qr:"QR de Mesa",settings:"Configuración del sitio y abrir/cerrar",orders:"Pedidos online",pos:"Meseros / POS",cash:"Caja",kitchen:"Pantalla de cocina",inventory:"Inventario",staff:"Gestión de personal",promotions:"Promociones",reviews:"Reseñas"};
 }
 function openPlanPurchaseModal(id){
  const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
- planCheckoutPlanId=Number(id);planCheckoutMode="one_time";
+ planCheckoutPlanId=Number(id);planCheckoutMode="one_time";planCheckoutCycle="monthly";
  const modal=document.getElementById("planCheckoutModal");if(!modal)return;
  modal.classList.add("open");modal.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";
  renderPlanPurchaseModal();
@@ -3027,6 +3039,10 @@ function closePlanPurchaseModal(){
 }
 function setPlanPurchaseMode(mode){
  planCheckoutMode=mode==="recurring"?"recurring":"one_time";renderPlanPurchaseModal();
+}
+function setPlanPurchaseCycle(cycle){
+ const p=subscriptionPlans.find(x=>Number(x.id)===Number(planCheckoutPlanId));
+ planCheckoutCycle=cycle==="annual"&&p?.annual_enabled?"annual":"monthly";renderPlanPurchaseModal();
 }
 function planProviderButton(provider,label,sub,onclick,disabled=false){
  const logo=provider==="mercadopago"?'<span class="plan-provider-logo mp" aria-label="Mercado Pago"></span>':'<span class="plan-provider-logo flow" aria-label="Flow">flow</span>';
