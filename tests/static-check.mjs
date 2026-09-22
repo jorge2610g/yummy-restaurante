@@ -37,3 +37,5 @@ for(const marker of ['subscriptionBannerShouldShow','activeTab!=="plans"','banne
 for(const marker of ['restaurant-admin-sidebar-scale-v2464','#sideMenu .nav-label{font-size:15px!important;font-weight:720!important','#sideMenu .nav-icon{width:44px!important;height:44px!important','#sideMenu .tab{width:100%!important;height:56px!important'])if(!panel.includes(marker))throw new Error('panel/index.html: falta escala del menú igual al admin '+marker);
 
 for(const marker of ['restaurant-collapsed-admin-reference-v2465','scrollbar-width:none','::-webkit-scrollbar','width:62px!important','height:42px!important'])if(!panel.includes(marker))throw new Error('panel/index.html: falta estilo cerrado igual al admin '+marker);
+
+for(const marker of ['role-and-cash-gates-v2466','operationalTabLockReason','Mesero / POS solo puede utilizarse con un usuario con rol Mesero','Cocina solo puede utilizarse con un usuario con rol Cocina','restaurant_has_open_cash','posCashGate','Caja cerrada: primero el usuario de Caja debe abrir una caja'])if(!panel.includes(marker))throw new Error('panel/index.html: falta restricción de rol/caja '+marker);
