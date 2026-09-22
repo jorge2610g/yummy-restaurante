@@ -2918,7 +2918,7 @@ async function loadPos(){
  const [productsResult,categoriesResult,tablesResult]=await Promise.all([
   sb.from("restaurant_products").select("id,name,description,price,image_url,available,sort_order,category_id").eq("restaurant_id",currentRestaurant).eq("available",true).order("sort_order"),
   sb.from("restaurant_categories").select("id,name,sort_order,active").eq("restaurant_id",currentRestaurant).eq("active",true).order("sort_order").order("name"),
-  sb.from("restaurant_tables").select("id,name,sort_order,active").eq("restaurant_id",currentRestaurant).eq("active",true).order("sort_order").order("id")
+  sb.rpc("get_active_restaurant_tables_for_pos",{p_restaurant_id:currentRestaurant})
  ]);
  if(productsResult.error){console.error("Error cargando productos del POS",productsResult.error);if(root)root.innerHTML='<p style="color:var(--bad);font-weight:800">No se pudieron cargar los productos. Pulsa actualizar o vuelve a iniciar sesión.</p>';return toast("No se pudieron cargar los productos del POS")}
  if(categoriesResult.error)console.error("No se pudieron cargar las categorías del POS",categoriesResult.error);
@@ -3572,7 +3572,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.76</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.77</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
