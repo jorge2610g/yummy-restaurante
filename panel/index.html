@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="YummyPro">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/pwa-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/pwa-icon.svg">
 <title>YummyPro Restaurante</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -1665,6 +1666,23 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
  @keyframes waiterPullSpin{to{transform:rotate(360deg)}}
 }
 </style>
+<style id="pwa-install-v2501">
+#pwaInstallModal{position:fixed;inset:0;z-index:2400;display:none;align-items:center;justify-content:center;padding:18px}
+#pwaInstallModal.open{display:flex}
+#pwaInstallModal .pwa-install-backdrop{position:absolute;inset:0;background:rgba(2,8,18,.72);backdrop-filter:blur(4px)}
+#pwaInstallModal .pwa-install-card{position:relative;z-index:1;width:min(460px,100%);background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 28px 80px #0008}
+#pwaInstallModal h2{margin:0 0 8px}.pwa-install-steps{display:grid;gap:10px;margin:16px 0}.pwa-install-step{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;align-items:start;padding:11px;border:1px solid var(--line);border-radius:13px;background:var(--item)}.pwa-install-step b{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--a);color:#171000}
+#pwaInstallBtn{position:relative}
+@media(display-mode:standalone){#pwaInstallBtn{display:none!important}}
+</style>
+<div id="pwaInstallModal" aria-hidden="true">
+ <div class="pwa-install-backdrop" onclick="closePwaInstallHelp()"></div>
+ <div class="pwa-install-card" role="dialog" aria-modal="true" aria-labelledby="pwaInstallTitle">
+  <div class="row between"><div><h2 id="pwaInstallTitle">Instalar YummyPro</h2><p id="pwaInstallText" class="mut" style="margin:4px 0 0">Instala el panel como aplicación.</p></div><button class="ghost" type="button" onclick="closePwaInstallHelp()" aria-label="Cerrar">✕</button></div>
+  <div id="pwaInstallSteps" class="pwa-install-steps"></div>
+  <button class="primary full" type="button" onclick="closePwaInstallHelp()">Entendido</button>
+ </div>
+</div>
 <div id="appBootLoader" role="status" aria-live="polite"><div class="app-boot-card"><div class="app-boot-mark">Y</div><h2>Cargando tu restaurante…</h2><p>Estamos verificando tu sesión y tus accesos.</p><div class="app-boot-spinner" aria-hidden="true"></div></div></div>
 <div id="login" class="wrap login hidden"><div class="card"><h1>Panel de administración</h1><p class="mut">Gestiona menú, precios, disponibilidad y datos del negocio.</p>
 <label>Correo administrador</label><input id="email" type="email" autocomplete="username" placeholder="tu@email.com">
@@ -1673,7 +1691,7 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
 
 <div id="app" class="wrap hidden">
 <div id="subscriptionBanner" class="card" style="margin-bottom:14px;display:none"></div>
-<div class="top"><div><h1 id="panelMainTitle">Panel Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><a id="viewMenuLink" href="#" target="_blank" style="display:none"><button class="ghost header-action" type="button" aria-label="Ver menú" title="Ver menú"><span class="header-action-icon" aria-hidden="true">👁️</span><span class="action-label">Ver menú</span></button></a><button class="ghost header-action" id="themeBtn" type="button" onclick="toggleAdminTheme()" aria-label="Cambiar modo de color" title="Cambiar tema"><span class="header-action-icon" aria-hidden="true">☀️</span><span class="action-label">Modo claro</span></button><button class="ghost header-action" type="button" onclick="logout()" aria-label="Salir" title="Salir"><span class="header-action-icon" aria-hidden="true">↪</span><span class="action-label">Salir</span></button><button id="sideMenuToggle" class="ghost side-menu-toggle header-action" type="button" onclick="toggleSideMenu()" aria-label="Abrir menú del panel" title="Menú del panel"><span class="header-action-icon" aria-hidden="true">☰</span><span class="action-label">Menú</span></button></div></div>
+<div class="top"><div><h1 id="panelMainTitle">Panel Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><button class="ghost header-action hidden" id="pwaInstallBtn" type="button" onclick="installYummyProPwa()" aria-label="Instalar YummyPro" title="Instalar YummyPro"><span class="header-action-icon" aria-hidden="true">⬇️</span><span class="action-label">Instalar</span></button><a id="viewMenuLink" href="#" target="_blank" style="display:none"><button class="ghost header-action" type="button" aria-label="Ver menú" title="Ver menú"><span class="header-action-icon" aria-hidden="true">👁️</span><span class="action-label">Ver menú</span></button></a><button class="ghost header-action" id="themeBtn" type="button" onclick="toggleAdminTheme()" aria-label="Cambiar modo de color" title="Cambiar tema"><span class="header-action-icon" aria-hidden="true">☀️</span><span class="action-label">Modo claro</span></button><button class="ghost header-action" type="button" onclick="logout()" aria-label="Salir" title="Salir"><span class="header-action-icon" aria-hidden="true">↪</span><span class="action-label">Salir</span></button><button id="sideMenuToggle" class="ghost side-menu-toggle header-action" type="button" onclick="toggleSideMenu()" aria-label="Abrir menú del panel" title="Menú del panel"><span class="header-action-icon" aria-hidden="true">☰</span><span class="action-label">Menú</span></button></div></div>
 <div id="sideMenuBackdrop" class="side-menu-backdrop" onclick="closeSideMenu()"></div><div id="panelLayout" class="panel-layout"><aside id="sideMenu" class="side-menu">
 <div class="sidebar-brand">
   <span class="sidebar-brand-mark">Y</span>
@@ -2784,7 +2802,49 @@ function browserPrintKitchenOrder(order){
   let items=o.items||[];if(typeof items==="string"){try{items=JSON.parse(items)}catch(_){items=[]}}if(!Array.isArray(items))items=[];
   const e=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
   const itemRows=items.map(x=>'<div class="line"><b>'+e(Number(x.qty||1)+" × "+(x.name||"Producto"))+'</b></div>').join("");
-  const html='<!doctype html><html><head><meta charset="utf-8"><title>Comanda '+e(o.order_code||o.id)+'</title><style>@page{margin:3mm}body{font-family:Arial,sans-serif;width:72mm;margin:0 auto;color:#000;font-size:13px}h1{text-align:center;font-size:18px;margin:0 0 4px}.sep{border-top:1px dashed #000;margin:7px 0}.line{margin:6px 0}.big{font-size:17px;font-weight:800}@media print{button{display:none}}</style></head><body><h1>'+e(r.name)+'</h1><div class="big">#'+e(o.order_code||o.id)+'</div><div>'+e(new Date(o.created_at||Date.now()).toLocaleString("es-CL"))+'</div><div class="sep"></div><div><b>Cliente:</b> '+e(o.customer_name||"Sin nombre")+'</div>'+(o.table_reference?'<div><b>Mesa:</b> '+e(o.table_reference)+'</div>':'')+'<div class="sep"></div>'+itemRows+(o.notes?'<div class="sep"></div><b>OBS:</b> '+e(o.notes):'')+'<div class="sep"></div><b>Total: '+e(money(o.total||0))+'</b><script>setTimeout(()=>window.print(),180)<\/script></body></html>';
+  const html='<!doctype html><html><head><meta charset="utf-8"><title>Comanda '+e(o.order_code||o.id)+'</title><style>@page{margin:3mm}body{font-family:Arial,sans-serif;width:72mm;margin:0 auto;color:#000;font-size:13px}h1{text-align:center;font-size:18px;margin:0 0 4px}.sep{border-top:1px dashed #000;margin:7px 0}.line{margin:6px 0}.big{font-size:17px;font-weight:800}@media print{button{display:none}}</style></head><body><h1>'+e(r.name)+'</h1><div class="big">#'+e(o.order_code||o.id)+'</div><div>'+e(new Date(o.created_at||Date.now()).toLocaleString("es-CL"))+'</div><div class="sep"></div><div><b>Cliente:</b> '+e(o.customer_name||"Sin nombre")+'</div>'+(o.table_reference?'<div><b>Mesa:</b> '+e(o.table_reference)+'</div>':'')+'<div class="sep"></div>'+itemRows+(o.notes?'<div class="sep"></div><b>OBS:</b> '+e(o.notes):'')+'<div class="sep"></div><b>Total: '+e(money(o.total||0))+'</b><script>setTimeout(()=>window.print(),180)<\/script><script id="pwa-install-script-v2501">
+let yummyProInstallPrompt=null;
+function yummyProStandalone(){return window.matchMedia?.("(display-mode: standalone)")?.matches===true||window.navigator.standalone===true}
+function yummyProIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(/macintosh/i.test(navigator.userAgent)&&navigator.maxTouchPoints>1)}
+function yummyProAndroid(){return /android/i.test(navigator.userAgent)}
+function refreshYummyProInstallButton(){
+ const btn=document.getElementById("pwaInstallBtn");if(!btn)return;
+ const shouldShow=!yummyProStandalone()&&(!!yummyProInstallPrompt||yummyProIOS()||yummyProAndroid());
+ btn.classList.toggle("hidden",!shouldShow);
+}
+function openPwaInstallHelp(kind){
+ const modal=document.getElementById("pwaInstallModal"),title=document.getElementById("pwaInstallTitle"),text=document.getElementById("pwaInstallText"),steps=document.getElementById("pwaInstallSteps");if(!modal||!steps)return;
+ if(kind==="ios"){
+  title.textContent="Instalar YummyPro en iPhone / iPad";
+  text.textContent="Safari permite añadir YummyPro a la pantalla de inicio como aplicación.";
+  steps.innerHTML='<div class="pwa-install-step"><b>1</b><div>Abre esta página en <strong>Safari</strong>.</div></div><div class="pwa-install-step"><b>2</b><div>Toca el botón <strong>Compartir</strong> de Safari.</div></div><div class="pwa-install-step"><b>3</b><div>Selecciona <strong>Añadir a pantalla de inicio</strong> y confirma.</div></div>';
+ }else{
+  title.textContent="Instalar YummyPro";
+  text.textContent="Tu navegador no mostró el aviso automático. Puedes instalarla desde el menú del navegador.";
+  steps.innerHTML='<div class="pwa-install-step"><b>1</b><div>Abre el menú <strong>⋮</strong> del navegador.</div></div><div class="pwa-install-step"><b>2</b><div>Busca <strong>Instalar aplicación</strong> o <strong>Añadir a pantalla principal</strong>.</div></div><div class="pwa-install-step"><b>3</b><div>Confirma <strong>YummyPro Restaurante</strong>.</div></div>';
+ }
+ modal.classList.add("open");modal.setAttribute("aria-hidden","false");
+}
+function closePwaInstallHelp(){const modal=document.getElementById("pwaInstallModal");if(!modal)return;modal.classList.remove("open");modal.setAttribute("aria-hidden","true")}
+async function installYummyProPwa(){
+ if(yummyProStandalone())return toast("YummyPro ya está instalada en este dispositivo.");
+ if(yummyProIOS())return openPwaInstallHelp("ios");
+ if(!yummyProInstallPrompt)return openPwaInstallHelp("android");
+ const prompt=yummyProInstallPrompt;yummyProInstallPrompt=null;
+ try{
+  await prompt.prompt();
+  const choice=await prompt.userChoice;
+  if(choice?.outcome==="accepted")toast("Instalando YummyPro…");else refreshYummyProInstallButton();
+ }catch(e){console.error("No se pudo abrir la instalación PWA",e);openPwaInstallHelp("android")}
+}
+window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();yummyProInstallPrompt=event;refreshYummyProInstallButton()});
+window.addEventListener("appinstalled",()=>{yummyProInstallPrompt=null;refreshYummyProInstallButton();toast("✅ YummyPro se instaló correctamente.")});
+window.addEventListener("DOMContentLoaded",async()=>{
+ try{if("serviceWorker" in navigator)await navigator.serviceWorker.register("/push-sw.js")}catch(e){console.error("No se pudo preparar YummyPro para instalación",e)}
+ refreshYummyProInstallButton();
+});
+</script>
+</body></html>';
   const w=window.open("","_blank","width=420,height=720");if(!w)return false;w.document.open();w.document.write(html);w.document.close();return true;
  }catch(e){console.error("Impresión del navegador",e);return false}
 }
@@ -4226,7 +4286,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v2.5.00</footer></main></div><script>
+</script><footer class="admin-version">Versión v2.5.01</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;

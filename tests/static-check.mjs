@@ -5,7 +5,7 @@ for(const marker of ['billing-pending-actions-v2454','managePendingSubscriptionP
 if(panel.includes('data-tab="health"')||panel.includes('loadRestaurantHealth'))throw new Error('panel/index.html: el monitoreo debe estar eliminado');
 if(panel.includes('.panel-layout,.panel-content,#orders'))throw new Error('panel/index.html: Pedidos no debe forzarse visible fuera de su pestaña');
 for(const marker of ['data-tab="whatsapp-demo"','id="whatsapp-demo"','WHATSAPP_DEVICE_DEMO_ENABLED','startWhatsAppDeviceDemo','whatsappDemoRequest'])if(panel.includes(marker))throw new Error(`panel/index.html: residuo de WhatsApp demo detectado: ${marker}`);
-if(!/Versión v2\.4\.\d+/.test(panel))throw new Error('panel/index.html: falta versión v2.4.x visible');
+if(!/Versión v2\.(?:4|5)\.\d+/.test(panel))throw new Error('panel/index.html: falta versión v2.4.x o v2.5.x visible');
 if(!panel.includes('Enviar pedido a cocina'))throw new Error('panel/index.html: falta envío POS sin impresión del mesero');
 for(const marker of ['id="posCartPanel"','id="posCartFab"','id="posCartBackdrop"','openPosCart','closePosCart'])if(!panel.includes(marker))throw new Error(`panel/index.html: falta carrito móvil POS: ${marker}`);
 if(panel.includes('Enviar a cocina e imprimir'))throw new Error('panel/index.html: el POS no debe imprimir en el dispositivo del mesero');
@@ -41,3 +41,5 @@ for(const marker of ['restaurant-collapsed-admin-reference-v2465','scrollbar-wid
 for(const marker of ['role-and-cash-gates-v2466','operationalTabLockReason','Mesero / POS solo puede utilizarse con un usuario con rol Mesero','Cocina solo puede utilizarse con un usuario con rol Cocina','restaurant_has_open_cash','posCashGate','Caja cerrada: primero el usuario de Caja debe abrir una caja'])if(!panel.includes(marker))throw new Error('panel/index.html: falta restricción de rol/caja '+marker);
 
 for(const marker of ['planCheckoutCycleAnnual','setPlanPurchaseCycle','planChargedMonths','annual_bonus_months','billing_cycle:billingCycle','Plan anual','12 meses de acceso'])if(!panel.includes(marker))throw new Error('panel/index.html: falta compra anual '+marker);
+
+for(const marker of ['manifest.webmanifest','pwaInstallBtn','installYummyProPwa','beforeinstallprompt','pwa-install-v2501'])if(!panel.includes(marker))throw new Error('panel/index.html: falta PWA instalable '+marker);
