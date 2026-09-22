@@ -19,3 +19,5 @@ for (const needle of ["subscriptionModuleAccess","loadSubscriptionModuleAccess",
 }
 
 for(const marker of ['currencyDigits','minimumFractionDigits:shown','maximumFractionDigits:shown'])if(!panel.includes(marker))throw new Error('panel/index.html: falta formato monetario adaptable '+marker);
+
+for(const marker of ['create-flow-subscription-payment','subscription-flow-settings','paySubscriptionPlanFlow','Pagar con Flow','flowPaymentConfigured','showFlowReturnMessage'])if(!panel.includes(marker))throw new Error('panel/index.html: falta integración Flow '+marker);
