@@ -1326,6 +1326,10 @@ html[data-theme="light"] .side-menu .tab.active .nav-icon{
 .review-card p{line-height:1.55}.review-response{margin-top:10px;padding:11px!important;background:var(--ghost)!important}
 @media(max-width:800px){.promotion-summary,.review-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important}.promotion-summary .restaurant-metric,.review-summary .restaurant-metric{min-height:88px!important;padding:11px!important}.promotion-summary .restaurant-metric strong,.review-summary .restaurant-metric strong{font-size:22px!important;margin-top:8px!important}}
 @media(max-width:520px){.promotion-summary,.review-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}.promotion-summary .restaurant-metric,.review-summary .restaurant-metric{padding:9px!important;border-radius:13px!important}.promotion-summary .restaurant-metric span,.review-summary .restaurant-metric span{font-size:10px!important}.promotion-summary .restaurant-metric small,.review-summary .restaurant-metric small{display:none!important}.review-card>.row,.review-card .row.between{align-items:flex-start!important;flex-direction:column!important}.review-card .actions{width:100%!important}}
+</style><style id="billing-center-v2452">
+.billing-shell{display:grid;gap:16px}.billing-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.billing-heading h2{margin:2px 0 5px;font-size:clamp(26px,3vw,36px);letter-spacing:-.04em}.billing-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:16px}.billing-current{position:relative;overflow:hidden}.billing-current:after{content:"";position:absolute;right:-55px;top:-70px;width:190px;height:190px;border-radius:50%;background:var(--a);opacity:.08;pointer-events:none}.billing-kicker{font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--mut)}.billing-current-name{font-size:clamp(25px,3vw,34px);font-weight:950;letter-spacing:-.04em;margin:8px 0}.billing-current-status,.billing-status{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900}.billing-status-success{background:rgba(45,212,191,.12);color:#2dd4bf}.billing-status-pending{background:rgba(255,193,7,.12);color:#f6b919}.billing-status-danger{background:rgba(251,113,133,.12);color:#fb7185}.billing-current-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}.billing-current-grid>div{padding:12px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--card) 88%,transparent)}.billing-current-grid span{display:block;color:var(--mut);font-size:11px;margin-bottom:4px}.billing-current-grid b{font-size:13px}.billing-method-ok,.billing-method-assisted{display:inline-flex;margin:10px 0;padding:7px 10px;border-radius:10px;font-size:12px;font-weight:900}.billing-method-ok{background:rgba(45,212,191,.12);color:#2dd4bf}.billing-method-assisted{background:rgba(255,193,7,.12);color:#f6b919}.billing-alt-methods{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}.billing-plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:16px}.billing-plan-grid .plan-card{height:100%}.billing-app-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}.billing-app-grid .item{height:100%}.billing-app-icon{font-size:27px}.billing-quote-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:14px}.billing-whatsapp-link{display:inline-flex;align-items:center;justify-content:center;padding:11px 15px;border-radius:12px;background:#25D366;color:#fff!important;font-weight:900;text-decoration:none;white-space:nowrap}.billing-history-list{display:grid;gap:9px;margin-top:14px}.billing-history-row{display:grid;grid-template-columns:minmax(180px,1fr) minmax(130px,.6fr) minmax(110px,.4fr) auto;align-items:center;gap:12px;padding:13px 14px;border:1px solid var(--line);border-radius:14px}.billing-history-date{font-size:12px;color:var(--mut)}.billing-history-amount{font-weight:900;text-align:right}.billing-loading,.billing-empty{padding:18px;border:1px dashed var(--line);border-radius:14px;color:var(--mut);text-align:center}.billing-app-card,.billing-history-card,.billing-plans-card{overflow:hidden}
+@media(max-width:850px){.billing-grid{grid-template-columns:1fr}.billing-app-grid{grid-template-columns:1fr}.billing-history-row{grid-template-columns:1fr auto}.billing-history-date{grid-column:1}.billing-history-amount{grid-column:2;grid-row:1;text-align:right}.billing-status{grid-column:2;grid-row:2;justify-self:end}.billing-quote-row{align-items:stretch;flex-direction:column}.billing-whatsapp-link{width:100%}}
+@media(max-width:520px){.billing-heading{flex-direction:column}.billing-heading>button{width:100%}.billing-current-grid{grid-template-columns:1fr}.billing-history-row{grid-template-columns:1fr}.billing-history-date,.billing-history-amount,.billing-status{grid-column:1;grid-row:auto;text-align:left;justify-self:start}.billing-plan-grid{grid-template-columns:1fr}}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -1375,7 +1379,7 @@ html[data-theme="light"] .side-menu .tab.active .nav-icon{
   <button class="tab" data-tab="qr" title="Código QR"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path d="M14 14h2v2h-2zM18 14h2M18 16v4M14 18h2v2h-2z"/></svg></span><span class="nav-label">Código QR</span></button>
 
   <div class="nav-group-label">CUENTA</div>
-  <button class="tab" data-tab="plans" title="Planes"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span><span class="nav-label">Planes</span></button>
+  <button class="tab" data-tab="plans" title="Plan y facturación"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span><span class="nav-label">Plan y facturación</span></button>
   <button class="tab" data-tab="settings" title="Configuración"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.2 2.3 2.6.4.8 2.5 2.3 1.2-.7 2.6.7 2.6-2.3 1.2-.8 2.5-2.6.4L12 21l-1.2-2.3-2.6-.4-.8-2.5-2.3-1.2.7-2.6-.7-2.6 2.3-1.2.8-2.5 2.6-.4z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="nav-label">Configuración</span></button>
 </div>
 </aside><main class="panel-content">
@@ -1486,7 +1490,43 @@ html[data-theme="light"] .side-menu .tab.active .nav-icon{
 <section id="table_qr" class="section"><div class="card"><div class="module-head"><div><h2>QR de Mesa</h2><p class="mut">Crea un QR único para cada mesa. El cliente escanea, pide desde su teléfono y el pedido llega a Cocina y Caja.</p></div><button class="ghost" type="button" onclick="loadRestaurantTables()">↻ Actualizar</button></div><div class="item" style="margin-top:16px"><div class="row" style="align-items:end;flex-wrap:wrap"><label style="flex:1;min-width:220px">Nombre de la mesa<input id="tableQrName" placeholder="Ej: Mesa 1, Terraza 2, Barra 1"></label><button class="primary" type="button" onclick="createRestaurantTable()">＋ Crear mesa</button></div></div><div id="tableQrList" class="list" style="margin-top:16px"></div></div></section>
 <section id="qr" class="section"><div class="card"><h2>Código QR del restaurante</h2><p class="mut">Enlace directo para compartir el menú de tu restaurante.</p><div id="qrPanel"></div></div></section>
 
-<section id="plans" class="section"><div class="card"><h2>Planes disponibles</h2><p class="mut">Elige un plan para mantener activo tu restaurante.</p><div id="restaurantPlans" class="list"></div></div></section>
+<section id="plans" class="section">
+  <div class="billing-shell">
+    <div class="billing-heading">
+      <div><span class="eyebrow">CUENTA</span><h2>Plan y Facturación</h2><p class="mut">Administra tu plan de YummyPro, revisa el próximo vencimiento y consulta tus pagos.</p></div>
+      <button class="ghost" type="button" onclick="refreshBillingCenter()">↻ Actualizar</button>
+    </div>
+
+    <div class="billing-grid">
+      <article class="card billing-current" id="billingCurrentPlan">
+        <div class="billing-loading">Cargando tu plan actual…</div>
+      </article>
+      <article class="card" id="billingPaymentMethods">
+        <div class="billing-loading">Cargando medios de pago…</div>
+      </article>
+    </div>
+
+    <article class="card billing-plans-card">
+      <div class="module-head"><div><h2>Planes de suscripción</h2><p class="mut">Los precios, duración y módulos se cargan desde la configuración del administrador.</p></div></div>
+      <div id="restaurantPlans" class="billing-plan-grid"></div>
+    </article>
+
+    <article class="card billing-app-card">
+      <div class="module-head"><div><h2>Aplicación personalizada</h2><p class="mut">Servicio adicional separado de tu suscripción mensual.</p></div></div>
+      <div class="billing-app-grid">
+        <div class="item"><span class="billing-app-icon">🤖</span><h3>App Android</h3><p class="mut">Aplicación personalizada para tu restaurante y publicación coordinada.</p></div>
+        <div class="item"><span class="billing-app-icon">📱</span><h3>Android + iOS</h3><p class="mut">Aplicaciones para ambas plataformas con tu marca y configuración.</p></div>
+        <div class="item"><span class="billing-app-icon">⌨️</span><h3>Proyecto completo</h3><p class="mut">Opción para proyectos que requieran entrega técnica y personalizaciones adicionales.</p></div>
+      </div>
+      <div class="billing-quote-row"><div><b>Cotización personalizada</b><div class="mut">El precio depende de la configuración, publicación y alcance del proyecto.</div></div><a class="billing-whatsapp-link" target="_blank" rel="noopener" href="https://wa.me/56982807639?text=Hola%2C%20quiero%20cotizar%20una%20aplicaci%C3%B3n%20personalizada%20para%20mi%20restaurante%20en%20YummyPro.">Solicitar cotización</a></div>
+    </article>
+
+    <article class="card billing-history-card">
+      <div class="module-head"><div><h2>Historial de pagos</h2><p class="mut">Pagos únicos y suscripciones automáticas registrados para este restaurante.</p></div><button class="ghost" type="button" onclick="loadSubscriptionHistory()">Actualizar historial</button></div>
+      <div id="subscriptionPaymentHistory" class="billing-history-list"><div class="billing-loading">Cargando historial…</div></div>
+    </article>
+  </div>
+</section>
 
 <section id="settings" class="section">
 <div class="settings-shell">
@@ -1606,7 +1646,7 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b){const next=theme==="dark"?"claro":"oscuro",icon=theme==="dark"?"☀️":"🌙";b.innerHTML='<span class="header-action-icon" aria-hidden="true">'+icon+'</span><span class="action-label">Modo '+next+'</span>';b.setAttribute("aria-label","Activar modo "+next);b.title="Activar modo "+next}}
 function toggleAdminTheme(){applyAdminTheme(document.documentElement.dataset.theme==="light"?"dark":"light")}
 applyAdminTheme(localStorage.getItem("admin_theme")||"dark");setTimeout(bindRestaurantMpButtons,0);
-let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",posCart={},subscriptionFxRates={},posOrders=[],posOrderDateFilter="today",cashDateFilter="today",cashPaidOrderDateFilter="today",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[];
+let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",posCart={},subscriptionFxRates={},posOrders=[],posOrderDateFilter="today",cashDateFilter="today",cashPaidOrderDateFilter="today",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[];
 function matchesPeriod(value,period,fromId,toId){const date=new Date(value);if(Number.isNaN(date.getTime()))return false;if(period==="all")return true;const now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),now.getDate()),end=new Date(start);end.setDate(end.getDate()+1);if(period==="week")start.setDate(start.getDate()-6);if(period==="month")start.setDate(1);if(period==="custom"){const from=document.getElementById(fromId)?.value,to=document.getElementById(toId)?.value;if(from)start.setTime(new Date(from+"T00:00:00").getTime());else start.setTime(0);if(to)end.setTime(new Date(to+"T23:59:59.999").getTime());else end.setTime(8640000000000000)}return date>=start&&date<end}
 function activatePeriodButtons(attribute,value){document.querySelectorAll(`[${attribute}]`).forEach(button=>{const active=button.getAttribute(attribute)===value;button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active))})}
 function resetPeriodToToday(tab){
@@ -1818,9 +1858,55 @@ async function refreshRestaurantDashboard(){await Promise.allSettled([loadProduc
 async function loadDashboardOrders(){if(!currentRestaurant)return;const {data,error}=await sb.from("restaurant_orders").select("*").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(500);if(error)return toast(error.message);orders=(data||[]).filter(o=>o.order_source==="waiter"||(o.order_source==="online"&&o.payment_status==="approved")||(o.order_source==="table_qr"&&(String(o.payment_method||"").trim().toLowerCase()!=="mercado pago"||o.payment_status==="approved")))}
 async function loadSubscriptionPlans(){
  const {data,error}=await sb.from("subscription_plans").select("*").eq("active",true).eq("is_default_trial",false).order("amount",{ascending:true});
- if(error){console.error("Error cargando planes",error);subscriptionPlans=[];renderRestaurantPlans();return}
- subscriptionPlans=data||[];await loadSubscriptionExchangeRates();renderRestaurantPlans();
+ if(error){console.error("Error cargando planes",error);subscriptionPlans=[];renderRestaurantPlans();renderBillingSummary();return}
+ subscriptionPlans=data||[];
+ await Promise.allSettled([loadSubscriptionExchangeRates(),loadSubscriptionHistory()]);
+ renderRestaurantPlans();renderBillingSummary();renderBillingPaymentMethods();
 }
+async function loadSubscriptionHistory(){
+ if(!currentRestaurant)return;
+ const box=document.getElementById("subscriptionPaymentHistory");
+ if(box)box.innerHTML='<div class="billing-loading">Cargando historial…</div>';
+ const {data,error}=await sb.from("subscription_payments").select("id,restaurant_id,plan_id,amount,status,created_at,paid_at,payment_type,provider,currency_code,mp_payment_id,mp_subscription_id").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(50);
+ if(error){console.error("No se pudo cargar el historial de suscripciones",error);subscriptionPayments=[];if(box)box.innerHTML='<div class="item"><b>No se pudo cargar el historial</b><div class="mut">'+esc(error.message||"Intenta nuevamente.")+'</div></div>';return}
+ subscriptionPayments=data||[];renderSubscriptionHistory();
+}
+function billingStatusLabel(status){
+ const value=String(status||"pending").toLowerCase(),labels={approved:"Aprobado",paid:"Pagado",authorized:"Autorizado",pending:"Pendiente",in_process:"En proceso",rejected:"Rechazado",cancelled:"Cancelado",canceled:"Cancelado",refunded:"Reembolsado"};
+ return labels[value]||value;
+}
+function billingStatusClass(status){
+ const value=String(status||"pending").toLowerCase();
+ return ["approved","paid","authorized"].includes(value)?"billing-status-success":["rejected","cancelled","canceled"].includes(value)?"billing-status-danger":"billing-status-pending";
+}
+function renderSubscriptionHistory(){
+ const box=document.getElementById("subscriptionPaymentHistory");if(!box)return;
+ if(!subscriptionPayments.length){box.innerHTML='<div class="billing-empty">Todavía no hay pagos registrados para este restaurante.</div>';return}
+ const plans=new Map((subscriptionPlans||[]).map(p=>[Number(p.id),p.name]));
+ box.innerHTML=subscriptionPayments.map(p=>{
+  const plan=plans.get(Number(p.plan_id))||"Plan YummyPro",date=new Date(p.paid_at||p.created_at),locale=currentRestaurantConfig?.locale||"es-CL";
+  const amount=money(p.amount,p.currency_code||currentRestaurantConfig?.currency_code,locale),type=p.payment_type==="recurring"?"Suscripción automática":"Pago único";
+  return '<div class="billing-history-row"><div><b>'+esc(plan)+'</b><div class="mut">'+esc(type)+' · '+esc(p.provider==="mercadopago"?"Mercado Pago":(p.provider||"Pago"))+'</div></div><div class="billing-history-date">'+esc(date.toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}))+'</div><div class="billing-history-amount">'+esc(amount)+'</div><span class="billing-status '+billingStatusClass(p.status)+'">'+esc(billingStatusLabel(p.status))+'</span></div>';
+ }).join("");
+}
+function renderBillingSummary(){
+ const box=document.getElementById("billingCurrentPlan");if(!box)return;
+ const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));if(!r){box.innerHTML='<div class="billing-empty">No se pudo cargar la suscripción.</div>';return}
+ const status=String(r.subscription_status||"trial").toLowerCase(),statusLabel=status==="trial"?"Prueba gratuita":status==="active"?"Suscripción activa":status==="suspended"?"Suscripción suspendida":"Suscripción vencida";
+ const expires=r.subscription_expires_at?new Date(r.subscription_expires_at):null,locale=r.locale||currentRestaurantConfig?.locale||"es-CL",days=expires?Math.max(0,Math.ceil((expires.getTime()-Date.now())/86400000)):null;
+ const recurring=String(r.mp_subscription_status||"").toLowerCase(),recurringLabel=recurring?(recurring==="authorized"||recurring==="active"?"Activa":billingStatusLabel(recurring)):"No activa";
+ const next=r.mp_next_payment_date?new Date(r.mp_next_payment_date).toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric"}):"Sin fecha programada";
+ box.innerHTML='<div class="billing-kicker">PLAN ACTUAL</div><div class="billing-current-name">'+esc(r.subscription_plan||"Plan YummyPro")+'</div><div class="billing-current-status '+(status==="active"||status==="trial"?"billing-status-success":status==="suspended"?"billing-status-danger":"billing-status-pending")+'">'+esc(statusLabel)+'</div><div class="billing-current-grid"><div><span>Vencimiento</span><b>'+esc(expires?expires.toLocaleString(locale,{day:"2-digit",month:"2-digit",year:"numeric"}):"Sin vencimiento")+'</b></div><div><span>Tiempo restante</span><b>'+esc(days==null?"—":days+" días")+'</b></div><div><span>Renovación automática</span><b>'+esc(recurringLabel)+'</b></div><div><span>Próximo cobro</span><b>'+esc(next)+'</b></div></div>';
+}
+function renderBillingPaymentMethods(){
+ const box=document.getElementById("billingPaymentMethods");if(!box)return;
+ const cfg=currentRestaurantConfig||countryByCode("CL"),country=countryByCode(cfg.country_code||"CL"),isChile=String(country.code||"CL")==="CL",mpAvailable=!!country.mercadopago_enabled&&isChile;
+ const alternatives=Array.isArray(country.alternative_payments)?country.alternative_payments:[];
+ const names={bank_transfer:"Transferencia bancaria",qr_bank:"Pago por QR",yape:"Yape",plin:"Plin",pix:"Pix",yappy:"Yappy",mobile_payment:"Pago móvil"};
+ const altText=alternatives.map(x=>names[x]||x).join(" · ");
+ box.innerHTML='<div class="billing-kicker">MEDIOS DE PAGO</div><h3 style="margin:8px 0 4px">'+esc(country.name||cfg.country_code||"Tu país")+'</h3>'+(mpAvailable?'<div class="billing-method-ok">✓ Mercado Pago habilitado</div><p class="mut">Puedes realizar pago único o activar la suscripción automática.</p>':'<div class="billing-method-assisted">Activación asistida</div><p class="mut">Mercado Pago para suscripciones no está habilitado en este país.</p>')+(altText?'<div class="billing-alt-methods"><b>Alternativas configuradas</b><div class="mut">'+esc(altText)+'</div></div>':'')+(!mpAvailable?'<a class="billing-whatsapp-link" target="_blank" rel="noopener" href="https://wa.me/56982807639?text=Hola%2C%20necesito%20activar%20mi%20plan%20de%20YummyPro.">Contactar para activar</a>':'');
+}
+async function refreshBillingCenter(){await Promise.allSettled([loadRestaurants(),loadSubscriptionPlans()]);renderBillingSummary();renderBillingPaymentMethods();}
 async function loadSubscriptionExchangeRates(){
  const bases=[...new Set((subscriptionPlans||[]).map(p=>String(p.currency_code||"CLP").toUpperCase()))];
  await Promise.all(bases.map(async base=>{if(subscriptionFxRates[base])return;try{const res=await fetch("https://open.er-api.com/v6/latest/"+encodeURIComponent(base));const data=await res.json();if(res.ok&&data?.rates)subscriptionFxRates[base]={rates:data.rates,updated:data.time_last_update_utc||null}}catch(e){console.error("No se pudo obtener la referencia cambiaria",base,e)}}));
@@ -2492,7 +2578,7 @@ async function paySubscriptionPlan(id){
   window.location.assign(data.init_point);
  }catch(e){console.error(e);toast("No se pudo crear la suscripción con Mercado Pago");}
 }
-function renderRestaurantContent(){renderQrPanel();renderRestaurantPlans();}
+function renderRestaurantContent(){renderQrPanel();renderRestaurantPlans();renderBillingSummary();renderBillingPaymentMethods();renderSubscriptionHistory();}
 function getDeliveryZones(){return String(document.getElementById("sdeliveryzones")?.value||"").split(/\n+/).map(x=>x.trim()).filter(Boolean).map(x=>{const p=x.split("=");return {max_km:Number(p[0]),price:Number(p[1])}}).filter(z=>Number.isFinite(z.max_km)&&z.max_km>0&&Number.isFinite(z.price)&&z.price>=0).sort((a,b)=>a.max_km-b.max_km)}
 function setDeliveryZones(zones){const hidden=document.getElementById("sdeliveryzones");if(hidden)hidden.value=(zones||[]).sort((a,b)=>a.max_km-b.max_km).map(z=>z.max_km+"="+z.price).join("\n");renderDeliveryZones()}
 function renderDeliveryZones(){const box=document.getElementById("deliveryZoneBuilder");if(!box)return;const zones=getDeliveryZones();box.innerHTML=zones.length?zones.map((z,i)=>`<div class="delivery-zone-row"><label>Hasta (km)<input type="number" min="0.1" step="0.1" value="${z.max_km}" onchange="updateDeliveryZone(${i},'max_km',this.value)"></label><label>Precio delivery<input type="number" min="0" step="1" value="${z.price}" onchange="updateDeliveryZone(${i},'price',this.value)"></label><button type="button" class="danger" onclick="removeDeliveryZone(${i})">Eliminar rango</button></div>`).join(""):'<div class="delivery-empty">No hay rangos creados. Agrega uno para cobrar por distancia.</div>'}
@@ -2543,7 +2629,7 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script></main></div><footer class="admin-version">Versión v2.4.51</footer><script>
+</script></main></div><footer class="admin-version">Versión v2.4.52</footer><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
