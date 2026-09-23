@@ -53,7 +53,7 @@ for(const marker of ['pwaNotificationBtn','activateYummyProNotifications','syncR
 
 for(const marker of ['apple-touch-icon.png','icon-192.png','icon-512.png'])if(!panel.includes(marker)&&marker==='apple-touch-icon.png')throw new Error('panel/index.html: falta icono iOS '+marker);
 
-for(const marker of ['restaurantPwaInstallBtn','install=pwa','v2.0.9'])if(!landing.includes(marker))throw new Error('index.html: falta entrada hacia PWA del panel '+marker);
+for(const marker of ['restaurantPwaInstallBtn','install=pwa','v2.0.10'])if(!landing.includes(marker))throw new Error('index.html: falta entrada hacia PWA del panel '+marker);
 
 
 if(landing.includes('rel="manifest" href="/restaurant.webmanifest'))throw new Error('index.html: la landing no debe competir como PWA independiente');
