@@ -1856,10 +1856,11 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
         <div id="retailPosCart" class="list" style="margin-top:14px"></div>
       </div>
       <div class="span5">
-        <div class="item"><div class="row between"><b>Subtotal</b><strong id="retailPosSubtotal">$0</strong></div><label>Descuento<input id="retailPosDiscount" type="number" min="0" step="1" value="0" oninput="renderRetailPosCart()"></label><div class="row between" style="font-size:20px;margin-top:10px"><b>Total</b><strong id="retailPosTotal">$0</strong></div></div>
-        <label>Método de pago<select id="retailPosPayment"><option>Efectivo</option><option>Tarjeta POS</option><option>Transferencia</option><option>QR</option></select></label>
-        <label>Monto recibido<input id="retailPosReceived" type="number" min="0" step="1" placeholder="Solo efectivo"></label>
+        <div class="item"><div class="row between"><b>Subtotal</b><strong id="retailPosSubtotal">$0</strong></div><label>Descuento<input id="retailPosDiscount" type="number" min="0" step="1" value="0" oninput="renderRetailPosCart();updateRetailCheckoutState()"></label><div class="row between" style="font-size:20px;margin-top:10px"><b>Total</b><strong id="retailPosTotal">$0</strong></div></div>
+        <label>Método de pago<select id="retailPosPayment" onchange="updateRetailCheckoutState()"><option>Efectivo</option><option>Tarjeta POS</option><option>Transferencia</option><option>QR</option></select></label>
+        <label>Monto recibido<input id="retailPosReceived" type="number" min="0" step="1" placeholder="Solo efectivo" oninput="updateRetailCheckoutState()"></label>
         <label>Cliente (opcional)<input id="retailPosCustomer" placeholder="Nombre del cliente"></label>
+        <div id="retailCheckoutStatus" class="item" style="margin:10px 0">Agrega productos para comenzar una venta.</div>
         <button class="primary full" id="retailPosCheckoutBtn" type="button" onclick="completeRetailSale()">Cobrar venta</button>
       </div>
     </div>
@@ -3058,7 +3059,7 @@ async function loadRetailPos(){
   const stateClass=x.refund_status==="full"||x.status==="voided"?"status-inactive":x.refund_status==="partial"?"pill":"status-active";
   return '<div class="item"><div class="row between"><div><div class="row" style="gap:7px;flex-wrap:wrap"><b>'+esc(x.sale_code||("#"+x.id))+'</b><span class="'+stateClass+'">'+esc(state)+'</span></div><div class="mut">'+new Date(x.created_at).toLocaleString(currentRestaurantConfig?.locale||"es-CL")+' · '+esc(x.payment_method)+(x.customer_name?" · "+esc(x.customer_name):"")+'</div>'+(refunded>0?'<div class="mut">Venta '+money(x.total)+' · devuelto '+money(refunded)+' · neto '+money(net)+'</div>':'')+'</div><div style="text-align:right"><strong>'+money(net)+'</strong><div class="actions" style="margin-top:7px"><button class="ghost" type="button" onclick="printRetailSale('+x.id+')">🧾 Ticket</button><button class="ghost" type="button" onclick="openRetailSaleDetail('+x.id+')">Ver / devolver</button></div></div></div></div>'
  }).join("")||'<p class="mut">Aún no hay ventas retail.</p>';
- syncRetailAutoPrint();renderRetailPosCart();setTimeout(()=>document.getElementById("retailBarcodeInput")?.focus(),100)
+ syncRetailAutoPrint();renderRetailPosCart();updateRetailCheckoutState();setTimeout(()=>document.getElementById("retailBarcodeInput")?.focus(),100)
 }
 function retailCodeKeys(value){
  const raw=String(value||"").trim();if(!raw)return [];
@@ -3196,7 +3197,25 @@ function renderRetailPosCart(){
  const el=document.getElementById("retailPosCart");if(!el)return;const rows=Object.values(retailPosCart);
  el.innerHTML=rows.map(x=>{const p=retailProducts.find(v=>Number(v.id)===Number(x.product_id));if(!p)return "";const line=Number(x.quantity)*Number(p.price);return '<div class="item row between"><div><b>'+esc(p.name)+'</b><div class="mut">'+money(p.price)+' · Stock '+retailQty(p.current_stock)+'</div></div><div class="row"><button class="ghost" type="button" onclick="retailChangeQty('+p.id+',-1)">−</button><b>'+retailQty(x.quantity)+'</b><button class="ghost" type="button" onclick="retailChangeQty('+p.id+',1)">＋</button><strong>'+money(line)+'</strong><button class="ghost" type="button" onclick="retailRemoveCart('+p.id+')">✕</button></div></div>'}).join("")||'<p class="mut">Escanea el primer producto para comenzar.</p>';
  const subtotal=retailCartSubtotal(),discount=Math.min(Math.max(Number(document.getElementById("retailPosDiscount")?.value||0),0),subtotal),total=subtotal-discount;
- const a=document.getElementById("retailPosSubtotal"),b=document.getElementById("retailPosTotal"),btn=document.getElementById("retailPosCheckoutBtn");if(a)a.textContent=money(subtotal);if(b)b.textContent=money(total);if(btn)btn.disabled=!retailCashSession||!rows.length
+ const a=document.getElementById("retailPosSubtotal"),b=document.getElementById("retailPosTotal");if(a)a.textContent=money(subtotal);if(b)b.textContent=money(total);updateRetailCheckoutState()
+}
+function retailCheckoutState(){
+ const rows=Object.values(retailPosCart),subtotal=retailCartSubtotal(),discount=Math.min(Math.max(Number(document.getElementById("retailPosDiscount")?.value||0),0),subtotal),total=Math.max(subtotal-discount,0),method=document.getElementById("retailPosPayment")?.value||"Efectivo",received=Number(document.getElementById("retailPosReceived")?.value||0);
+ if(!retailCashSession)return {ok:false,total,method,received,message:"Debes abrir una caja antes de cobrar."};
+ if(!rows.length)return {ok:false,total,method,received,message:"Agrega al menos un producto al carrito."};
+ if(method==="Efectivo"){
+  if(!Number.isFinite(received)||received<=0)return {ok:false,total,method,received,message:"Ingresa el monto recibido en efectivo."};
+  if(received<total)return {ok:false,total,method,received,message:"Monto insuficiente. Faltan "+money(total-received)+"."};
+  return {ok:true,total,method,received,message:received>total?"Cambio a entregar: "+money(received-total)+".":"Monto exacto. Puedes cobrar la venta."}
+ }
+ return {ok:true,total,method,received:null,message:"Listo para cobrar con "+method+"."}
+}
+function updateRetailCheckoutState(){
+ const state=retailCheckoutState(),box=document.getElementById("retailCheckoutStatus"),btn=document.getElementById("retailPosCheckoutBtn"),received=document.getElementById("retailPosReceived");
+ if(received)received.disabled=state.method!=="Efectivo";
+ if(box){box.textContent=state.message;box.style.borderColor=state.ok?"var(--ok)":"var(--line)"}
+ if(btn&&!btn.dataset.processing){btn.disabled=!state.ok}
+ return state
 }
 async function loadRetailSaleReceiptData(id){
  const [saleResult,itemsResult,returnsResult]=await Promise.all([
@@ -3255,18 +3274,33 @@ async function voidRetailSale(){
  trackRestaurantEvent("retail_sale_voided","retail_pos",{sale_id:ctx.sale.id,refund_total:data?.refund_total||0});toast("Venta anulada y stock repuesto · "+money(data?.refund_total||0));await loadRetailPos();await openRetailSaleDetail(ctx.sale.id)
 }
 async function completeRetailSale(){
- const items=Object.values(retailPosCart).map(x=>({product_id:Number(x.product_id),quantity:Number(x.quantity)}));if(!items.length)return toast("Agrega productos");
- if(!retailCashSession)return toast("Debes abrir una caja antes de vender");
- const method=document.getElementById("retailPosPayment")?.value||"Efectivo",received=method==="Efectivo"?Number(document.getElementById("retailPosReceived")?.value||0):null;
- const btn=document.getElementById("retailPosCheckoutBtn");if(btn){btn.disabled=true;btn.textContent="Procesando…"}
+ const state=updateRetailCheckoutState(),status=document.getElementById("retailCheckoutStatus"),btn=document.getElementById("retailPosCheckoutBtn");
+ if(!state.ok){toast(state.message);if(status)status.textContent="⚠ "+state.message;return}
+ const items=Object.values(retailPosCart).map(x=>({product_id:Number(x.product_id),quantity:Number(x.quantity)}));
+ const method=state.method,received=method==="Efectivo"?state.received:null;
+ if(btn?.dataset.processing==="1")return;
+ if(btn){btn.dataset.processing="1";btn.disabled=true;btn.textContent="Procesando cobro…"}
+ if(status)status.textContent="Procesando venta, espera un momento…";
  try{
-  const {data,error}=await sb.rpc("retail_complete_sale",{p_restaurant_id:currentRestaurant,p_cash_session_id:retailCashSession.id,p_payment_method:method,p_discount:Number(document.getElementById("retailPosDiscount")?.value||0),p_amount_received:received||null,p_customer_name:document.getElementById("retailPosCustomer")?.value.trim()||null,p_notes:null,p_items:items});
+  const rpc=sb.rpc("retail_complete_sale",{p_restaurant_id:currentRestaurant,p_cash_session_id:retailCashSession.id,p_payment_method:method,p_discount:Number(document.getElementById("retailPosDiscount")?.value||0),p_amount_received:received,p_customer_name:document.getElementById("retailPosCustomer")?.value.trim()||null,p_notes:null,p_items:items});
+  const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error("El cobro está tardando demasiado. Verifica tu conexión e intenta nuevamente.")),18000));
+  const {data,error}=await Promise.race([rpc,timeout]);
   if(error)throw error;
   const saleId=data?.sale_id,shouldPrint=document.getElementById("retailAutoPrint")?.checked===true;
   retailPosCart={};document.getElementById("retailPosDiscount").value=0;document.getElementById("retailPosReceived").value="";document.getElementById("retailPosCustomer").value="";
-  await loadRetailPos();trackRestaurantEvent("retail_sale_completed","retail_pos",{sale_id:saleId,total:data?.total});toast("Venta "+(data?.sale_code||"")+" completada · "+money(data?.total||0)+(Number(data?.change||0)>0?" · Cambio "+money(data.change):""));if(shouldPrint&&saleId)printRetailSale(saleId,true)
- }catch(e){trackRestaurantError("retail","retail_sale_failure",e.message||"No se pudo completar la venta",false);toast(e.message||"No se pudo completar la venta")}
- finally{if(btn){btn.disabled=!retailCashSession||!Object.keys(retailPosCart).length;btn.textContent="Cobrar venta"}}
+  await loadRetailPos();
+  trackRestaurantEvent("retail_sale_completed","retail_pos",{sale_id:saleId,total:data?.total});
+  const success="Venta "+(data?.sale_code||"")+" completada · "+money(data?.total||0)+(Number(data?.change||0)>0?" · Cambio "+money(data.change):"");
+  if(status)status.textContent="✅ "+success;toast(success);if(shouldPrint&&saleId)printRetailSale(saleId,true)
+ }catch(e){
+  const msg=e?.message||"No se pudo completar la venta";
+  trackRestaurantError("retail","retail_sale_failure",msg,false);
+  if(status)status.textContent="⚠ "+msg;
+  toast(msg)
+ }finally{
+  if(btn){delete btn.dataset.processing;btn.textContent="Cobrar venta"}
+  updateRetailCheckoutState()
+ }
 }
 
 async function refreshRetailDashboard(){
@@ -5010,7 +5044,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.17</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.18</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
