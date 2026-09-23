@@ -3895,7 +3895,7 @@ async function voidRetailSale(){
  if(error)return toast(error.message);
  trackRestaurantEvent("retail_sale_voided","retail_pos",{sale_id:ctx.sale.id,refund_total:data?.refund_total||0});toast("Venta anulada y stock repuesto · "+money(data?.refund_total||0));await loadRetailPos();await openRetailSaleDetail(ctx.sale.id)
 }
-async async function completeRetailSale(source="main"){
+async function completeRetailSale(source="main"){
  const refs=retailCheckoutRefs(source),state=updateRetailCheckoutState(source),status=refs.status,btn=refs.button;
  if(!state.ok){toast(state.message);if(status)status.textContent="⚠ "+state.message;return}
  const items=Object.values(retailPosCart).map(x=>({product_id:Number(x.product_id),quantity:Number(x.quantity)}));
@@ -5758,7 +5758,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.43</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.44</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
