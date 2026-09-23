@@ -2895,7 +2895,7 @@ function startRetailOnlineOrdersRealtime(){
  retailOnlineOrdersChannelRestaurant=currentRestaurant;
  retailOnlineOrdersChannel=sb.channel("retail-online-orders-"+currentRestaurant)
   .on("postgres_changes",{event:"*",schema:"public",table:"retail_online_orders",filter:"restaurant_id=eq."+currentRestaurant},payload=>{
-    if(payload.eventType==="INSERT")toast("🛒 Nueva compra online "+(payload.new?.order_code||""));
+    if(payload.eventType==="INSERT"){toast("🛒 Nueva compra online "+(payload.new?.order_code||""));try{playNewOrderSound()}catch(_){}try{if("Notification" in window&&Notification.permission==="granted")new Notification("YummyPro · Nueva compra online",{body:(payload.new?.order_code||"Pedido")+" · "+money(payload.new?.total||0),tag:"retail-online-"+payload.new?.id})}catch(_){}}
     loadRetailOnlineOrders().catch(()=>{});
   }).subscribe();
 }
