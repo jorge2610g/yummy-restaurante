@@ -58,7 +58,7 @@ for(const marker of ['restaurantPwaInstallBtn','install=pwa','v2.0.9'])if(!landi
 
 if(landing.includes('rel="manifest" href="/restaurant.webmanifest'))throw new Error('index.html: la landing no debe competir como PWA independiente');
 if(!panel.includes('/manifest.webmanifest?v=2508'))throw new Error('panel/index.html: falta manifest PWA panel v2508');
-if(!panel.includes('install=pwa'))throw new Error('panel/index.html: falta entrada de instalación desde landing');
+if(!panel.includes('params.get("install")==="pwa"'))throw new Error('panel/index.html: falta manejo de instalación desde landing');
 
 for(const marker of ['restaurantIssueButton','restaurantIssueDialog','submitRestaurantIssueReport','trackRestaurantEvent','trackRestaurantError','submit_issue_report'])if(!panel.includes(marker))throw new Error('panel/index.html: falta observabilidad/reporte '+marker);
 
