@@ -1619,6 +1619,23 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
  .retail-checkout-card,.retail-history-card{max-height:88dvh!important}
  #retailRecentSales{max-height:66dvh}
 }
+.retail-barcode-row{display:flex;align-items:stretch;gap:8px;flex-wrap:nowrap;width:100%}
+.retail-barcode-row #retailBarcodeInput{flex:1 1 auto;min-width:0;height:44px;padding:9px 12px!important;font-size:15px!important}
+.retail-barcode-action{flex:0 0 auto;height:44px!important;min-height:44px!important;margin:0!important}
+.retail-barcode-add{min-width:96px;padding:0 16px!important}
+.retail-barcode-camera{width:46px!important;min-width:46px!important;padding:0!important;font-size:18px!important}
+@media(max-width:600px){
+ .retail-barcode-row{gap:6px}
+ .retail-barcode-row #retailBarcodeInput{height:40px!important;min-height:40px!important;padding:7px 9px!important;font-size:13px!important}
+ .retail-barcode-action{height:40px!important;min-height:40px!important;font-size:12px!important}
+ .retail-barcode-add{min-width:76px!important;padding:0 10px!important}
+ .retail-barcode-camera{width:40px!important;min-width:40px!important;font-size:16px!important}
+}
+@media(max-width:380px){
+ .retail-barcode-row #retailBarcodeInput{font-size:12px!important}
+ .retail-barcode-add{min-width:70px!important;padding:0 8px!important}
+ .retail-barcode-camera{width:38px!important;min-width:38px!important}
+}
 </style>
 </head>
 <body class="auth-loading">
@@ -1976,7 +1993,7 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
     <div id="retailCashWarning" class="item" style="margin:14px 0"></div>
     <div>
       <label>Código de barra o SKU</label>
-      <div class="row" style="flex-wrap:wrap"><input id="retailBarcodeInput" inputmode="numeric" autocomplete="off" placeholder="Escanea o escribe el código" onkeydown="if(event.key==='Enter'){event.preventDefault();retailScanBarcode()}"><button class="primary" type="button" onclick="retailScanBarcode()">Agregar</button><button class="ghost" type="button" onclick="openRetailBarcodeCamera()">📷 Cámara</button></div><div id="retailPosScanStatus" class="mut" style="margin-top:8px">Cargando productos disponibles…</div>
+      <div class="retail-barcode-row"><input id="retailBarcodeInput" inputmode="numeric" autocomplete="off" placeholder="Escanea o escribe el código" onkeydown="if(event.key==='Enter'){event.preventDefault();retailScanBarcode()}"><button class="primary retail-barcode-action retail-barcode-add" type="button" onclick="retailScanBarcode()" aria-label="Agregar código" title="Agregar">Agregar</button><button class="ghost retail-barcode-action retail-barcode-camera" type="button" onclick="openRetailBarcodeCamera()" aria-label="Abrir cámara para escanear" title="Cámara">📷</button></div><div id="retailPosScanStatus" class="mut" style="margin-top:8px">Cargando productos disponibles…</div>
       <div class="item" style="margin-top:10px"><b>🧾 Ticket automático activado</b><div class="mut">Al completar cada venta se abrirá automáticamente el ticket listo para imprimir. Puedes ver o reimprimir ventas desde el ícono 🕘.</div></div>
       <div id="retailPosCart" class="list" style="margin-top:14px"></div>
       <div class="item retail-pos-quick-checkout">
@@ -5449,7 +5466,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.38</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.39</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
