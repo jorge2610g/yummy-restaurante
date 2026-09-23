@@ -6,13 +6,14 @@ Rama previa a los cambios:
 `backup/pre-observability-2026-09-23`
 
 ## Landing restaurante
-Versión: v2.0.9.
+Versión: v2.0.10.
 
 ### Cambios
 - Se ocultó la tarjeta pública separada **“Prueba 30 días / Gratis”**.
 - La prueba continúa existiendo internamente como plan predeterminado de 30 días.
 - La grilla pública muestra solamente Básico, Standar y Pro.
 - El CTA de cada plan pasa a **“Prueba 30 días gratis”**.
+- Todos los botones amarillos de entrada a la prueba usan el texto **“Prueba 30 días gratis”**; el botón de login mantiene **“Entrar a mi panel”**.
 - Al pulsar un plan se guarda el plan que interesó al visitante.
 - Crear una cuenta no cobra el plan seleccionado; activa la prueba gratuita.
 - Cuando la cuenta requiere confirmación de correo, se guardan en metadata el restaurante, país y plan de interés. Al entrar posteriormente, el panel crea automáticamente el restaurante y la prueba.
