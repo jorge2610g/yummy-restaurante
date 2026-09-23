@@ -2420,7 +2420,7 @@ async function enter(user){
   }
 }
 const roleTabs={restaurant:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","retail_orders","retail_pos","retail_products","retail_suppliers","retail_purchases","staff","promotions","reviews","table_qr","qr","plans","settings"],manager:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","retail_orders","retail_pos","retail_products","retail_suppliers","retail_purchases","staff","promotions","reviews","table_qr","qr","settings"],editor:["orders","kitchen","products","categories","inventory","retail_products"],cashier:["orders","cash","retail_orders","retail_pos"],kitchen:["kitchen"],waiter:["pos"],courier:["orders"]};
-const retailTabModule={retail_orders:"cash",retail_pos:"cash",retail_products:"products",retail_suppliers:"inventory",retail_purchases:"inventory"};
+const retailTabModule={retail_orders:"retail_orders",retail_pos:"retail_pos",retail_products:"retail_products",retail_suppliers:"retail_suppliers",retail_purchases:"retail_purchases"};
 const restaurantOnlyTabs=new Set(["orders","pos","kitchen","products","categories","inventory","promotions","reviews","table_qr","qr"]);
 function currentBusinessType(){return String(currentRestaurantConfig?.business_type||restaurants.find(x=>Number(x.id)===Number(currentRestaurant))?.business_type||"restaurant").toLowerCase()}
 function isRetailBusiness(){return ["supermarket","minimarket"].includes(currentBusinessType())}
@@ -4829,7 +4829,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.12</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.13</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
