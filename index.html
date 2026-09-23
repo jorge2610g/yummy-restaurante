@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="YummyPro Restaurante">
-<link rel="manifest" href="/restaurant.webmanifest">
+<link rel="manifest" href="/restaurant.webmanifest?v=207">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" sizes="192x192" href="/icon-192.png" type="image/png">
 <title>menu.yummypro · Menú digital para restaurantes</title>
@@ -178,7 +178,7 @@ document.getElementById("loginForm").addEventListener("submit",async e=>{e.preve
 document.getElementById("signupForm").addEventListener("submit",async e=>{e.preventDefault();const btn=document.getElementById("signupBtn"),msg=document.getElementById("signupMsg");btn.disabled=true;msg.textContent="Creando tu acceso…";try{const email=sEmail.value.trim();const password=sPass.value;const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:"https://web.yummypro.online/panel/",data:{trial_restaurant_name:sName.value.trim(),trial_whatsapp:sPhone.value.trim(),trial_address:sAddress.value.trim()}}});if(error)throw error;let session=data.session;if(!session){msg.innerHTML='Cuenta creada. Revisa tu correo para confirmar tu cuenta. Después vuelve aquí e inicia sesión para activar tu prueba de 30 días.';msg.className="msg success";return}const country=selectedLandingCountry();const {error:rpcError}=await sb.rpc("create_my_trial_restaurant_v2",{p_name:sName.value.trim(),p_whatsapp:sPhone.value.trim(),p_address:sAddress.value.trim(),p_country_code:country.code});if(rpcError)throw rpcError;msg.textContent="¡Listo! Tu prueba de 30 días está activa.";msg.className="msg success";setTimeout(()=>location.href="https://web.yummypro.online/panel/"+(selectedPlanId?"?tab=plans&plan="+encodeURIComponent(selectedPlanId):""),700)}catch(err){msg.textContent=err.message||"No pudimos crear tu acceso.";msg.className="msg"}finally{btn.disabled=false}});
 loadPublicPlans();
 </script>
-<script id="restaurant-landing-pwa-v206">
+<script id="restaurant-landing-pwa-v207">
 let restaurantLandingInstallPrompt=null;
 function restaurantLandingStandalone(){return window.matchMedia?.("(display-mode: standalone)")?.matches===true||window.navigator.standalone===true}
 function restaurantLandingIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(/macintosh/i.test(navigator.userAgent)&&navigator.maxTouchPoints>1)}
@@ -197,9 +197,19 @@ async function installRestaurantLandingPwa(){
 window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();restaurantLandingInstallPrompt=event;refreshRestaurantLandingInstall()});
 window.addEventListener("appinstalled",()=>{restaurantLandingInstallPrompt=null;refreshRestaurantLandingInstall()});
 window.addEventListener("DOMContentLoaded",async()=>{
- try{if("serviceWorker" in navigator)await navigator.serviceWorker.register("/push-sw.js")}catch(e){console.error("PWA landing restaurante",e)}
+ try{
+  if("serviceWorker" in navigator){
+   const reg=await navigator.serviceWorker.register("/push-sw.js");
+   await reg.update().catch(()=>{});
+   if(reg.waiting&&!restaurantLandingStandalone())reg.waiting.postMessage({type:"SKIP_WAITING"});
+   navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(restaurantLandingStandalone()||window.__restaurantLandingReloading)return;
+    window.__restaurantLandingReloading=true;location.reload();
+   });
+  }
+ }catch(e){console.error("PWA landing restaurante",e)}
  refreshRestaurantLandingInstall();
 });
 </script>
-<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.0.6</div>
+<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.0.7</div>
 </body></html>

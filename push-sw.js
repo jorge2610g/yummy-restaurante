@@ -1,4 +1,4 @@
-const YUMMYPRO_CACHE="yummypro-pwa-v2506-landing206";
+const YUMMYPRO_CACHE="yummypro-pwa-v2507-installfix";
 const YUMMYPRO_OFFLINE_URL="/offline.html";
 const YUMMYPRO_LANDING_OFFLINE="/restaurant-offline.html";
 const YUMMYPRO_CORE=[YUMMYPRO_OFFLINE_URL,YUMMYPRO_LANDING_OFFLINE,"/manifest.webmanifest","/restaurant.webmanifest","/pwa-icon.svg","/icon-192.png","/icon-512.png","/apple-touch-icon.png"];
@@ -18,7 +18,12 @@ self.addEventListener("fetch",event=>{
  const url=new URL(request.url);
  if(url.origin!==self.location.origin)return;
  if(YUMMYPRO_CORE.includes(url.pathname)){
-  event.respondWith(caches.match(request).then(cached=>cached||fetch(request)));
+  event.respondWith(
+   fetch(request,{cache:"no-store"}).then(async response=>{
+    if(response?.ok){const cache=await caches.open(YUMMYPRO_CACHE);await cache.put(request,response.clone())}
+    return response;
+   }).catch(()=>caches.match(request).then(hit=>hit||caches.match(url.pathname)))
+  );
   return;
  }
  if(request.mode==="navigate"){

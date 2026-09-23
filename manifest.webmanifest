@@ -1,11 +1,11 @@
 {
   "id": "/panel/",
   "name": "YummyPro Restaurante",
-  "short_name": "YummyPro",
+  "short_name": "YummyPro Rest.",
   "description": "Panel de gestión para restaurantes YummyPro",
   "lang": "es",
   "start_url": "/panel/",
-  "scope": "/",
+  "scope": "/panel/",
   "display": "standalone",
   "display_override": [
     "window-controls-overlay",

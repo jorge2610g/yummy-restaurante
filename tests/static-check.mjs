@@ -53,4 +53,7 @@ for(const marker of ['pwaNotificationBtn','activateYummyProNotifications','syncR
 
 for(const marker of ['apple-touch-icon.png','icon-192.png','icon-512.png'])if(!panel.includes(marker)&&marker==='apple-touch-icon.png')throw new Error('panel/index.html: falta icono iOS '+marker);
 
-for(const marker of ['restaurant.webmanifest','restaurantPwaInstallBtn','installRestaurantLandingPwa','restaurant-landing-pwa-v206','v2.0.6'])if(!landing.includes(marker))throw new Error('index.html: falta PWA landing restaurante '+marker);
+for(const marker of ['restaurant.webmanifest','restaurantPwaInstallBtn','installRestaurantLandingPwa','restaurant-landing-pwa-v207','v2.0.7'])if(!landing.includes(marker))throw new Error('index.html: falta PWA landing restaurante '+marker);
+
+if(!panel.includes('/manifest.webmanifest?v=2507'))throw new Error('panel/index.html: falta manifest versionado v2507');
+if(!landing.includes('/restaurant.webmanifest?v=207'))throw new Error('index.html: falta manifest landing versionado v207');
