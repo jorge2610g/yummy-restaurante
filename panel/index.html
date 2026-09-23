@@ -1580,7 +1580,27 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
 #pos.pos-cash-closed .pos-product button,
 #pos.pos-cash-closed #posCartPanel button.primary{cursor:not-allowed}
 @media(max-width:650px){.pos-cash-gate{align-items:flex-start;flex-direction:column}}
-</style></head>
+</style><style id="mobile-retail-scanner-v2536">
+#restaurantIssueButton{z-index:1500!important}
+#retailBarcodeCameraItems{max-height:180px;overflow:auto}
+#retailBarcodeCameraItems .scanner-cart-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+@media(max-width:600px){
+  #retailBarcodeCameraModal{align-items:flex-end!important;padding:8px!important}
+  #retailBarcodeCameraModal .product-modal-card{max-height:78dvh!important;padding:14px!important}
+  #retailBarcodeCameraModal .row.between{align-items:center!important}
+  #retailBarcodeCameraModal h2{font-size:19px!important;margin:2px 0 0!important}
+  #retailBarcodeCameraHelp{margin:8px 0 10px!important;line-height:1.25!important}
+  #retailBarcodeNativeFrame,#retailBarcodeFallbackReader{height:150px!important;min-height:150px!important;max-height:150px!important;border-radius:12px!important}
+  #retailBarcodeVideo{height:150px!important;min-height:150px!important;max-height:150px!important;object-fit:cover!important}
+  #retailBarcodeFallbackReader video,#retailBarcodeFallbackReader canvas{height:150px!important;max-height:150px!important;object-fit:cover!important}
+  #retailBarcodeCameraStatus{margin-top:8px!important;padding:9px 10px!important;font-size:12px!important}
+  #retailBarcodeCameraItems{max-height:140px!important;margin-top:8px!important}
+  #retailBarcodeCameraItems .scanner-cart-row{padding:7px 9px!important}
+  #restaurantIssueButton{left:auto!important;right:10px!important;bottom:calc(10px + env(safe-area-inset-bottom))!important;padding:8px 10px!important;font-size:12px!important}
+  body:has(.product-modal.open) #restaurantIssueButton{visibility:hidden!important;pointer-events:none!important}
+}
+</style>
+</head>
 <body class="auth-loading">
 <style>
 #app{display:none!important}.auth-ready #app:not(.hidden){display:block!important}.auth-loading #login,.auth-loading #app{display:none!important}
@@ -1960,6 +1980,7 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
   <div id="retailBarcodeNativeFrame" style="position:relative;background:#000;border-radius:14px;overflow:hidden;min-height:260px"><video id="retailBarcodeVideo" autoplay playsinline muted style="width:100%;height:100%;min-height:260px;object-fit:cover"></video><div style="position:absolute;left:10%;right:10%;top:42%;height:2px;background:#ffb000;box-shadow:0 0 12px #ffb000"></div></div>
   <div id="retailBarcodeFallbackReader" hidden style="background:#000;border-radius:14px;overflow:hidden;min-height:260px"></div>
   <div id="retailBarcodeCameraStatus" class="item" style="margin-top:12px">Preparando cámara…</div>
+  <div id="retailBarcodeCameraItems" class="list" hidden></div>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="closeRetailBarcodeCamera()">Cerrar</button></div>
 </div></div>
 
@@ -3330,6 +3351,14 @@ function loadRetailScannerFallbackLibrary(){
   document.head.appendChild(script)
  })
 }
+function renderRetailScannerCartSummary(){
+ const box=document.getElementById("retailBarcodeCameraItems");if(!box)return;
+ if(retailScannerMode!=="pos"){box.hidden=true;box.innerHTML="";return}
+ box.hidden=false;
+ const rows=Object.values(retailPosCart);
+ if(!rows.length){box.innerHTML='<div class="item mut">Aún no hay productos escaneados.</div>';return}
+ box.innerHTML='<div class="mut" style="margin:2px 0 6px"><b>Productos escaneados</b></div>'+rows.slice(-6).reverse().map(x=>{const p=retailProducts.find(v=>Number(v.id)===Number(x.product_id));if(!p)return "";return '<div class="item scanner-cart-row"><div><b>'+esc(p.name)+'</b><div class="mut">'+esc(p.barcode||p.sku||"")+'</div></div><div style="text-align:right"><b>x'+retailQty(x.quantity)+'</b><div class="mut">'+money(Number(x.quantity||0)*Number(p.price||0))+'</div></div></div>'}).join("")
+}
 async function handleRetailCameraCode(raw,status){
  const code=String(raw||"").trim(),now=Date.now();
  if(!code||(code===retailScannerLastCode&&now-retailScannerLastAt<1300))return;
@@ -3339,8 +3368,11 @@ async function handleRetailCameraCode(raw,status){
   applyScannedRetailProductCode(code);
   return
  }
- const ok=await retailAddCode(code,true);
- if(status)status.innerHTML=ok?'✅ Agregado al carrito: <b>'+esc(code)+'</b>':'⚠ No se agregó: <b>'+esc(code)+'</b>. Revisa stock o que el código esté registrado.'
+ const ok=await retailAddCode(code,true),product=retailProducts.find(x=>retailProductMatchesCode(x,code));
+ renderRetailScannerCartSummary();
+ if(status)status.innerHTML=ok
+  ?'✅ <b>'+esc(product?.name||code)+'</b> agregado · cantidad: <b>'+retailQty(product?retailPosCart[product.id]?.quantity||1:1)+'</b>'
+  :'⚠ No se agregó: <b>'+esc(code)+'</b>. Revisa stock o que el código esté registrado.'
 }
 async function startRetailFallbackScanner(status){
  await loadRetailScannerFallbackLibrary();
@@ -3351,7 +3383,7 @@ async function startRetailFallbackScanner(status){
  if(status)status.textContent="Abriendo cámara compatible…";
  await retailHtml5Scanner.start(
   {facingMode:"environment"},
-  {fps:10,qrbox:{width:Math.min(300,Math.max(220,window.innerWidth-110)),height:150},aspectRatio:1.777778},
+  {fps:10,qrbox:{width:Math.min(window.innerWidth<=600?280:300,Math.max(220,window.innerWidth-110)),height:window.innerWidth<=600?90:150},aspectRatio:1.777778},
   decoded=>handleRetailCameraCode(decoded,status),
   ()=>{}
  );
@@ -3364,7 +3396,7 @@ async function openRetailBarcodeCamera(mode="pos"){
  if(title)title.textContent=retailScannerMode==="product"?"Escanear código del producto":"Leer código de barra";
  if(help)help.textContent=retailScannerMode==="product"?"Apunta la cámara trasera al código de barra. Al leerlo, se copiará automáticamente al formulario del producto.":"Apunta la cámara trasera al código. Puedes escanear varios productos sin cerrar esta ventana.";
  if(nativeFrame)nativeFrame.hidden=false;if(fallback){fallback.hidden=true;fallback.innerHTML=""}
- modal.style.zIndex="3200";modal.classList.add("open");modal.setAttribute("aria-hidden","false");if(status)status.textContent="Preparando cámara…";
+ modal.style.zIndex="3200";modal.classList.add("open");modal.setAttribute("aria-hidden","false");if(status)status.textContent="Preparando cámara…";renderRetailScannerCartSummary();
  if(!window.isSecureContext){if(status)status.textContent="La cámara requiere una conexión HTTPS segura.";return}
  if(!navigator.mediaDevices?.getUserMedia){if(status)status.textContent="Este dispositivo no permite acceso a cámara desde el navegador.";return}
  try{
@@ -3426,7 +3458,7 @@ function renderRetailPosCart(){
  const el=document.getElementById("retailPosCart");if(!el)return;const rows=Object.values(retailPosCart);
  el.innerHTML=rows.map(x=>{const p=retailProducts.find(v=>Number(v.id)===Number(x.product_id));if(!p)return "";const line=Number(x.quantity)*Number(p.price);return '<div class="item row between"><div><b>'+esc(p.name)+'</b><div class="mut">'+money(p.price)+' · Stock '+retailQty(p.current_stock)+'</div></div><div class="row"><button class="ghost" type="button" onclick="retailChangeQty('+p.id+',-1)">−</button><b>'+retailQty(x.quantity)+'</b><button class="ghost" type="button" onclick="retailChangeQty('+p.id+',1)">＋</button><strong>'+money(line)+'</strong><button class="ghost" type="button" onclick="retailRemoveCart('+p.id+')">✕</button></div></div>'}).join("")||'<p class="mut">Escanea el primer producto para comenzar.</p>';
  const subtotal=retailCartSubtotal(),discount=Math.min(Math.max(Number(document.getElementById("retailPosDiscount")?.value||0),0),subtotal),total=subtotal-discount;
- const a=document.getElementById("retailPosSubtotal"),b=document.getElementById("retailPosTotal");if(a)a.textContent=money(subtotal);if(b)b.textContent=money(total);updateRetailCheckoutState()
+ const a=document.getElementById("retailPosSubtotal"),b=document.getElementById("retailPosTotal");if(a)a.textContent=money(subtotal);if(b)b.textContent=money(total);updateRetailCheckoutState();renderRetailScannerCartSummary()
 }
 function retailCheckoutState(){
  const rows=Object.values(retailPosCart),subtotal=retailCartSubtotal(),discount=Math.min(Math.max(Number(document.getElementById("retailPosDiscount")?.value||0),0),subtotal),total=Math.max(subtotal-discount,0),method=document.getElementById("retailPosPayment")?.value||"Efectivo",received=Number(document.getElementById("retailPosReceived")?.value||0);
@@ -5342,7 +5374,7 @@ window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
 </script>
-<button type="button" id="restaurantIssueButton" onclick="openRestaurantIssueReport()" style="position:fixed;left:12px;bottom:12px;z-index:4900;border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:999px;padding:10px 14px;font-weight:800;box-shadow:0 10px 30px #0006">⚠ Reportar problema</button>
+<button type="button" id="restaurantIssueButton" onclick="openRestaurantIssueReport()" style="position:fixed;left:12px;bottom:12px;z-index:1500;border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:999px;padding:10px 14px;font-weight:800;box-shadow:0 10px 30px #0006">⚠ Reportar problema</button>
 <dialog id="restaurantIssueDialog" style="border:1px solid var(--line);border-radius:18px;padding:0;width:min(92vw,520px);background:var(--card);color:var(--txt);box-shadow:0 24px 80px #0009">
   <div style="padding:20px">
     <div class="row between"><div><h2 style="margin:0">Reportar un problema</h2><p class="mut" style="margin:5px 0 0">Este reporte llegará al panel de administración con la sección y el restaurante actuales.</p></div><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">✕</button></div>
@@ -5352,7 +5384,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.35</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.36</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
