@@ -2112,7 +2112,7 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
 </div>
 
 <section id="table_qr" class="section"><div class="card"><div class="module-head"><div><h2>QR de Mesa</h2><p class="mut">Crea un QR único para cada mesa. El cliente escanea, pide desde su teléfono y el pedido llega a Cocina y Caja.</p></div><button class="ghost" type="button" onclick="loadRestaurantTables()">↻ Actualizar</button></div><div class="item" style="margin-top:16px"><div class="row" style="align-items:end;flex-wrap:wrap"><label style="flex:1;min-width:220px">Nombre de la mesa<input id="tableQrName" placeholder="Ej: Mesa 1, Terraza 2, Barra 1"></label><button class="primary" type="button" onclick="createRestaurantTable()">＋ Crear mesa</button></div></div><div id="tableQrList" class="list" style="margin-top:16px"></div></div></section>
-<section id="qr" class="section"><div class="card"><h2>Código QR del restaurante</h2><p class="mut">Enlace directo para compartir el menú de tu restaurante.</p><div id="qrPanel"></div></div></section>
+<section id="qr" class="section"><div class="card"><div class="module-head"><div><h2 id="businessQrTitle">Código QR de tu negocio</h2><p id="businessQrDescription" class="mut">Comparte el enlace público de tu negocio en redes sociales, impresos y carteles.</p></div><button class="ghost" type="button" onclick="renderQrPanel()">↻ Actualizar</button></div><div id="qrPanel"></div></div></section>
 
 <section id="plans" class="section">
   <div class="billing-shell">
@@ -2575,15 +2575,15 @@ const roleTabsByBusiness={
   courier:["orders"]
  },
  retail:{
-  restaurant:["dashboard","cash","retail_orders","retail_pos","retail_products","retail_suppliers","retail_purchases","staff","plans","settings"],
-  manager:["dashboard","cash","retail_orders","retail_pos","retail_products","retail_suppliers","retail_purchases","staff","settings"],
+  restaurant:["dashboard","cash","retail_orders","retail_pos","retail_products","retail_suppliers","retail_purchases","staff","qr","plans","settings"],
+  manager:["dashboard","cash","retail_orders","retail_pos","retail_products","retail_suppliers","retail_purchases","staff","qr","settings"],
   editor:["retail_products","retail_suppliers","retail_purchases"],
   cashier:["cash","retail_pos"],
   courier:["retail_orders"]
  },
  professional:{
-  restaurant:["dashboard","appointments","services","professionals","clients","cash","staff","reports","plans","settings"],
-  manager:["dashboard","appointments","services","professionals","clients","cash","staff","reports","settings"],
+  restaurant:["dashboard","appointments","services","professionals","clients","cash","staff","reports","qr","plans","settings"],
+  manager:["dashboard","appointments","services","professionals","clients","cash","staff","reports","qr","settings"],
   professional:["dashboard","appointments","clients"],
   receptionist:["dashboard","appointments","clients","cash"],
   editor:["services","professionals"]
@@ -2683,7 +2683,7 @@ function effectiveTabs(){
  if(currentRole!=="restaurant"&&currentRole!=="manager")return raw;
  if(subscriptionModuleAccess===null)return raw;
  const set=new Set(subscriptionModuleAccess);
- return raw.filter(x=>x==="plans"||set.has(retailTabModule[x]||x));
+ return raw.filter(x=>x==="plans"||x==="qr"||set.has(retailTabModule[x]||x));
 }
 function syncSubscriptionBannerForActiveTab(){
  const banner=document.getElementById("subscriptionBanner");if(!banner)return;
@@ -4957,16 +4957,67 @@ function printRestaurantTableQr(id){
  const w=window.open("","_blank","width=650,height=800");if(!w)return toast("Permite ventanas emergentes para imprimir");w.document.open();w.document.write(html);w.document.close();
 }
 
+function businessPublicPageInfo(r){
+ const type=String(r?.business_type||"restaurant").toLowerCase();
+ const label=type==="professional"?"página de reservas":(["supermarket","minimarket"].includes(type)?"tienda online":"menú online");
+ return {label,url:"https://menu.yummypro.online/?r="+encodeURIComponent(r?.slug||r?.id||"")};
+}
+function businessQrFileName(r){
+ return String(r?.name||"negocio").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")+"-qr.png";
+}
+function currentBusinessQrData(){
+ const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));if(!r)return null;
+ const page=businessPublicPageInfo(r);
+ return {r,page,qrUrl:"https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&margin=20&data="+encodeURIComponent(page.url)};
+}
+async function copyBusinessPublicLink(){
+ const data=currentBusinessQrData();if(!data)return toast("No se pudo cargar el negocio.");
+ try{await navigator.clipboard.writeText(data.page.url);toast("Enlace copiado")}catch(_){toast("No se pudo copiar el enlace")}
+}
+async function downloadBusinessQr(){
+ const data=currentBusinessQrData();if(!data)return toast("No se pudo cargar el negocio.");
+ try{
+  const res=await fetch(data.qrUrl,{cache:"no-store"});if(!res.ok)throw new Error("QR no disponible");
+  const blob=await res.blob(),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=businessQrFileName(data.r);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);
+  trackRestaurantEvent?.("business_qr_downloaded","qr",{business_type:data.r.business_type});toast("QR descargado")
+ }catch(e){
+  console.error(e);window.open(data.qrUrl,"_blank","noopener");toast("Abrimos el QR para que puedas guardarlo.")
+ }
+}
+async function shareBusinessQr(){
+ const data=currentBusinessQrData();if(!data)return toast("No se pudo cargar el negocio.");
+ try{
+  if(navigator.share){
+   try{
+    const res=await fetch(data.qrUrl,{cache:"no-store"});
+    if(res.ok){
+     const blob=await res.blob(),file=new File([blob],businessQrFileName(data.r),{type:blob.type||"image/png"});
+     if(!navigator.canShare||navigator.canShare({files:[file]})){
+      await navigator.share({title:data.r.name,text:"Escanea o visita "+data.page.label+" de "+data.r.name,files:[file],url:data.page.url});
+      trackRestaurantEvent?.("business_qr_shared","qr",{business_type:data.r.business_type,with_file:true});return
+     }
+    }
+   }catch(e){if(e?.name==="AbortError")return}
+   await navigator.share({title:data.r.name,text:"Visita "+data.page.label+" de "+data.r.name,url:data.page.url});
+   trackRestaurantEvent?.("business_qr_shared","qr",{business_type:data.r.business_type,with_file:false});return
+  }
+  await copyBusinessPublicLink()
+ }catch(e){if(e?.name!=="AbortError")await copyBusinessPublicLink()}
+}
 function renderQrPanel(){
  const qrPanel=document.getElementById("qrPanel");if(!qrPanel||!currentRestaurant)return;
- const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));if(!r){qrPanel.innerHTML="<p class='mut'>No se pudo cargar el restaurante.</p>";return}
- const menuUrl="https://menu.yummypro.online/?r="+encodeURIComponent(r.slug||r.id);
- const qrUrl="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data="+encodeURIComponent(menuUrl);
- qrPanel.innerHTML=`<div class="grid"><div class="span4"><img src="${qrUrl}" alt="Código QR" style="width:280px;max-width:100%;background:#fff;padding:10px;border-radius:14px"></div><div class="span8"><label>Enlace del menú</label><input value="${esc(menuUrl)}" readonly><div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="primary" onclick="navigator.clipboard.writeText('${menuUrl}').then(()=>toast('Enlace copiado'))">Copiar enlace</button><a href="${menuUrl}" target="_blank"><button class="ghost" type="button">Abrir menú</button></a></div></div></div>`;
+ const data=currentBusinessQrData();if(!data){qrPanel.innerHTML="<p class='mut'>No se pudo cargar el negocio.</p>";return}
+ const {r,page,qrUrl}=data,type=String(r.business_type||"restaurant").toLowerCase();
+ const title=document.getElementById("businessQrTitle"),description=document.getElementById("businessQrDescription");
+ if(title)title.textContent="Código QR de "+(r.name||"tu negocio");
+ if(description)description.textContent="Este QR abre directamente tu "+page.label+". Puedes descargarlo, compartirlo o publicarlo en redes sociales.";
+ const cta=type==="professional"?"Escanea para reservar":(["supermarket","minimarket"].includes(type)?"Escanea para comprar":"Escanea para ver el menú");
+ qrPanel.innerHTML=`<div class="grid" style="align-items:center"><div class="span4" style="text-align:center"><div style="display:inline-block;background:#fff;padding:14px;border-radius:20px;box-shadow:0 12px 32px #0002"><img src="${qrUrl}" alt="Código QR de ${esc(r.name||"negocio")}" style="width:280px;max-width:100%;display:block"></div><div style="font-weight:900;margin-top:10px">${esc(cta)}</div></div><div class="span8"><span class="eyebrow">ENLACE PÚBLICO</span><h3 style="margin:5px 0 8px">${esc(r.name||"Negocio")}</h3><p class="mut">El QR siempre apunta a tu ${esc(page.label)} actual. Si actualizas productos, servicios o información, no necesitas generar otro QR.</p><label>Enlace público</label><input value="${esc(page.url)}" readonly><div class="row" style="margin-top:14px;flex-wrap:wrap;gap:9px"><button class="primary" type="button" onclick="downloadBusinessQr()">⬇ Descargar QR</button><button class="ghost" type="button" onclick="shareBusinessQr()">↗ Compartir</button><button class="ghost" type="button" onclick="copyBusinessPublicLink()">Copiar enlace</button><a href="${page.url}" target="_blank" rel="noopener"><button class="ghost" type="button">Abrir página</button></a></div><p class="mut" style="margin-top:12px">Ideal para Instagram, Facebook, WhatsApp, volantes, tarjetas, vitrinas y carteles.</p></div></div>`;
 }
 function renderRestaurantPlans(){
  const box=document.getElementById("restaurantPlans");if(!box)return;
- const labels={dashboard:"Dashboard",products:"Gestión de productos",categories:"Gestión de categorías",qr:"Código QR del menú",table_qr:"QR de Mesa",settings:"Configuración del sitio y abrir/cerrar",orders:"Pedidos online",pos:"Meseros / POS",cash:"Caja",kitchen:"Pantalla de cocina",inventory:"Inventario",staff:"Gestión de personal",promotions:"Promociones",reviews:"Reseñas"};
+ const labels={dashboard:"Dashboard",products:"Gestión de productos",categories:"Gestión de categorías",qr:"Código QR del negocio",table_qr:"QR de Mesa",settings:"Configuración del sitio y abrir/cerrar",orders:"Pedidos online",pos:"Meseros / POS",cash:"Caja",kitchen:"Pantalla de cocina",inventory:"Inventario",staff:"Gestión de personal",promotions:"Promociones",reviews:"Reseñas"};
  const cfg=currentRestaurantConfig||countryByCode("CL"),restaurant=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));
  box.innerHTML=(subscriptionPlans||[]).map(p=>{
   const modules=Array.isArray(p.modules)?p.modules:[],price=planPriceInfo(p,"monthly"),localPrice=Number.isFinite(price.amount)&&price.amount>0?money(price.amount,price.currency,cfg.locale):"Precio por confirmar",usd=Number.isFinite(price.usd)&&price.usd>0?new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(price.usd):"",annualPrice=p.annual_enabled?planPriceInfo(p,"annual"):null,annualLocal=annualPrice&&Number.isFinite(annualPrice.amount)&&annualPrice.amount>0?money(annualPrice.amount,annualPrice.currency,cfg.locale):"",bonus=Number(p.annual_bonus_months||0);
@@ -4979,7 +5030,7 @@ function renderRestaurantPlans(){
 
 let planCheckoutPlanId=null,planCheckoutMode="one_time",planCheckoutCycle="monthly";
 function planCheckoutModuleLabels(){
- return {dashboard:"Dashboard",products:"Gestión de productos",categories:"Gestión de categorías",qr:"Código QR del menú",table_qr:"QR de Mesa",settings:"Configuración del sitio y abrir/cerrar",orders:"Pedidos online",pos:"Meseros / POS",cash:"Caja",kitchen:"Pantalla de cocina",inventory:"Inventario",staff:"Gestión de personal",promotions:"Promociones",reviews:"Reseñas"};
+ return {dashboard:"Dashboard",products:"Gestión de productos",categories:"Gestión de categorías",qr:"Código QR del negocio",table_qr:"QR de Mesa",settings:"Configuración del sitio y abrir/cerrar",orders:"Pedidos online",pos:"Meseros / POS",cash:"Caja",kitchen:"Pantalla de cocina",inventory:"Inventario",staff:"Gestión de personal",promotions:"Promociones",reviews:"Reseñas"};
 }
 function openPlanPurchaseModal(id){
  const p=subscriptionPlans.find(x=>Number(x.id)===Number(id));if(!p)return toast("Plan no encontrado");
@@ -5245,7 +5296,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.32</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.33</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
