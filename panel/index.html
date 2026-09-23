@@ -2969,7 +2969,7 @@ async function enter(user){
     msg.textContent="Cargando restaurante...";
     const {data:accountRole,error:roleError}=await sb.rpc("current_account_role");
     if(roleError){await sb.auth.signOut();msg.textContent="No se pudo verificar el tipo de cuenta.";return}
-    if(accountRole!=="restaurant"&&accountRole!=="unassigned"){await sb.auth.signOut();msg.textContent=accountRole==="admin"?"Esta cuenta es de administrador. Ingresa desde el panel de administración.":"Esta cuenta es de cliente y no tiene acceso al panel de restaurante.";return}
+    if(accountRole!=="restaurant"){await sb.auth.signOut();msg.textContent=accountRole==="admin"?"Esta cuenta es de administrador. Ingresa desde el panel de administración.":accountRole==="customer"?"Esta cuenta es de cliente y no tiene acceso al panel de restaurante.":"Esta cuenta no está clasificada como negocio.";return}
     let {data:membership,error:membershipError}=await sb.from("restaurant_staff")
       .select("restaurant_id,role,permissions")
       .eq("user_id",user.id).eq("active",true);
@@ -6060,7 +6060,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.51</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.52</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
