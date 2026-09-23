@@ -3118,7 +3118,20 @@ function renderRetailProducts(){
 }
 function openRetailProductModal(){
  const g=id=>document.getElementById(id);
- g("retailProductId").value="";g("retailProductBarcode").value="";g("retailProductSku").value="";g("retailProductName").value="";g("retailProductBrand").value="";g("retailProductCategory").value="";g("retailProductCost").value=0;g("retailProductPrice").value=0;g("retailProductInitialStock").value=0;g("retailProductInitialStock").disabled=false;g("retailInitialStockLabel").textContent="Stock inicial";g("retailProductMinimum").value=0;g("retailProductUnit").value="unidad";g("retailProductImage").value="";g("retailProductGalleryFile").value="";g("retailProductCameraFile").value="";g("retailProductImagePreview").removeAttribute("src");g("retailProductImagePreview").hidden=true;g("retailProductFractional").checked=false;g("retailProductActive").checked=true;g("retailProductModalTitle").textContent="Nuevo producto";g("retailProductModal").classList.add("open");g("retailProductModal").setAttribute("aria-hidden","false");setTimeout(()=>g("retailProductBarcode")?.focus(),80)
+ g("retailProductId").value="";g("retailProductBarcode").value="";g("retailProductSku").value="";g("retailProductName").value="";g("retailProductBrand").value="";g("retailProductCategory").value="";g("retailProductCost").value=0;g("retailProductPrice").value=0;g("retailProductInitialStock").value=0;g("retailProductInitialStock").disabled=false;g("retailInitialStockLabel").textContent="Stock inicial";g("retailProductMinimum").value=0;g("retailProductUnit").value="unidad";g("retailProductImage").value="";g("retailProductGalleryFile").value="";g("retailProductCameraFile").value="";g("retailProductImagePreview").removeAttribute("src");g("retailProductImagePreview").hidden=true;g("retailProductFractional").checked=false;g("retailProductActive").checked=true;g("retailProductModalTitle").textContent="Nuevo producto";g("retailProductModal").classList.add("open");g("retailProductModal").setAttribute("aria-hidden","false");
+ g("retailProductBarcode")?.blur();
+ setTimeout(()=>autoOpenRetailProductScanner(),120)
+}
+async function autoOpenRetailProductScanner(){
+ const modal=document.getElementById("retailProductModal"),input=document.getElementById("retailProductBarcode");
+ if(!modal?.classList.contains("open")||!input)return;
+ input.blur();
+ const opened=await openRetailBarcodeCamera("product");
+ if(opened===false&&modal.classList.contains("open")){
+  closeRetailBarcodeCamera(false);
+  setTimeout(()=>{input.focus();input.select()},100);
+  toast("No se pudo usar la cámara. Puedes escribir el código manualmente.")
+ }
 }
 function editRetailProduct(id){
  const p=retailProducts.find(x=>Number(x.id)===Number(id));if(!p)return;
@@ -3376,14 +3389,14 @@ function applyScannedRetailProductCode(code){
  if(!input)return false;
  const existing=retailProducts.find(p=>retailProductMatchesCode(p,code)&&Number(p.id)!==Number(currentId));
  if(existing){
-  closeRetailBarcodeCamera();
+  closeRetailBarcodeCamera(false);
   editRetailProduct(existing.id);
   toast("Ese código ya pertenece a "+existing.name+". Abrimos el producto existente.");
   return true
  }
  input.value=code;
  input.dispatchEvent(new Event("input",{bubbles:true}));
- closeRetailBarcodeCamera();
+ closeRetailBarcodeCamera(false);
  setTimeout(()=>document.getElementById("retailProductName")?.focus(),120);
  toast("Código leído correctamente. Completa los datos del producto.");
  return true
@@ -3448,31 +3461,31 @@ async function startRetailFallbackScanner(status){
 async function openRetailBarcodeCamera(mode="pos"){
  retailScannerMode=mode==="product"?"product":"pos";
  const modal=document.getElementById("retailBarcodeCameraModal"),status=document.getElementById("retailBarcodeCameraStatus"),video=document.getElementById("retailBarcodeVideo"),title=document.getElementById("retailBarcodeCameraTitle"),help=document.getElementById("retailBarcodeCameraHelp"),nativeFrame=document.getElementById("retailBarcodeNativeFrame"),fallback=document.getElementById("retailBarcodeFallbackReader");
- if(!modal||!video)return;
+ if(!modal||!video)return false;
  if(title)title.textContent=retailScannerMode==="product"?"Escanear código del producto":"Leer código de barra";
  if(help)help.textContent=retailScannerMode==="product"?"Apunta la cámara trasera al código de barra. Al leerlo, se copiará automáticamente al formulario del producto.":"Apunta la cámara trasera al código. Puedes escanear varios productos sin cerrar esta ventana.";
  if(nativeFrame)nativeFrame.hidden=false;if(fallback){fallback.hidden=true;fallback.innerHTML=""}
  modal.style.zIndex="3200";modal.classList.add("open");modal.setAttribute("aria-hidden","false");if(status)status.textContent="Preparando cámara…";renderRetailScannerCartSummary();
- if(!window.isSecureContext){if(status)status.textContent="La cámara requiere una conexión HTTPS segura.";return}
- if(!navigator.mediaDevices?.getUserMedia){if(status)status.textContent="Este dispositivo no permite acceso a cámara desde el navegador.";return}
+ if(!window.isSecureContext){if(status)status.textContent="La cámara requiere una conexión HTTPS segura.";return false}
+ if(!navigator.mediaDevices?.getUserMedia){if(status)status.textContent="Este dispositivo no permite acceso a cámara desde el navegador.";return false}
  try{
   if("BarcodeDetector" in window){
    const formats=BarcodeDetector.getSupportedFormats?await BarcodeDetector.getSupportedFormats():[];
    const preferred=["ean_13","ean_8","upc_a","upc_e","code_128","code_39","itf","codabar","qr_code"];
    retailScannerDetector=new BarcodeDetector({formats:formats.length?preferred.filter(x=>formats.includes(x)):undefined});
    retailScannerStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false});
-   video.srcObject=retailScannerStream;await video.play();retailScannerActive=true;retailScannerLastCode="";retailScannerLastAt=0;if(status)status.textContent="Cámara lista. Apunta al código de barra.";retailBarcodeCameraLoop();return
+   video.srcObject=retailScannerStream;await video.play();retailScannerActive=true;retailScannerLastCode="";retailScannerLastAt=0;if(status)status.textContent="Cámara lista. Apunta al código de barra.";retailBarcodeCameraLoop();return true
   }
-  await startRetailFallbackScanner(status)
+  await startRetailFallbackScanner(status);return true
  }catch(e){
   console.error("Cámara código de barra",e);
   stopRetailBarcodeCameraStream();
   if(e?.name==="NotAllowedError"||e?.name==="PermissionDeniedError"){
    if(status)status.textContent="No se concedió permiso para la cámara. En Chrome, permite Cámara para web.yummypro.online y vuelve a intentar.";
-   return
+   return false
   }
-  try{await startRetailFallbackScanner(status)}
-  catch(fallbackError){console.error("Lector compatible",fallbackError);if(status)status.textContent="No se pudo abrir la cámara. Revisa el permiso de cámara y vuelve a intentar."}
+  try{await startRetailFallbackScanner(status);return true}
+  catch(fallbackError){console.error("Lector compatible",fallbackError);if(status)status.textContent="No se pudo abrir la cámara. Revisa el permiso de cámara y vuelve a intentar.";return false}
  }
 }
 async function retailBarcodeCameraLoop(){
@@ -3495,13 +3508,13 @@ function stopRetailBarcodeCameraStream(){
   Promise.resolve(scanner.stop?.()).catch(()=>{}).finally(()=>{try{scanner.clear?.()}catch(_){}});
  }
 }
-function closeRetailBarcodeCamera(){
+function closeRetailBarcodeCamera(focusAfter=true){
  const mode=retailScannerMode;
  stopRetailBarcodeCameraStream();
  const nativeFrame=document.getElementById("retailBarcodeNativeFrame"),fallback=document.getElementById("retailBarcodeFallbackReader");
  if(nativeFrame)nativeFrame.hidden=false;if(fallback){fallback.hidden=true;fallback.innerHTML=""}
  const m=document.getElementById("retailBarcodeCameraModal");m?.classList.remove("open");m?.setAttribute("aria-hidden","true");if(m)m.style.zIndex="";
- setTimeout(()=>document.getElementById(mode==="product"?"retailProductBarcode":"retailBarcodeInput")?.focus(),80)
+ if(focusAfter)setTimeout(()=>document.getElementById(mode==="product"?"retailProductBarcode":"retailBarcodeInput")?.focus(),80)
 }
 function retailChangeQty(id,delta){
  const row=retailPosCart[id],p=retailProducts.find(x=>Number(x.id)===Number(id));if(!row||!p)return;const next=Number(row.quantity)+delta;
@@ -5466,7 +5479,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.39</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.40</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
