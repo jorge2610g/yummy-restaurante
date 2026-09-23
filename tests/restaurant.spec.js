@@ -40,3 +40,32 @@ test('panel restaurante cerrado copia referencia admin sin barra visible',async(
 test('restringe POS y Cocina por rol y exige caja abierta',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('operationalTabLockReason');expect(html).toContain('restaurant_has_open_cash');expect(html).toContain('posCashGate');expect(html).toContain('usuario con rol Mesero');expect(html).toContain('usuario con rol Cocina')});
 
 test('permite elegir mensual o anual en la compra del plan',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('planCheckoutCycleAnnual');expect(html).toContain('setPlanPurchaseCycle');expect(html).toContain('billing_cycle:billingCycle');expect(html).toContain('12 meses de acceso')});
+
+async function diagnosePwaInstallability(page,context,url,label){
+  await page.goto(url,{waitUntil:'domcontentloaded'});
+  const sw=await page.evaluate(async()=>{
+    if(!('serviceWorker' in navigator))return {supported:false};
+    try{
+      const reg=await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_,reject)=>setTimeout(()=>reject(new Error('service worker ready timeout')),7000))
+      ]);
+      return {supported:true,scope:reg.scope,controller:!!navigator.serviceWorker.controller};
+    }catch(e){return {supported:true,error:String(e),controller:!!navigator.serviceWorker.controller}}
+  });
+  if(sw.supported&&!sw.controller&&!sw.error){
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForTimeout(500);
+  }
+  const cdp=await context.newCDPSession(page);
+  const manifest=await cdp.send('Page.getAppManifest');
+  const installability=await cdp.send('Page.getInstallabilityErrors');
+  const report={label,url,sw,manifestUrl:manifest.url,manifestErrors:manifest.errors||[],installabilityErrors:installability.installabilityErrors||[]};
+  console.log('PWA_DIAGNOSTIC '+JSON.stringify(report));
+  expect(report.manifestErrors,JSON.stringify(report)).toEqual([]);
+  expect(report.installabilityErrors,JSON.stringify(report)).toEqual([]);
+}
+
+test('diagnóstico PWA instalable: landing restaurante',async({page,context})=>{await diagnosePwaInstallability(page,context,'/','landing restaurante')});
+
+test('diagnóstico PWA instalable: panel restaurante',async({page,context})=>{await diagnosePwaInstallability(page,context,'/panel/','panel restaurante')});
