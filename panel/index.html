@@ -2114,6 +2114,24 @@ function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;loc
 function toggleAdminTheme(){applyAdminTheme(document.documentElement.dataset.theme==="light"?"dark":"light")}
 applyAdminTheme(localStorage.getItem("admin_theme")||"dark");setTimeout(bindRestaurantMpButtons,0);
 let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",veripagosSubscriptionConfigured=false,veripagosRestaurantConfigured=false,currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[];
+const REST_TELEMETRY_KEY="yummy_restaurant_telemetry_session_v1";
+function restaurantTelemetrySession(){try{let v=localStorage.getItem(REST_TELEMETRY_KEY);if(!v){v=(crypto.randomUUID?.()||Date.now()+"-"+Math.random().toString(16).slice(2));localStorage.setItem(REST_TELEMETRY_KEY,v)}return v}catch(_){return "restaurant-"+Date.now()}}
+async function trackRestaurantEvent(eventName,module=null,metadata={},planId=null){try{await sb.rpc("log_app_event",{p_app_context:"restaurant",p_event_name:eventName,p_module:module,p_restaurant_id:currentRestaurant||null,p_plan_id:planId||null,p_session_id:restaurantTelemetrySession(),p_route:location.pathname+location.search,p_metadata:metadata||{}})}catch(_){}}
+async function trackRestaurantError(category,errorCode,message,isUserError=false,metadata={}){try{await sb.rpc("log_app_error",{p_app_context:"restaurant",p_category:category,p_error_code:errorCode,p_message:String(message||"").slice(0,650),p_severity:isUserError?"info":"error",p_is_user_error:!!isUserError,p_restaurant_id:currentRestaurant||null,p_session_id:restaurantTelemetrySession(),p_route:location.pathname+location.search,p_metadata:metadata||{}})}catch(_){}}
+function openRestaurantIssueReport(){const d=document.getElementById("restaurantIssueDialog");if(!d)return;document.getElementById("restaurantIssueTitle").value="";document.getElementById("restaurantIssueDescription").value="";document.getElementById("restaurantIssueStatus").textContent="";d.showModal?.()}
+async function submitRestaurantIssueReport(){
+ const title=document.getElementById("restaurantIssueTitle")?.value.trim(),description=document.getElementById("restaurantIssueDescription")?.value.trim(),status=document.getElementById("restaurantIssueStatus");
+ if(!title||!description){if(status)status.textContent="Describe brevemente qué ocurrió.";return}
+ if(status)status.textContent="Enviando…";
+ try{
+  const {error}=await sb.rpc("submit_issue_report",{p_app_context:"restaurant",p_title:title,p_description:description,p_restaurant_id:currentRestaurant||null,p_route:location.pathname+location.search,p_metadata:{role:currentRole||null}});
+  if(error)throw error;
+  await trackRestaurantEvent("issue_report_submitted","support",{title});
+  if(status)status.textContent="✅ Reporte enviado. Quedó visible para administración.";
+  setTimeout(()=>document.getElementById("restaurantIssueDialog")?.close(),900);
+ }catch(e){if(status)status.textContent="No se pudo enviar: "+(e.message||"error");trackRestaurantError("support","issue_report_failure",e.message||"No se pudo enviar el reporte",false)}
+}
+
 function matchesPeriod(value,period,fromId,toId){const date=new Date(value);if(Number.isNaN(date.getTime()))return false;if(period==="all")return true;const now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),now.getDate()),end=new Date(start);end.setDate(end.getDate()+1);if(period==="week")start.setDate(start.getDate()-6);if(period==="month")start.setDate(1);if(period==="custom"){const from=document.getElementById(fromId)?.value,to=document.getElementById(toId)?.value;if(from)start.setTime(new Date(from+"T00:00:00").getTime());else start.setTime(0);if(to)end.setTime(new Date(to+"T23:59:59.999").getTime());else end.setTime(8640000000000000)}return date>=start&&date<end}
 function activatePeriodButtons(attribute,value){document.querySelectorAll(`[${attribute}]`).forEach(button=>{const active=button.getAttribute(attribute)===value;button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active))})}
 function resetPeriodToToday(tab){
@@ -2149,10 +2167,11 @@ async function login(){
     const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error("La conexión está tardando demasiado. Intenta nuevamente.")),15000));
     const auth=sb.auth.signInWithPassword({email:emailEl.value.trim(),password:passEl.value});
     const {data,error}=await Promise.race([auth,timeout]);
-    if(error){msg.textContent=error.message;return}
-    if(!data?.user){msg.textContent="No se pudo iniciar sesión.";return}
+    if(error){const raw=String(error.message||"Error de autenticación"),userError=/invalid login credentials|invalid credentials|email not confirmed|wrong password/i.test(raw);await trackRestaurantError("auth",userError?"invalid_credentials":"login_failure",raw,userError);msg.textContent=raw;return}
+    if(!data?.user){await trackRestaurantError("auth","missing_user","No se recibió usuario después del inicio de sesión",false);msg.textContent="No se pudo iniciar sesión.";return}
+    await trackRestaurantEvent("login_success","auth");
     await enter(data.user);
-  }catch(e){msg.textContent=e.message||"Error de conexión. Intenta nuevamente."}
+  }catch(e){const raw=e.message||"Error de conexión. Intenta nuevamente.";await trackRestaurantError("auth","login_exception",raw,false);msg.textContent=raw}
 }
 function bindRestaurantMpButtons(){const s=document.getElementById("saveRestaurantMpBtn"),v=document.getElementById("verifyRestaurantMpBtn");if(s)s.onclick=saveRestaurantMercadoPago;if(v)v.onclick=verifyRestaurantMercadoPago}
 function setMpConnectionStatus(type,message){const box=document.getElementById("restaurantMpStatus");if(!box)return;box.className="mp-status-card "+type;box.textContent=message}
@@ -2227,11 +2246,14 @@ async function enter(user){
     if(membershipError)throw membershipError;
     membership=membership||[];
     if(!membership.length && user.user_metadata?.trial_restaurant_name){
-      const cr=await sb.rpc("create_my_trial_restaurant",{
+      const cr=await sb.rpc("create_my_trial_restaurant_v2",{
         p_name:user.user_metadata.trial_restaurant_name,
         p_whatsapp:user.user_metadata.trial_whatsapp||"",
-        p_address:user.user_metadata.trial_address||""
+        p_address:user.user_metadata.trial_address||"",
+        p_country_code:user.user_metadata.trial_country_code||"CL",
+        p_intended_plan_id:Number(user.user_metadata.trial_intended_plan_id)||null
       });
+      if(cr.error)await trackRestaurantError("signup","trial_creation_failure",cr.error.message||"No se pudo activar la prueba",false);
       if(!cr.error){
         const retry=await sb.from("restaurant_staff").select("restaurant_id,role,permissions").eq("user_id",user.id).eq("active",true);
         membership=retry.data||[];
@@ -2240,6 +2262,7 @@ async function enter(user){
     if(!membership.length){await sb.auth.signOut();msg.textContent="Esta cuenta no tiene un restaurante asignado.";return}
     currentRestaurant=Number(membership[0].restaurant_id);
     currentRole=membership[0].role||"restaurant";
+    trackRestaurantEvent("session_started","dashboard",{role:currentRole});
     document.body.classList.toggle("waiter-mobile-shell",currentRole==="waiter");
     if(currentRole==="waiter")setTimeout(setupWaiterPullToRefresh,0);
     document.getElementById("login").classList.add("hidden");
@@ -2276,6 +2299,7 @@ async function enter(user){
     msg.textContent="";
   }catch(e){
     console.error("Restaurant panel load error",e);
+    trackRestaurantError("panel","panel_load_failure",e.message||"No se pudo cargar la información del restaurante.",false,{role:currentRole||null});
     msg.textContent=e.message||"No se pudo cargar la información del restaurante.";
   }
 }
@@ -2831,7 +2855,15 @@ function browserPrintKitchenOrder(order){
   let items=o.items||[];if(typeof items==="string"){try{items=JSON.parse(items)}catch(_){items=[]}}if(!Array.isArray(items))items=[];
   const e=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
   const itemRows=items.map(x=>'<div class="line"><b>'+e(Number(x.qty||1)+" × "+(x.name||"Producto"))+'</b></div>').join("");
-  const html='<!doctype html><html><head><meta charset="utf-8"><title>Comanda '+e(o.order_code||o.id)+'</title><style>@page{margin:3mm}body{font-family:Arial,sans-serif;width:72mm;margin:0 auto;color:#000;font-size:13px}h1{text-align:center;font-size:18px;margin:0 0 4px}.sep{border-top:1px dashed #000;margin:7px 0}.line{margin:6px 0}.big{font-size:17px;font-weight:800}@media print{button{display:none}}</style></head><body><h1>'+e(r.name)+'</h1><div class="big">#'+e(o.order_code||o.id)+'</div><div>'+e(new Date(o.created_at||Date.now()).toLocaleString("es-CL"))+'</div><div class="sep"></div><div><b>Cliente:</b> '+e(o.customer_name||"Sin nombre")+'</div>'+(o.table_reference?'<div><b>Mesa:</b> '+e(o.table_reference)+'</div>':'')+'<div class="sep"></div>'+itemRows+(o.notes?'<div class="sep"></div><b>OBS:</b> '+e(o.notes):'')+'<div class="sep"></div><b>Total: '+e(money(o.total||0))+'</b><script>setTimeout(()=>window.print(),180)<\/script></body></html>';
+  const html='<!doctype html><html><head><meta charset="utf-8"><title>Comanda '+e(o.order_code||o.id)+'</title><style>@page{margin:3mm}body{font-family:Arial,sans-serif;width:72mm;margin:0 auto;color:#000;font-size:13px}h1{text-align:center;font-size:18px;margin:0 0 4px}.sep{border-top:1px dashed #000;margin:7px 0}.line{margin:6px 0}.big{font-size:17px;font-weight:800}@media print{button{display:none}}</style></head><body><h1>'+e(r.name)+'</h1><div class="big">#'+e(o.order_code||o.id)+'</div><div>'+e(new Date(o.created_at||Date.now()).toLocaleString("es-CL"))+'</div><div class="sep"></div><div><b>Cliente:</b> '+e(o.customer_name||"Sin nombre")+'</div>'+(o.table_reference?'<div><b>Mesa:</b> '+e(o.table_reference)+'</div>':'')+'<div class="sep"></div>'+itemRows+(o.notes?'<div class="sep"></div><b>OBS:</b> '+e(o.notes):'')+'<div class="sep"></div><b>Total: '+e(money(o.total||0))+'</b><script>setTimeout(()=>window.print(),180)<\/script><script id="restaurant-observability-v2509">
+document.addEventListener("click",e=>{
+ const tab=e.target.closest?.(".tab[data-tab]");
+ if(tab?.dataset?.tab)trackRestaurantEvent("module_view",tab.dataset.tab,{role:currentRole||null});
+});
+window.addEventListener("error",e=>trackRestaurantError("javascript","window_error",e.message||"Error JavaScript",false,{file:e.filename||null,line:e.lineno||null}));
+window.addEventListener("unhandledrejection",e=>trackRestaurantError("javascript","unhandled_rejection",String(e.reason?.message||e.reason||"Promesa rechazada"),false));
+</script>
+</body></html>';
   const w=window.open("","_blank","width=420,height=720");if(!w)return false;w.document.open();w.document.write(html);w.document.close();return true;
  }catch(e){console.error("Impresión del navegador",e);return false}
 }
@@ -4273,7 +4305,18 @@ window.openOrderDetail=function(id){const o=orders.find(x=>Number(x.id)===Number
 window.closeOrderDetail=function(){orderEditModal.style.display="none"}
 function calcOrderEditTotal(){let t=0;document.querySelectorAll(".orderEditItem").forEach(r=>t+=Number(r.querySelector(".oiQty").value||0)*Number(r.querySelector(".oiPrice").value||0));oeTotal.textContent=money(t);return t}
 window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===Number(oeId.value));const items=[...document.querySelectorAll(".orderEditItem")].map((r,i)=>({...(old?.items?.[i]||{}),name:r.querySelector(".oiName").value.trim(),qty:Number(r.querySelector(".oiQty").value||1),unit_price:Number(r.querySelector(".oiPrice").value||0),note:r.querySelector(".oiNote").value.trim()}));const row={customer_name:oeName.value.trim(),order_type:oeType.value,delivery_address:oeType.value==="Delivery"?oeAddress.value.trim():null,payment_method:oePayment.value.trim(),status:oeStatus.value,notes:oeNotes.value.trim()||null,items,total:calcOrderEditTotal(),updated_at:new Date().toISOString()};const {error}=await sb.from("restaurant_orders").update(row).eq("id",Number(oeId.value)).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);closeOrderDetail();toast("Pedido actualizado");await loadOrders()}
-</script><footer class="admin-version">Versión v2.5.08</footer></main></div><script>
+</script>
+<button type="button" id="restaurantIssueButton" onclick="openRestaurantIssueReport()" style="position:fixed;left:12px;bottom:12px;z-index:4900;border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:999px;padding:10px 14px;font-weight:800;box-shadow:0 10px 30px #0006">⚠ Reportar problema</button>
+<dialog id="restaurantIssueDialog" style="border:1px solid var(--line);border-radius:18px;padding:0;width:min(92vw,520px);background:var(--card);color:var(--txt);box-shadow:0 24px 80px #0009">
+  <div style="padding:20px">
+    <div class="row between"><div><h2 style="margin:0">Reportar un problema</h2><p class="mut" style="margin:5px 0 0">Este reporte llegará al panel de administración con la sección y el restaurante actuales.</p></div><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">✕</button></div>
+    <label>Título<input id="restaurantIssueTitle" maxlength="160" placeholder="Ej. No puedo guardar un producto"></label>
+    <label>Qué ocurrió<textarea id="restaurantIssueDescription" maxlength="2500" rows="6" placeholder="Cuéntanos qué intentabas hacer y qué viste."></textarea></label>
+    <div id="restaurantIssueStatus" class="mut" style="min-height:22px;margin-top:8px"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
+  </div>
+</dialog>
+<footer class="admin-version">Versión v2.5.09</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
