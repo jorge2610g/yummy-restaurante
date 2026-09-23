@@ -1851,7 +1851,7 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
     <div class="grid">
       <div class="span7">
         <label>Código de barra o SKU</label>
-        <div class="row" style="flex-wrap:wrap"><input id="retailBarcodeInput" inputmode="numeric" autocomplete="off" placeholder="Escanea o escribe el código" onkeydown="if(event.key==='Enter'){event.preventDefault();retailScanBarcode()}"><button class="primary" type="button" onclick="retailScanBarcode()">Agregar</button><button class="ghost" type="button" onclick="openRetailBarcodeCamera()">📷 Cámara</button></div>
+        <div class="row" style="flex-wrap:wrap"><input id="retailBarcodeInput" inputmode="numeric" autocomplete="off" placeholder="Escanea o escribe el código" onkeydown="if(event.key==='Enter'){event.preventDefault();retailScanBarcode()}"><button class="primary" type="button" onclick="retailScanBarcode()">Agregar</button><button class="ghost" type="button" onclick="openRetailBarcodeCamera()">📷 Cámara</button></div><div id="retailPosScanStatus" class="mut" style="margin-top:8px">Cargando productos disponibles…</div>
         <div class="row" style="margin-top:10px;flex-wrap:wrap"><label style="margin:0;display:flex;align-items:center;gap:8px"><input id="retailAutoPrint" type="checkbox" style="width:auto" onchange="saveRetailAutoPrint()"> Imprimir ticket automáticamente al cobrar</label></div>
         <div id="retailPosCart" class="list" style="margin-top:14px"></div>
       </div>
@@ -1899,7 +1899,7 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
   <div class="two"><div><label>Marca</label><input id="retailProductBrand"></div><div><label>Categoría</label><input id="retailProductCategory" placeholder="Bebidas"></div></div>
   <div class="two"><div><label>Costo</label><input id="retailProductCost" type="number" min="0" step="0.01" value="0"></div><div><label>Precio de venta</label><input id="retailProductPrice" type="number" min="0" step="0.01" value="0"></div></div>
   <div class="two"><div><label id="retailInitialStockLabel">Stock inicial</label><input id="retailProductInitialStock" type="number" min="0" step="1" value="0"></div><div><label>Stock mínimo</label><input id="retailProductMinimum" type="number" min="0" step="1" value="0"></div></div>
-  <div class="two"><div><label>Unidad</label><select id="retailProductUnit"><option value="unidad">Unidad</option><option value="kg">Kg</option><option value="g">Gramo</option><option value="l">Litro</option><option value="ml">Mililitro</option><option value="caja">Caja</option><option value="paquete">Paquete</option></select></div><div><label>Imagen URL</label><input id="retailProductImage" placeholder="Opcional"></div></div>
+  <div class="two"><div><label>Unidad</label><select id="retailProductUnit"><option value="unidad">Unidad</option><option value="kg">Kg</option><option value="g">Gramo</option><option value="l">Litro</option><option value="ml">Mililitro</option><option value="caja">Caja</option><option value="paquete">Paquete</option></select></div><div><label>Imagen del producto</label><input id="retailProductImage" placeholder="URL opcional"><div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px"><input id="retailProductGalleryFile" type="file" accept="image/*" hidden onchange="uploadRetailProductImage(this)"><button class="ghost" type="button" onclick="document.getElementById('retailProductGalleryFile').click()">🖼️ Galería</button><input id="retailProductCameraFile" type="file" accept="image/*" capture="environment" hidden onchange="uploadRetailProductImage(this)"><button class="ghost" type="button" onclick="document.getElementById('retailProductCameraFile').click()">📷 Tomar foto</button></div><img id="retailProductImagePreview" class="uploadPreview" alt="Vista previa del producto" hidden style="margin-top:10px;max-height:180px;object-fit:contain"></div></div>
   <div class="row" style="flex-wrap:wrap;margin-top:12px"><label style="margin:0"><input id="retailProductFractional" type="checkbox" style="width:auto"> Permitir cantidades fraccionadas</label><label style="margin:0"><input id="retailProductActive" type="checkbox" style="width:auto" checked> Producto activo</label></div>
   <div class="row product-modal-actions" style="margin-top:16px"><button class="primary" type="button" onclick="saveRetailProduct()">Guardar producto</button><button class="ghost" type="button" onclick="closeRetailProductModal()">Cancelar</button></div>
 </div></div>
@@ -2270,6 +2270,7 @@ async function uploadRestaurantAsset(file,kind){if(!currentRestaurant||!file)thr
 async function uploadAlternativeAsset(input,kind){const file=input.files?.[0];if(!file)return;const button=input.nextElementSibling;try{if(button){button.disabled=true;button.textContent="Subiendo…"}const url=await uploadRestaurantAsset(file,"payments-"+kind);const target=document.getElementById(kind==="qr"?"altMethodQr":"altMethodLogo"),preview=document.getElementById(kind==="qr"?"altMethodQrPreview":"altMethodLogoPreview");target.value=url;preview.src=url;preview.hidden=false;toast(kind==="qr"?"QR cargado correctamente":"Logo cargado correctamente")}catch(e){toast(e.message||"No se pudo subir la imagen");input.value=""}finally{if(button){button.disabled=false;button.textContent=kind==="qr"?"▣ Elegir QR de la galería":"📷 Elegir logo"}}}
 async function uploadSettingsLogo(input){const file=input.files?.[0];if(!file)return;const button=input.nextElementSibling;try{if(button){button.disabled=true;button.textContent="Subiendo logo…"}const url=await uploadRestaurantAsset(file,"restaurant-logo");slogo.value=url;slogoPreview.src=url;slogoPreview.hidden=false;toast("Logo cargado. Pulsa Guardar configuración para aplicarlo.")}catch(e){toast(e.message||"No se pudo subir el logo");input.value=""}finally{if(button){button.disabled=false;button.textContent="📷 Elegir logo"}}}
 async function uploadProductImage(input){const file=input.files?.[0];if(!file)return;const button=input.nextElementSibling;try{if(button){button.disabled=true;button.textContent="Subiendo foto…"}const url=await uploadRestaurantAsset(file,"product");pimage.value=url;pimagePreview.src=url;pimagePreview.hidden=false;toast("Foto cargada correctamente")}catch(e){toast(e.message||"No se pudo subir la foto");input.value=""}finally{if(button){button.disabled=false;button.textContent="📷 Elegir foto de la galería"}}}
+async function uploadRetailProductImage(input){const file=input.files?.[0];if(!file)return;const preview=document.getElementById("retailProductImagePreview"),target=document.getElementById("retailProductImage");try{toast("Subiendo imagen del producto…");const url=await uploadRestaurantAsset(file,"retail-product");if(target)target.value=url;if(preview){preview.src=url;preview.hidden=false}toast("Imagen del producto cargada correctamente")}catch(e){console.error("Imagen retail",e);toast(e.message||"No se pudo subir la imagen");input.value=""}}
 async function loadAlternativePaymentMethods(){if(!currentRestaurant)return;const {data,error}=await sb.from("restaurant_payment_methods").select("*").eq("restaurant_id",currentRestaurant).order("sort_order");if(error)return toast(error.message);alternativePaymentMethods=data||[];const box=document.getElementById("alternativePaymentList");if(box)box.innerHTML=alternativePaymentMethods.map(m=>`<div class="item"><div class="row between"><div style="display:flex;gap:12px;align-items:center">${m.qr_image_url||m.logo_url?`<img src="${esc(m.qr_image_url||m.logo_url)}" alt="" style="width:64px;height:64px;object-fit:contain;border-radius:10px;background:#fff;padding:4px">`:""}<div><b>${esc(m.label)}</b><div class="mut">${esc(m.institution||"")} ${esc(m.account_identifier||"")}</div>${m.account_holder?`<div class="mut">Titular: ${esc(m.account_holder)}${m.document_id?" · "+esc(m.document_id):""}</div>`:""}${m.account_type?`<div class="mut">${esc(m.account_type)}</div>`:""}<div class="mut">${esc(m.instructions||"")}</div></div></div><button class="danger" type="button" onclick="deleteAlternativePaymentMethod(${m.id})">Eliminar</button></div></div>`).join("")||'<p class="mut">Todavía no agregaste métodos alternativos.</p>'}
 async function saveAlternativePaymentMethod(){if(!currentRestaurant)return;const label=altMethodLabel.value.trim(),isQr=qrPaymentTypes.has(altMethodType.value);if(!label)return toast("Escribe el nombre visible del método");if(isQr&&!altMethodQr.value)return toast("Sube la imagen del QR desde tu galería");if(!isQr&&(!altMethodAccount.value.trim()||!altMethodHolder.value.trim()||!altMethodInstitution.value.trim()))return toast("Completa banco, cuenta y titular");const row={restaurant_id:currentRestaurant,method_type:altMethodType.value,label,account_holder:altMethodHolder.value.trim(),account_identifier:altMethodAccount.value.trim(),institution:altMethodInstitution.value.trim(),document_id:altMethodDocument.value.trim(),account_type:altMethodAccountType.value,qr_image_url:altMethodQr.value.trim()||null,logo_url:altMethodLogo.value.trim()||null,instructions:altMethodInstructions.value.trim(),requires_proof:true,active:true};const {error}=await sb.from("restaurant_payment_methods").insert(row);if(error)return toast(error.message);[altMethodLabel,altMethodHolder,altMethodAccount,altMethodInstitution,altMethodDocument,altMethodQr,altMethodLogo,altMethodInstructions].forEach(x=>x.value="");altMethodAccountType.value="";[altMethodQrPreview,altMethodLogoPreview].forEach(x=>{x.removeAttribute("src");x.hidden=true});await loadAlternativePaymentMethods();updateAlternativePaymentForm();toast("Método de pago agregado")}
 async function deleteAlternativePaymentMethod(id){const {error}=await sb.from("restaurant_payment_methods").delete().eq("id",id).eq("restaurant_id",currentRestaurant);if(error)return toast(error.message);await loadAlternativePaymentMethods();toast("Método eliminado")}
@@ -2857,12 +2858,12 @@ function renderRetailProducts(){
 }
 function openRetailProductModal(){
  const g=id=>document.getElementById(id);
- g("retailProductId").value="";g("retailProductBarcode").value="";g("retailProductSku").value="";g("retailProductName").value="";g("retailProductBrand").value="";g("retailProductCategory").value="";g("retailProductCost").value=0;g("retailProductPrice").value=0;g("retailProductInitialStock").value=0;g("retailProductInitialStock").disabled=false;g("retailInitialStockLabel").textContent="Stock inicial";g("retailProductMinimum").value=0;g("retailProductUnit").value="unidad";g("retailProductImage").value="";g("retailProductFractional").checked=false;g("retailProductActive").checked=true;g("retailProductModalTitle").textContent="Nuevo producto";g("retailProductModal").classList.add("open");g("retailProductModal").setAttribute("aria-hidden","false");setTimeout(()=>g("retailProductBarcode")?.focus(),80)
+ g("retailProductId").value="";g("retailProductBarcode").value="";g("retailProductSku").value="";g("retailProductName").value="";g("retailProductBrand").value="";g("retailProductCategory").value="";g("retailProductCost").value=0;g("retailProductPrice").value=0;g("retailProductInitialStock").value=0;g("retailProductInitialStock").disabled=false;g("retailInitialStockLabel").textContent="Stock inicial";g("retailProductMinimum").value=0;g("retailProductUnit").value="unidad";g("retailProductImage").value="";g("retailProductGalleryFile").value="";g("retailProductCameraFile").value="";g("retailProductImagePreview").removeAttribute("src");g("retailProductImagePreview").hidden=true;g("retailProductFractional").checked=false;g("retailProductActive").checked=true;g("retailProductModalTitle").textContent="Nuevo producto";g("retailProductModal").classList.add("open");g("retailProductModal").setAttribute("aria-hidden","false");setTimeout(()=>g("retailProductBarcode")?.focus(),80)
 }
 function editRetailProduct(id){
  const p=retailProducts.find(x=>Number(x.id)===Number(id));if(!p)return;
  const g=id=>document.getElementById(id);
- g("retailProductId").value=p.id;g("retailProductBarcode").value=p.barcode||"";g("retailProductSku").value=p.sku||"";g("retailProductName").value=p.name||"";g("retailProductBrand").value=p.brand||"";g("retailProductCategory").value=p.category||"";g("retailProductCost").value=Number(p.cost||0);g("retailProductPrice").value=Number(p.price||0);g("retailProductInitialStock").value=Number(p.current_stock||0);g("retailProductInitialStock").disabled=true;g("retailInitialStockLabel").textContent="Stock actual (usa Ajustar stock)";g("retailProductMinimum").value=Number(p.minimum_stock||0);g("retailProductUnit").value=p.unit||"unidad";g("retailProductImage").value=p.image_url||"";g("retailProductFractional").checked=!!p.allow_fractional;g("retailProductActive").checked=!!p.active;g("retailProductModalTitle").textContent="Editar producto";g("retailProductModal").classList.add("open");g("retailProductModal").setAttribute("aria-hidden","false")
+ g("retailProductId").value=p.id;g("retailProductBarcode").value=p.barcode||"";g("retailProductSku").value=p.sku||"";g("retailProductName").value=p.name||"";g("retailProductBrand").value=p.brand||"";g("retailProductCategory").value=p.category||"";g("retailProductCost").value=Number(p.cost||0);g("retailProductPrice").value=Number(p.price||0);g("retailProductInitialStock").value=Number(p.current_stock||0);g("retailProductInitialStock").disabled=true;g("retailInitialStockLabel").textContent="Stock actual (usa Ajustar stock)";g("retailProductMinimum").value=Number(p.minimum_stock||0);g("retailProductUnit").value=p.unit||"unidad";g("retailProductImage").value=p.image_url||"";g("retailProductGalleryFile").value="";g("retailProductCameraFile").value="";if(p.image_url){g("retailProductImagePreview").src=p.image_url;g("retailProductImagePreview").hidden=false}else{g("retailProductImagePreview").removeAttribute("src");g("retailProductImagePreview").hidden=true}g("retailProductFractional").checked=!!p.allow_fractional;g("retailProductActive").checked=!!p.active;g("retailProductModalTitle").textContent="Editar producto";g("retailProductModal").classList.add("open");g("retailProductModal").setAttribute("aria-hidden","false")
 }
 function closeRetailProductModal(){const m=document.getElementById("retailProductModal");m?.classList.remove("open");m?.setAttribute("aria-hidden","true")}
 async function saveRetailProduct(){
@@ -3048,6 +3049,7 @@ async function loadRetailPos(){
  ]);
  if(productsResult.error)return toast(productsResult.error.message);
  retailProducts=productsResult.data||[];retailSales=salesResult.data||[];retailCashSession=cashResult.data?.[0]||null;
+ const scanStatus=document.getElementById("retailPosScanStatus");if(scanStatus)scanStatus.textContent=retailProducts.length?retailProducts.length+" productos activos cargados. Escanea un código de barra o SKU para agregarlo al carrito.":"No hay productos activos disponibles. Crea o activa productos en Productos e inventario.";
  const warning=document.getElementById("retailCashWarning");
  if(warning)warning.innerHTML=retailCashSession?'<div class="row between"><div><b>🟢 Caja abierta</b><div class="mut">Sesión #'+retailCashSession.id+' · lista para vender</div></div><button class="ghost" type="button" onclick="document.querySelector(\'.tab[data-tab=&quot;cash&quot;]\')?.click()">Ver caja</button></div>':'<div class="row between"><div><b>🔴 Caja cerrada</b><div class="mut">Abre una caja antes de registrar ventas o devoluciones.</div></div><button class="primary" type="button" onclick="document.querySelector(\'.tab[data-tab=&quot;cash&quot;]\')?.click()">Abrir caja</button></div>';
  const recent=document.getElementById("retailRecentSales");
@@ -3058,26 +3060,67 @@ async function loadRetailPos(){
  }).join("")||'<p class="mut">Aún no hay ventas retail.</p>';
  syncRetailAutoPrint();renderRetailPosCart();setTimeout(()=>document.getElementById("retailBarcodeInput")?.focus(),100)
 }
+function retailCodeKeys(value){
+ const raw=String(value||"").trim();if(!raw)return [];
+ const compact=raw.replace(/[\s-]+/g,""),upper=compact.toUpperCase(),keys=new Set([raw.toUpperCase(),upper]);
+ if(/^\d+$/.test(compact)){
+  const noLeading=compact.replace(/^0+(?=\d)/,"");keys.add(noLeading);
+  if(compact.length===12)keys.add("0"+compact);
+  if(compact.length===13&&compact.startsWith("0"))keys.add(compact.slice(1));
+ }
+ return [...keys].filter(Boolean)
+}
+function retailProductMatchesCode(product,code){
+ const wanted=new Set(retailCodeKeys(code));
+ return [product?.barcode,product?.sku].some(value=>retailCodeKeys(value).some(key=>wanted.has(key)))
+}
+async function refreshRetailPosProducts(){
+ if(!currentRestaurant)return [];
+ const {data,error}=await sb.from("retail_products").select("*").eq("restaurant_id",currentRestaurant).eq("active",true).order("name");
+ if(error){console.error("No se pudieron refrescar los productos POS",error);return retailProducts}
+ retailProducts=data||[];
+ const scanStatus=document.getElementById("retailPosScanStatus");if(scanStatus)scanStatus.textContent=retailProducts.length?retailProducts.length+" productos activos cargados. Escanea un código de barra o SKU para agregarlo al carrito.":"No hay productos activos disponibles. Crea o activa productos en Productos e inventario.";
+ return retailProducts
+}
 function addRetailProductToCart(p){
- const row=retailPosCart[p.id]||{product_id:p.id,quantity:0};const next=Number(row.quantity)+1;
- if(next>Number(p.current_stock||0))return toast("Stock insuficiente para "+p.name);
- row.quantity=next;retailPosCart[p.id]=row;renderRetailPosCart()
+ if(!p)return false;
+ const stock=Number(p.current_stock||0),row=retailPosCart[p.id]||{product_id:p.id,quantity:0},next=Number(row.quantity)+1;
+ if(stock<=0){
+  const msg="Producto encontrado, pero "+p.name+" está sin stock. Ajusta el stock antes de venderlo.";
+  toast(msg);const status=document.getElementById("retailPosScanStatus");if(status)status.textContent="⚠ "+msg;return false
+ }
+ if(next>stock){
+  const msg="Stock insuficiente para "+p.name+". Disponible: "+retailQty(stock);
+  toast(msg);const status=document.getElementById("retailPosScanStatus");if(status)status.textContent="⚠ "+msg;return false
+ }
+ row.quantity=next;retailPosCart[p.id]=row;renderRetailPosCart();
+ const status=document.getElementById("retailPosScanStatus");if(status)status.textContent="✅ "+p.name+" agregado al carrito · stock disponible: "+retailQty(stock);
+ return true
 }
-function retailAddCode(code,fromCamera=false){
+async function retailAddCode(code,fromCamera=false){
  code=String(code||"").trim();if(!code)return false;
- const p=retailProducts.find(x=>String(x.barcode||"")===code||String(x.sku||"")===code);
- if(!p){if(!fromCamera)toast("No encontramos ese código. Créalo en Productos Retail.");return false}
- addRetailProductToCart(p);return true
+ let p=retailProducts.find(x=>retailProductMatchesCode(x,code));
+ if(!p){
+  await refreshRetailPosProducts();
+  p=retailProducts.find(x=>retailProductMatchesCode(x,code))
+ }
+ if(!p){
+  const msg="Código "+code+" no registrado en este "+currentBusinessLabel().toLowerCase()+". Créalo en Productos e inventario.";
+  const status=document.getElementById("retailPosScanStatus");if(status)status.textContent="⚠ "+msg;
+  if(!fromCamera)toast(msg);
+  return false
+ }
+ return addRetailProductToCart(p)
 }
-function retailScanBarcode(){
+async function retailScanBarcode(){
  const input=document.getElementById("retailBarcodeInput"),code=String(input?.value||"").trim();if(!code)return;
- const ok=retailAddCode(code,false);if(input){if(ok)input.value="";else input.select();input.focus()}
+ const ok=await retailAddCode(code,false);if(input){if(ok)input.value="";else input.select();input.focus()}
 }
 function openRetailProductBarcodeCamera(){openRetailBarcodeCamera("product")}
 function applyScannedRetailProductCode(code){
  const input=document.getElementById("retailProductBarcode"),currentId=Number(document.getElementById("retailProductId")?.value)||null;
  if(!input)return false;
- const existing=retailProducts.find(p=>(String(p.barcode||"").trim()===code||String(p.sku||"").trim()===code)&&Number(p.id)!==Number(currentId));
+ const existing=retailProducts.find(p=>retailProductMatchesCode(p,code)&&Number(p.id)!==Number(currentId));
  if(existing){
   closeRetailBarcodeCamera();
   editRetailProduct(existing.id);
@@ -3123,8 +3166,8 @@ async function retailBarcodeCameraLoop(){
       applyScannedRetailProductCode(code);
       return
      }
-     const ok=retailAddCode(code,true);
-     if(status)status.innerHTML=ok?'✅ Agregado: <b>'+esc(code)+'</b>':'⚠ Código no registrado: <b>'+esc(code)+'</b>';
+     const ok=await retailAddCode(code,true);
+     if(status)status.innerHTML=ok?'✅ Agregado al carrito: <b>'+esc(code)+'</b>':'⚠ No se agregó: <b>'+esc(code)+'</b>. Revisa stock o que el código esté registrado.';
     }
    }
   }
@@ -4967,7 +5010,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.16</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.17</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
