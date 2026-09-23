@@ -2856,15 +2856,7 @@ function browserPrintKitchenOrder(order){
   let items=o.items||[];if(typeof items==="string"){try{items=JSON.parse(items)}catch(_){items=[]}}if(!Array.isArray(items))items=[];
   const e=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
   const itemRows=items.map(x=>'<div class="line"><b>'+e(Number(x.qty||1)+" × "+(x.name||"Producto"))+'</b></div>').join("");
-  const html='<!doctype html><html><head><meta charset="utf-8"><title>Comanda '+e(o.order_code||o.id)+'</title><style>@page{margin:3mm}body{font-family:Arial,sans-serif;width:72mm;margin:0 auto;color:#000;font-size:13px}h1{text-align:center;font-size:18px;margin:0 0 4px}.sep{border-top:1px dashed #000;margin:7px 0}.line{margin:6px 0}.big{font-size:17px;font-weight:800}@media print{button{display:none}}</style></head><body><h1>'+e(r.name)+'</h1><div class="big">#'+e(o.order_code||o.id)+'</div><div>'+e(new Date(o.created_at||Date.now()).toLocaleString("es-CL"))+'</div><div class="sep"></div><div><b>Cliente:</b> '+e(o.customer_name||"Sin nombre")+'</div>'+(o.table_reference?'<div><b>Mesa:</b> '+e(o.table_reference)+'</div>':'')+'<div class="sep"></div>'+itemRows+(o.notes?'<div class="sep"></div><b>OBS:</b> '+e(o.notes):'')+'<div class="sep"></div><b>Total: '+e(money(o.total||0))+'</b><script>setTimeout(()=>window.print(),180)<\/script><script id="restaurant-observability-v2509">
-document.addEventListener("click",e=>{
- const tab=e.target.closest?.(".tab[data-tab]");
- if(tab?.dataset?.tab)trackRestaurantEvent("module_view",tab.dataset.tab,{role:currentRole||null});
-});
-window.addEventListener("error",e=>trackRestaurantError("javascript","window_error",e.message||"Error JavaScript",false,{file:e.filename||null,line:e.lineno||null}));
-window.addEventListener("unhandledrejection",e=>trackRestaurantError("javascript","unhandled_rejection",String(e.reason?.message||e.reason||"Promesa rechazada"),false));
-</script>
-</body></html>';
+  const html='<!doctype html><html><head><meta charset="utf-8"><title>Comanda '+e(o.order_code||o.id)+'</title><style>@page{margin:3mm}body{font-family:Arial,sans-serif;width:72mm;margin:0 auto;color:#000;font-size:13px}h1{text-align:center;font-size:18px;margin:0 0 4px}.sep{border-top:1px dashed #000;margin:7px 0}.line{margin:6px 0}.big{font-size:17px;font-weight:800}@media print{button{display:none}}</style></head><body><h1>'+e(r.name)+'</h1><div class="big">#'+e(o.order_code||o.id)+'</div><div>'+e(new Date(o.created_at||Date.now()).toLocaleString("es-CL"))+'</div><div class="sep"></div><div><b>Cliente:</b> '+e(o.customer_name||"Sin nombre")+'</div>'+(o.table_reference?'<div><b>Mesa:</b> '+e(o.table_reference)+'</div>':'')+'<div class="sep"></div>'+itemRows+(o.notes?'<div class="sep"></div><b>OBS:</b> '+e(o.notes):'')+'<div class="sep"></div><b>Total: '+e(money(o.total||0))+'</b><script>setTimeout(()=>window.print(),180)<\/script></body></html>';
   const w=window.open("","_blank","width=420,height=720");if(!w)return false;w.document.open();w.document.write(html);w.document.close();return true;
  }catch(e){console.error("Impresión del navegador",e);return false}
 }
@@ -4478,5 +4470,13 @@ window.addEventListener("DOMContentLoaded",async()=>{
   }
  }catch(_){}
 });
+</script>
+<script id="restaurant-observability-v2509">
+document.addEventListener("click",e=>{
+ const tab=e.target.closest?.(".tab[data-tab]");
+ if(tab?.dataset?.tab)trackRestaurantEvent("module_view",tab.dataset.tab,{role:currentRole||null});
+});
+window.addEventListener("error",e=>trackRestaurantError("javascript","window_error",e.message||"Error JavaScript",false,{file:e.filename||null,line:e.lineno||null}));
+window.addEventListener("unhandledrejection",e=>trackRestaurantError("javascript","unhandled_rejection",String(e.reason?.message||e.reason||"Promesa rechazada"),false));
 </script>
 </body></html>
