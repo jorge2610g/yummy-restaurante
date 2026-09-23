@@ -66,3 +66,5 @@ for(const marker of ['plan_interest_selected','trial_intended_plan_id','create_m
 if(landing.includes('<div class="trial"><span class="tag">PRUEBA GRATIS</span>'))throw new Error('index.html: todavía existe tarjeta separada de prueba gratis');
 
 for(const marker of ['data-tab="retail_pos"','data-tab="retail_products"','data-tab="retail_suppliers"','data-tab="retail_purchases"','retail_save_product','retail_complete_sale','retail_receive_purchase','retail_adjust_stock','isRetailBusiness','business_type','create_my_trial_restaurant_v3'])if(!panel.includes(marker)&&!landing.includes(marker))throw new Error('falta infraestructura retail '+marker);
+
+for(const marker of ['retailBarcodeCameraModal','openRetailBarcodeCamera','BarcodeDetector','retailAutoPrint','printRetailSale','retailSaleModal','processRetailPartialReturn','retail_void_sale','retail_return_sale_items','refunded_amount','refund_status'])if(!panel.includes(marker))throw new Error('panel/index.html: falta fase 2 retail '+marker);
