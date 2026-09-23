@@ -3215,6 +3215,12 @@ function consumeAdminPreviewSessionHash(){
  history.replaceState(null,"",clean);
  return {access_token,refresh_token}
 }
+function showAdminPreviewFailure(message){
+ document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
+ const login=document.getElementById("login");if(!login)return;
+ login.classList.remove("hidden");
+ login.innerHTML='<div class="card"><h1>Vista administrativa</h1><p class="mut">'+esc(message||"No se pudo recibir la sesión administrativa.")+'</p><button class="primary full" type="button" onclick="returnFromAdminPreview()">Volver al administrador</button></div>'
+}
 async function bootAdminPreview(payload){
  if(adminPreviewInitialized)return;
  if(adminPreviewBootPromise)return adminPreviewBootPromise;
@@ -3228,9 +3234,7 @@ async function bootAdminPreview(payload){
   await enter(user);adminPreviewInitialized=adminPreviewMode;
  }catch(err){
   console.error("No se pudo iniciar la vista administrativa",err);
-  document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
-  const login=document.getElementById("login");if(login)login.classList.remove("hidden");
-  const msg=document.getElementById("loginMsg");if(msg)msg.textContent=(err.message||"No se pudo abrir la vista administrativa.")+" Vuelve al administrador e inténtalo nuevamente.";
+  showAdminPreviewFailure((err.message||"No se pudo abrir la vista administrativa.")+" Vuelve al administrador e inténtalo nuevamente.");
  }finally{adminPreviewBootPromise=null}})();
  return adminPreviewBootPromise;
 }
@@ -3244,7 +3248,60 @@ function returnFromAdminPreview(){
  try{if(window.opener&&!window.opener.closed){window.opener.focus();window.close();return}}catch(e){}
  window.location.href="https://admin.yummypro.online/"
 }
-async function restoreSession(){const preview=new URLSearchParams(location.search).has("admin_preview");try{if(preview){document.getElementById("login").classList.add("hidden");document.getElementById("loginMsg").textContent="Abriendo vista administrativa del negocio…";const handoff=consumeAdminPreviewSessionHash();if(handoff){await bootAdminPreview({restaurant_id:Number(new URLSearchParams(location.search).get("admin_preview")||0),tab:new URLSearchParams(location.search).get("tab")||"dashboard",access_token:handoff.access_token,refresh_token:handoff.refresh_token});return}notifyAdminPreviewReady();setTimeout(()=>{if(!adminPreviewInitialized&&!adminPreviewBootPromise)bootAdminPreview(null)},1800);setTimeout(()=>{if(!adminPreviewInitialized&&!adminPreviewBootPromise){document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");document.getElementById("login").classList.remove("hidden");document.getElementById("loginMsg").textContent="No se pudo completar la apertura administrativa. Vuelve al administrador e inténtalo nuevamente."}},15000);return}const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){await enter(data.session.user)}else{document.getElementById("login").classList.remove("hidden")}}catch(e){document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");document.getElementById("login").classList.remove("hidden");document.getElementById("loginMsg").textContent=e.message||"No se pudo validar la sesión."}finally{if(!preview)document.body.classList.remove("auth-loading")}}restoreSession();
+async function restoreSession(){
+ const preview=new URLSearchParams(location.search).has("admin_preview");
+ try{
+  if(preview){
+   document.getElementById("login").classList.add("hidden");
+   const msg=document.getElementById("loginMsg");if(msg)msg.textContent="Abriendo vista administrativa del negocio…";
+   const handoff=consumeAdminPreviewSessionHash();
+   if(handoff){
+    await bootAdminPreview({
+      restaurant_id:Number(new URLSearchParams(location.search).get("admin_preview")||0),
+      tab:new URLSearchParams(location.search).get("tab")||"dashboard",
+      access_token:handoff.access_token,
+      refresh_token:handoff.refresh_token
+    });
+    return
+   }
+
+   // Si el fragmento no llegó, esperar el puente postMessage del administrador.
+   // No intentar getUser() sin sesión porque Supabase responde "Auth session missing!".
+   notifyAdminPreviewReady();
+
+   // Si este origen ya tiene una sesión admin válida, puede reutilizarse.
+   setTimeout(async()=>{
+    if(adminPreviewInitialized||adminPreviewBootPromise)return;
+    try{
+      const {data:{session}}=await sb.auth.getSession();
+      if(session){
+        const {data:role}=await sb.rpc("current_account_role");
+        if(role==="admin")await bootAdminPreview(null)
+      }
+    }catch(_){}
+   },700);
+
+   setTimeout(()=>{
+    if(!adminPreviewInitialized&&!adminPreviewBootPromise){
+      showAdminPreviewFailure("No se recibió la sesión del administrador. Vuelve al administrador y abre nuevamente el panel del negocio.")
+    }
+   },15000);
+   return
+  }
+
+  const {data,error}=await sb.auth.getSession();
+  if(error)throw error;
+  if(data.session)await enter(data.session.user);
+  else document.getElementById("login").classList.remove("hidden")
+ }catch(e){
+  document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
+  document.getElementById("login").classList.remove("hidden");
+  document.getElementById("loginMsg").textContent=e.message||"No se pudo validar la sesión."
+ }finally{
+  if(!preview)document.body.classList.remove("auth-loading")
+ }
+}
+restoreSession();
 const RESTAURANT_SIDEBAR_STATE_KEY="yummy_restaurant_sidebar_collapsed";
 function applyRestaurantSidebarState(collapsed){
  const m=document.getElementById("sideMenu"),layout=document.getElementById("panelLayout"),app=document.getElementById("app"),btn=document.getElementById("restaurantSidebarCollapseBtn");if(!m)return;
@@ -5993,7 +6050,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.48</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.49</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
