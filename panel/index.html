@@ -2195,7 +2195,7 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b){const next=theme==="dark"?"claro":"oscuro",icon=theme==="dark"?"☀️":"🌙";b.innerHTML='<span class="header-action-icon" aria-hidden="true">'+icon+'</span><span class="action-label">Modo '+next+'</span>';b.setAttribute("aria-label","Activar modo "+next);b.title="Activar modo "+next}}
 function toggleAdminTheme(){applyAdminTheme(document.documentElement.dataset.theme==="light"?"dark":"light")}
 applyAdminTheme(localStorage.getItem("admin_theme")||"dark");setTimeout(bindRestaurantMpButtons,0);
-let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",veripagosSubscriptionConfigured=false,veripagosRestaurantConfigured=false,currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[];
+let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",veripagosSubscriptionConfigured=false,veripagosRestaurantConfigured=false,currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[],retailProducts=[],retailSuppliers=[],retailSales=[],retailPurchases=[],retailPosCart={},retailPurchaseCart=[],retailCashSession=null;
 const REST_TELEMETRY_KEY="yummy_restaurant_telemetry_session_v1";
 function restaurantTelemetrySession(){try{let v=localStorage.getItem(REST_TELEMETRY_KEY);if(!v){v=(crypto.randomUUID?.()||Date.now()+"-"+Math.random().toString(16).slice(2));localStorage.setItem(REST_TELEMETRY_KEY,v)}return v}catch(_){return "restaurant-"+Date.now()}}
 async function trackRestaurantEvent(eventName,module=null,metadata={},planId=null){try{await sb.rpc("log_app_event",{p_app_context:"restaurant",p_event_name:eventName,p_module:module,p_restaurant_id:currentRestaurant||null,p_plan_id:planId||null,p_session_id:restaurantTelemetrySession(),p_route:location.pathname+location.search,p_metadata:metadata||{}})}catch(_){}}
@@ -2329,12 +2329,13 @@ async function enter(user){
     if(membershipError)throw membershipError;
     membership=membership||[];
     if(!membership.length && user.user_metadata?.trial_restaurant_name){
-      const cr=await sb.rpc("create_my_trial_restaurant_v2",{
+      const cr=await sb.rpc("create_my_trial_restaurant_v3",{
         p_name:user.user_metadata.trial_restaurant_name,
         p_whatsapp:user.user_metadata.trial_whatsapp||"",
         p_address:user.user_metadata.trial_address||"",
         p_country_code:user.user_metadata.trial_country_code||"CL",
-        p_intended_plan_id:Number(user.user_metadata.trial_intended_plan_id)||null
+        p_intended_plan_id:Number(user.user_metadata.trial_intended_plan_id)||null,
+        p_business_type:user.user_metadata.trial_business_type||"restaurant"
       });
       if(cr.error)await trackRestaurantError("signup","trial_creation_failure",cr.error.message||"No se pudo activar la prueba",false);
       if(!cr.error){
@@ -2386,7 +2387,11 @@ async function enter(user){
     msg.textContent=e.message||"No se pudo cargar la información del restaurante.";
   }
 }
-const roleTabs={restaurant:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","promotions","reviews","table_qr","qr","plans","settings"],manager:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","staff","promotions","reviews","table_qr","qr","settings"],editor:["orders","kitchen","products","categories","inventory"],cashier:["orders","cash"],kitchen:["kitchen"],waiter:["pos"],courier:["orders"]};
+const roleTabs={restaurant:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","retail_pos","retail_products","retail_suppliers","retail_purchases","staff","promotions","reviews","table_qr","qr","plans","settings"],manager:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","retail_pos","retail_products","retail_suppliers","retail_purchases","staff","promotions","reviews","table_qr","qr","settings"],editor:["orders","kitchen","products","categories","inventory","retail_products"],cashier:["orders","cash","retail_pos"],kitchen:["kitchen"],waiter:["pos"],courier:["orders"]};
+const retailTabModule={retail_pos:"cash",retail_products:"products",retail_suppliers:"inventory",retail_purchases:"inventory"};
+const restaurantOnlyTabs=new Set(["orders","pos","kitchen","products","categories","inventory","promotions","reviews","table_qr","qr"]);
+function currentBusinessType(){return String(currentRestaurantConfig?.business_type||restaurants.find(x=>Number(x.id)===Number(currentRestaurant))?.business_type||"restaurant").toLowerCase()}
+function isRetailBusiness(){return ["supermarket","minimarket"].includes(currentBusinessType())}
 let subscriptionModuleAccess=null;let adminPreviewMode=false;let adminPreviewTab="dashboard";let adminPreviewBootPromise=null;let adminPreviewInitialized=false;
 function subscriptionIsUsable(r){if(!r)return false;const s=String(r.subscription_status||"").toLowerCase();const exp=r.subscription_expires_at?new Date(r.subscription_expires_at).getTime():null;return (s==="active"||s==="trial")&&(!exp||exp>=Date.now())}
 async function loadSubscriptionModuleAccess(){
@@ -2414,7 +2419,15 @@ function startSubscriptionAccessRealtime(){
    toast("Tus accesos de suscripción fueron actualizados");
   }).subscribe();
 }
-function effectiveTabs(){if(adminPreviewMode)return roleTabs.restaurant;const byRole=roleTabs[currentRole]||["dashboard"];if(currentRole!=="restaurant"&&currentRole!=="manager")return byRole;if(subscriptionModuleAccess===null)return byRole;const set=new Set(subscriptionModuleAccess);return byRole.filter(x=>x==="plans"||set.has(x))}
+function effectiveTabs(){
+ const raw=adminPreviewMode?roleTabs.restaurant:(roleTabs[currentRole]||["dashboard"]),retail=isRetailBusiness();
+ const byBusiness=raw.filter(x=>retail?!restaurantOnlyTabs.has(x):!x.startsWith("retail_"));
+ if(adminPreviewMode)return byBusiness;
+ if(currentRole!=="restaurant"&&currentRole!=="manager")return byBusiness;
+ if(subscriptionModuleAccess===null)return byBusiness;
+ const set=new Set(subscriptionModuleAccess);
+ return byBusiness.filter(x=>x==="plans"||set.has(retailTabModule[x]||x));
+}
 function syncSubscriptionBannerForActiveTab(){
  const banner=document.getElementById("subscriptionBanner");if(!banner)return;
  if(!subscriptionBannerShouldShow()){
@@ -2715,12 +2728,12 @@ function renderSubscriptionBanner(r){
 }
 function syncRestaurantHeader(r){
  if(!r)return;
- const name=String(r.name||("Restaurante #"+currentRestaurant)).trim();
- const slug=String(r.slug||currentRestaurant);
- const menuLink=document.getElementById("viewMenuLink");
- if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(slug);menuLink.style.removeProperty("display")}
+ const name=String(r.name||("Negocio #"+currentRestaurant)).trim(),type=String(r.business_type||"restaurant"),retail=["supermarket","minimarket"].includes(type);
+ const slug=String(r.slug||currentRestaurant),menuLink=document.getElementById("viewMenuLink");
+ if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(slug);menuLink.style.setProperty("display",retail?"none":"",retail?"important":"")}
  const who=document.getElementById("who"),sessionEmail=String(who?.dataset.email||who?.textContent||"").trim();if(who&&!who.dataset.email)who.dataset.email=sessionEmail;
- if(adminPreviewMode){who.textContent="Vista administrador · "+name;document.getElementById("panelMainTitle").textContent="Panel de "+name}else{document.getElementById("panelMainTitle").textContent="Panel Restaurante";who.textContent=name+(sessionEmail?" · "+sessionEmail:"")}
+ const label=type==="supermarket"?"Supermercado":type==="minimarket"?"Minimarket":"Restaurante";
+ if(adminPreviewMode){who.textContent="Vista administrador · "+name;document.getElementById("panelMainTitle").textContent="Panel de "+name}else{document.getElementById("panelMainTitle").textContent="Panel "+label;who.textContent=name+(sessionEmail?" · "+sessionEmail:"")}
 }
 async function loadRestaurants(){
   const {data,error}=await sb.from("restaurants").select("*").eq("id",currentRestaurant).limit(1);
