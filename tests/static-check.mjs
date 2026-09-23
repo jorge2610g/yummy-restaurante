@@ -53,7 +53,7 @@ for(const marker of ['pwaNotificationBtn','activateYummyProNotifications','syncR
 
 for(const marker of ['apple-touch-icon.png','icon-192.png','icon-512.png'])if(!panel.includes(marker)&&marker==='apple-touch-icon.png')throw new Error('panel/index.html: falta icono iOS '+marker);
 
-for(const marker of ['restaurantPwaInstallBtn','install=pwa','v2.0.10'])if(!landing.includes(marker))throw new Error('index.html: falta entrada hacia PWA del panel '+marker);
+for(const marker of ['restaurantPwaInstallBtn','install=pwa','v2.0.11'])if(!landing.includes(marker))throw new Error('index.html: falta entrada hacia PWA del panel '+marker);
 
 
 if(landing.includes('rel="manifest" href="/restaurant.webmanifest'))throw new Error('index.html: la landing no debe competir como PWA independiente');
@@ -62,5 +62,7 @@ if(!panel.includes('params.get("install")==="pwa"'))throw new Error('panel/index
 
 for(const marker of ['restaurantIssueButton','restaurantIssueDialog','submitRestaurantIssueReport','trackRestaurantEvent','trackRestaurantError','submit_issue_report'])if(!panel.includes(marker))throw new Error('panel/index.html: falta observabilidad/reporte '+marker);
 
-for(const marker of ['plan_interest_selected','trial_intended_plan_id','create_my_trial_restaurant_v2','Prueba 30 días gratis','landingHasRestaurant','syncLandingSession'])if(!landing.includes(marker))throw new Error('index.html: falta nuevo flujo de prueba '+marker);
+for(const marker of ['plan_interest_selected','trial_intended_plan_id','create_my_trial_restaurant_v3','Prueba 30 días gratis','landingHasRestaurant','syncLandingSession'])if(!landing.includes(marker))throw new Error('index.html: falta nuevo flujo de prueba '+marker);
 if(landing.includes('<div class="trial"><span class="tag">PRUEBA GRATIS</span>'))throw new Error('index.html: todavía existe tarjeta separada de prueba gratis');
+
+for(const marker of ['data-tab="retail_pos"','data-tab="retail_products"','data-tab="retail_suppliers"','data-tab="retail_purchases"','retail_save_product','retail_complete_sale','retail_receive_purchase','retail_adjust_stock','isRetailBusiness','business_type','create_my_trial_restaurant_v3'])if(!panel.includes(marker)&&!landing.includes(marker))throw new Error('falta infraestructura retail '+marker);
