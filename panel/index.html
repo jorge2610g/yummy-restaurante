@@ -2227,7 +2227,7 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b){const next=theme==="dark"?"claro":"oscuro",icon=theme==="dark"?"☀️":"🌙";b.innerHTML='<span class="header-action-icon" aria-hidden="true">'+icon+'</span><span class="action-label">Modo '+next+'</span>';b.setAttribute("aria-label","Activar modo "+next);b.title="Activar modo "+next}}
 function toggleAdminTheme(){applyAdminTheme(document.documentElement.dataset.theme==="light"?"dark":"light")}
 applyAdminTheme(localStorage.getItem("admin_theme")||"dark");setTimeout(bindRestaurantMpButtons,0);
-let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",veripagosSubscriptionConfigured=false,veripagosRestaurantConfigured=false,currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[],retailProducts=[],retailSuppliers=[],retailSales=[],retailPurchases=[],retailPosCart={},retailPurchaseCart=[],retailCashSession=null,retailScannerStream=null,retailScannerDetector=null,retailScannerActive=false,retailScannerLastCode="",retailScannerLastAt=0,retailReturnContext=null;
+let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",veripagosSubscriptionConfigured=false,veripagosRestaurantConfigured=false,currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[],retailProducts=[],retailSuppliers=[],retailSales=[],retailPurchases=[],retailPosCart={},retailPurchaseCart=[],retailCashSession=null,retailOnlineOrders=[],retailOrderFilter="active",retailScannerStream=null,retailScannerDetector=null,retailScannerActive=false,retailScannerLastCode="",retailScannerLastAt=0,retailReturnContext=null;
 const REST_TELEMETRY_KEY="yummy_restaurant_telemetry_session_v1";
 function restaurantTelemetrySession(){try{let v=localStorage.getItem(REST_TELEMETRY_KEY);if(!v){v=(crypto.randomUUID?.()||Date.now()+"-"+Math.random().toString(16).slice(2));localStorage.setItem(REST_TELEMETRY_KEY,v)}return v}catch(_){return "restaurant-"+Date.now()}}
 async function trackRestaurantEvent(eventName,module=null,metadata={},planId=null){try{await sb.rpc("log_app_event",{p_app_context:"restaurant",p_event_name:eventName,p_module:module,p_restaurant_id:currentRestaurant||null,p_plan_id:planId||null,p_session_id:restaurantTelemetrySession(),p_route:location.pathname+location.search,p_metadata:metadata||{}})}catch(_){}}
@@ -2878,6 +2878,67 @@ async function receiveRetailPurchase(){
  retailPurchaseCart=[];document.getElementById("retailPurchaseDocument").value="";document.getElementById("retailPurchaseNotes").value="";await loadRetailPurchases();toast("Mercadería ingresada · "+money(data?.total||0))
 }
 
+
+
+function retailOnlineStatusLabel(status){
+ return ({pending_payment:"Esperando pago",received:"Recibido",preparing:"Preparando",ready:"Listo",delivered:"Entregado",cancelled:"Cancelado"}[String(status||"")]||String(status||""))
+}
+function setRetailOrderFilter(filter){
+ retailOrderFilter=filter||"active";
+ document.querySelectorAll(".retail-order-filter").forEach(b=>b.classList.toggle("active",b.dataset.retailOrderFilter===retailOrderFilter));
+ renderRetailOnlineOrders();
+}
+async function loadRetailOnlineOrders(){
+ if(!currentRestaurant)return;
+ const {data,error}=await sb.from("retail_online_orders").select("*").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(150);
+ if(error){console.error(error);return toast("No se pudieron cargar los pedidos online")}
+ const orders=data||[],ids=orders.map(x=>x.id);let items=[];
+ if(ids.length){const q=await sb.from("retail_online_order_items").select("*").in("order_id",ids).order("id");if(!q.error)items=q.data||[]}
+ retailOnlineOrders=orders.map(o=>({...o,items:items.filter(i=>Number(i.order_id)===Number(o.id))}));
+ renderRetailOnlineOrders();
+}
+function renderRetailOnlineOrders(){
+ const el=document.getElementById("retailOnlineOrderList");if(!el)return;
+ const active=retailOnlineOrders.filter(o=>["received","preparing","ready"].includes(o.status)),pending=retailOnlineOrders.filter(o=>o.status==="pending_payment"),ready=retailOnlineOrders.filter(o=>o.status==="ready"),sales=retailOnlineOrders.filter(o=>!["cancelled","pending_payment"].includes(o.status)).reduce((a,o)=>a+Number(o.total||0),0);
+ const set=(id,v)=>{const x=document.getElementById(id);if(x)x.textContent=v};set("retailOnlineActiveCount",active.length);set("retailOnlinePendingCount",pending.length);set("retailOnlineReadyCount",ready.length);set("retailOnlineSalesTotal",money(sales));
+ let rows=retailOnlineOrders;
+ if(retailOrderFilter==="active")rows=active;
+ else if(retailOrderFilter!=="all")rows=rows.filter(o=>o.status===retailOrderFilter);
+ el.innerHTML=rows.map(o=>{
+   const payment=String(o.payment_status||"pending"),method=String(o.payment_method||""),approved=payment==="approved",items=o.items||[];
+   const buttons=[];
+   if(o.status==="received")buttons.push('<button class="primary" type="button" onclick="setRetailOnlineOrderStatus('+o.id+',\'preparing\')">Preparar</button>');
+   if(o.status==="preparing")buttons.push('<button class="primary" type="button" onclick="setRetailOnlineOrderStatus('+o.id+',\'ready\')">Marcar listo</button>');
+   if(o.status==="ready")buttons.push('<button class="primary" type="button" onclick="setRetailOnlineOrderStatus('+o.id+',\'delivered\')">Entregado</button>');
+   if(!["delivered","cancelled"].includes(o.status))buttons.push('<button class="danger" type="button" onclick="cancelRetailOnlineOrder('+o.id+')">'+(approved&&method==="Mercado Pago"?"Devolver pago y cancelar":"Cancelar")+'</button>');
+   return '<article class="item"><div class="row between" style="align-items:flex-start;gap:14px"><div style="min-width:0"><div class="row" style="gap:7px;flex-wrap:wrap"><b>'+esc(o.order_code||("#"+o.id))+'</b><span class="pill">'+esc(retailOnlineStatusLabel(o.status))+'</span><span class="pill">'+esc(method||"Sin método")+' · '+esc(payment)+'</span></div><div class="mut" style="margin-top:5px">'+new Date(o.created_at).toLocaleString(currentRestaurantConfig?.locale||"es-CL")+' · '+esc(o.customer_name||"Cliente")+(o.customer_phone?" · "+esc(o.customer_phone):"")+'</div><div class="mut">'+esc(o.order_type||"Retiro")+(o.delivery_address?" · "+esc(o.delivery_address):"")+'</div><div style="margin-top:9px">'+items.map(i=>'<div>'+retailQty(i.quantity)+' × '+esc(i.name_snapshot)+' · '+money(i.line_total)+'</div>').join("")+'</div>'+(o.notes?'<div class="mut" style="margin-top:7px">Nota: '+esc(o.notes)+'</div>':'')+'</div><div style="text-align:right;min-width:150px"><strong style="font-size:18px">'+money(o.total)+'</strong><div class="actions" style="margin-top:10px;justify-content:flex-end;flex-wrap:wrap">'+buttons.join("")+'</div></div></div></article>'
+ }).join("")||'<p class="mut">No hay pedidos en esta vista.</p>';
+}
+async function setRetailOnlineOrderStatus(id,status){
+ const o=retailOnlineOrders.find(x=>Number(x.id)===Number(id));if(!o)return;
+ const {error}=await sb.rpc("retail_update_online_order_status",{p_restaurant_id:currentRestaurant,p_order_id:Number(id),p_status:status});
+ if(error)return toast(error.message);
+ await trackRestaurantEvent("retail_online_status_changed","retail_orders",{order_id:Number(id),status});
+ await loadRetailOnlineOrders();toast("Pedido "+retailOnlineStatusLabel(status))
+}
+async function cancelRetailOnlineOrder(id){
+ const o=retailOnlineOrders.find(x=>Number(x.id)===Number(id));if(!o)return;
+ if(!confirm("¿Cancelar "+(o.order_code||("pedido #"+id))+"? El stock reservado volverá al inventario."))return;
+ if(o.payment_status==="approved"){
+   if(String(o.payment_method||"").toLowerCase()==="mercado pago"){
+     try{
+       const {data:{session}}=await sb.auth.getSession();if(!session)throw new Error("Tu sesión venció");
+       const resp=await fetch(SB_URL+"/functions/v1/refund-retail-payment",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify({order_id:Number(id)})});
+       const data=await resp.json();if(!resp.ok)throw new Error(data?.error||"No se pudo devolver el pago");
+       await trackRestaurantEvent("retail_online_refunded","retail_orders",{order_id:Number(id)});await loadRetailOnlineOrders();toast("Pago devuelto y pedido cancelado");return
+     }catch(e){return toast(e.message||"No se pudo devolver el pago")}
+   }
+   return toast("Este pedido tiene un pago aprobado. Para "+String(o.payment_method||"este método")+" registra primero el reembolso con el proveedor y luego gestiónalo desde soporte.")
+ }
+ const {error}=await sb.rpc("retail_update_online_order_status",{p_restaurant_id:currentRestaurant,p_order_id:Number(id),p_status:"cancelled"});
+ if(error)return toast(error.message);
+ await trackRestaurantEvent("retail_online_cancelled","retail_orders",{order_id:Number(id)});await loadRetailOnlineOrders();toast("Pedido cancelado y stock liberado")
+}
 
 function retailAutoPrintKey(){return "yummy_retail_auto_print_"+String(currentRestaurant||"0")}
 function syncRetailAutoPrint(){
