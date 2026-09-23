@@ -1852,7 +1852,7 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
       <div class="span7">
         <label>Código de barra o SKU</label>
         <div class="row" style="flex-wrap:wrap"><input id="retailBarcodeInput" inputmode="numeric" autocomplete="off" placeholder="Escanea o escribe el código" onkeydown="if(event.key==='Enter'){event.preventDefault();retailScanBarcode()}"><button class="primary" type="button" onclick="retailScanBarcode()">Agregar</button><button class="ghost" type="button" onclick="openRetailBarcodeCamera()">📷 Cámara</button></div><div id="retailPosScanStatus" class="mut" style="margin-top:8px">Cargando productos disponibles…</div>
-        <div class="row" style="margin-top:10px;flex-wrap:wrap"><label style="margin:0;display:flex;align-items:center;gap:8px"><input id="retailAutoPrint" type="checkbox" style="width:auto" onchange="saveRetailAutoPrint()"> Imprimir ticket automáticamente al cobrar</label></div>
+        <div class="item" style="margin-top:10px"><b>🧾 Ticket automático activado</b><div class="mut">Al completar cada venta se abrirá automáticamente el ticket listo para imprimir. También podrás reimprimirlo desde Ventas recientes.</div></div>
         <div id="retailPosCart" class="list" style="margin-top:14px"></div>
       </div>
       <div class="span5">
@@ -3033,14 +3033,8 @@ async function cancelRetailOnlineOrder(id){
 }
 
 function retailAutoPrintKey(){return "yummy_retail_auto_print_"+String(currentRestaurant||"0")}
-function syncRetailAutoPrint(){
- const el=document.getElementById("retailAutoPrint");if(!el)return;
- try{el.checked=localStorage.getItem(retailAutoPrintKey())==="1"}catch(_){el.checked=false}
-}
-function saveRetailAutoPrint(){
- const el=document.getElementById("retailAutoPrint");
- try{localStorage.setItem(retailAutoPrintKey(),el?.checked?"1":"0")}catch(_){}
-}
+function syncRetailAutoPrint(){try{localStorage.setItem(retailAutoPrintKey(),"1")}catch(_){}}
+function saveRetailAutoPrint(){try{localStorage.setItem(retailAutoPrintKey(),"1")}catch(_){}}
 async function loadRetailPos(){
  if(!currentRestaurant)return;
  const [productsResult,salesResult,cashResult]=await Promise.all([
@@ -3231,7 +3225,7 @@ async function printRetailSale(id,automatic=false){
   const data=await loadRetailSaleReceiptData(id),sale=data.sale,items=data.items,r=currentRestaurantConfig||{},date=new Date(sale.created_at).toLocaleString(r.locale||"es-CL"),refunded=Number(sale.refunded_amount||0);
   const rows=items.map(x=>'<tr><td>'+esc(x.name_snapshot)+'</td><td style="text-align:center">'+retailQty(x.quantity)+'</td><td style="text-align:right">'+money(x.line_total)+'</td></tr>').join("");
   const refundLines=(data.returns||[]).map(x=>'<div>Devolución '+new Date(x.created_at).toLocaleString(r.locale||"es-CL")+' · -'+money(x.total)+'</div>').join("");
-  const html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(sale.sale_code||"Ticket")+'</title><style>@page{size:80mm auto;margin:4mm}body{font-family:ui-monospace,monospace;width:72mm;margin:0 auto;color:#000;font-size:12px}h1{font-size:17px;text-align:center;margin:0}.center{text-align:center}.mut{color:#444}.line{border-top:1px dashed #000;margin:8px 0}table{width:100%;border-collapse:collapse}td{padding:3px 0;vertical-align:top}.tot{font-size:15px;font-weight:700}.foot{text-align:center;margin-top:10px}</style></head><body><h1>'+esc(r.name||"YummyPro")+'</h1><div class="center mut">'+esc(r.address||"")+'</div><div class="center mut">'+esc(r.whatsapp||"")+'</div><div class="line"></div><div><b>'+esc(sale.sale_code||("#"+sale.id))+'</b></div><div>'+esc(date)+'</div><div>Pago: '+esc(sale.payment_method||"")+'</div>'+(sale.customer_name?'<div>Cliente: '+esc(sale.customer_name)+'</div>':'')+'<div class="line"></div><table>'+rows+'</table><div class="line"></div><table><tr><td>Subtotal</td><td style="text-align:right">'+money(sale.subtotal)+'</td></tr>'+(Number(sale.discount||0)>0?'<tr><td>Descuento</td><td style="text-align:right">-'+money(sale.discount)+'</td></tr>':'')+'<tr class="tot"><td>Total</td><td style="text-align:right">'+money(sale.total)+'</td></tr>'+(Number(sale.amount_received||0)>0?'<tr><td>Recibido</td><td style="text-align:right">'+money(sale.amount_received)+'</td></tr>':'')+(Number(sale.change_amount||0)>0?'<tr><td>Cambio</td><td style="text-align:right">'+money(sale.change_amount)+'</td></tr>':'')+(refunded>0?'<tr><td>Devuelto</td><td style="text-align:right">-'+money(refunded)+'</td></tr>':'')+'</table>'+(refundLines?'<div class="line"></div><div>'+refundLines+'</div>':'')+'<div class="line"></div><div class="foot">Gracias por tu compra</div><div class="foot mut">YummyPro Retail</div></body></html>';
+  const html='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(sale.sale_code||"Ticket")+'</title><style>@page{size:80mm auto;margin:4mm}body{font-family:ui-monospace,monospace;width:72mm;margin:0 auto;color:#000;font-size:12px}h1{font-size:17px;text-align:center;margin:0}.center{text-align:center}.mut{color:#444}.line{border-top:1px dashed #000;margin:8px 0}table{width:100%;border-collapse:collapse}td{padding:3px 0;vertical-align:top}.tot{font-size:15px;font-weight:700}.foot{text-align:center;margin-top:10px}</style></head><body><h1>'+esc(r.name||"YummyPro")+'</h1><div class="center"><b>TICKET DE VENTA</b></div><div class="center mut">'+esc(r.address||"")+'</div><div class="center mut">'+esc(r.whatsapp||"")+'</div><div class="line"></div><div><b>'+esc(sale.sale_code||("#"+sale.id))+'</b></div><div>'+esc(date)+'</div><div>Pago: '+esc(sale.payment_method||"")+'</div>'+(sale.customer_name?'<div>Cliente: '+esc(sale.customer_name)+'</div>':'')+'<div class="line"></div><table>'+rows+'</table><div class="line"></div><table><tr><td>Subtotal</td><td style="text-align:right">'+money(sale.subtotal)+'</td></tr>'+(Number(sale.discount||0)>0?'<tr><td>Descuento</td><td style="text-align:right">-'+money(sale.discount)+'</td></tr>':'')+'<tr class="tot"><td>Total</td><td style="text-align:right">'+money(sale.total)+'</td></tr>'+(Number(sale.amount_received||0)>0?'<tr><td>Recibido</td><td style="text-align:right">'+money(sale.amount_received)+'</td></tr>':'')+(Number(sale.change_amount||0)>0?'<tr><td>Cambio</td><td style="text-align:right">'+money(sale.change_amount)+'</td></tr>':'')+(refunded>0?'<tr><td>Devuelto</td><td style="text-align:right">-'+money(refunded)+'</td></tr>':'')+'</table>'+(refundLines?'<div class="line"></div><div>'+refundLines+'</div>':'')+'<div class="line"></div><div class="foot">Gracias por tu compra</div><div class="foot mut">YummyPro Retail</div></body></html>';
   const frame=document.createElement("iframe");frame.setAttribute("aria-hidden","true");frame.style.cssText="position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none";document.body.appendChild(frame);
   frame.onload=()=>setTimeout(()=>{try{frame.contentWindow?.focus();frame.contentWindow?.print()}catch(e){if(!automatic)toast("No se pudo abrir la impresión")}setTimeout(()=>frame.remove(),2500)},120);
   frame.srcdoc=html;
@@ -3286,12 +3280,13 @@ async function completeRetailSale(){
   const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error("El cobro está tardando demasiado. Verifica tu conexión e intenta nuevamente.")),18000));
   const {data,error}=await Promise.race([rpc,timeout]);
   if(error)throw error;
-  const saleId=data?.sale_id,shouldPrint=document.getElementById("retailAutoPrint")?.checked===true;
+  const saleId=data?.sale_id;
+  if(saleId)printRetailSale(saleId,true);
   retailPosCart={};document.getElementById("retailPosDiscount").value=0;document.getElementById("retailPosReceived").value="";document.getElementById("retailPosCustomer").value="";
   await loadRetailPos();
   trackRestaurantEvent("retail_sale_completed","retail_pos",{sale_id:saleId,total:data?.total});
-  const success="Venta "+(data?.sale_code||"")+" completada · "+money(data?.total||0)+(Number(data?.change||0)>0?" · Cambio "+money(data.change):"");
-  if(status)status.textContent="✅ "+success;toast(success);if(shouldPrint&&saleId)printRetailSale(saleId,true)
+  const success="Venta "+(data?.sale_code||"")+" completada · "+money(data?.total||0)+(Number(data?.change||0)>0?" · Cambio "+money(data.change):"")+" · ticket generado";
+  if(status)status.textContent="✅ "+success;toast(success)
  }catch(e){
   const msg=e?.message||"No se pudo completar la venta";
   trackRestaurantError("retail","retail_sale_failure",msg,false);
@@ -5044,7 +5039,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.18</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.19</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
