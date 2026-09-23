@@ -2762,7 +2762,7 @@ function syncRestaurantHeader(r){
  if(!r)return;
  const name=String(r.name||("Negocio #"+currentRestaurant)).trim(),type=String(r.business_type||"restaurant"),retail=["supermarket","minimarket"].includes(type);
  const slug=String(r.slug||currentRestaurant),menuLink=document.getElementById("viewMenuLink");
- if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(slug);menuLink.style.setProperty("display",retail?"none":"",retail?"important":"")}
+ if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(slug);menuLink.title=retail?"Ver tienda online":"Ver menú";menuLink.style.removeProperty("display")}
  const who=document.getElementById("who"),sessionEmail=String(who?.dataset.email||who?.textContent||"").trim();if(who&&!who.dataset.email)who.dataset.email=sessionEmail;
  const label=type==="supermarket"?"Supermercado":type==="minimarket"?"Minimarket":"Restaurante";
  if(adminPreviewMode){who.textContent="Vista administrador · "+name;document.getElementById("panelMainTitle").textContent="Panel de "+name}else{document.getElementById("panelMainTitle").textContent="Panel "+label;who.textContent=name+(sessionEmail?" · "+sessionEmail:"")}
@@ -4793,7 +4793,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.11</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.12</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
