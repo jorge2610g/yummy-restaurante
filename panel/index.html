@@ -3525,6 +3525,18 @@ function setRetailAutoPrint(v){
  toast(v?"Ticket automático activado":"Ticket automático desactivado")
 }
 function saveRetailAutoPrint(v){setRetailAutoPrint(!!v)}
+async function autoOpenRetailPosScanner(){
+ const section=document.getElementById("retail_pos"),input=document.getElementById("retailBarcodeInput"),cameraModal=document.getElementById("retailBarcodeCameraModal");
+ if(!section?.classList.contains("active")||!input)return;
+ if(cameraModal?.classList.contains("open")||retailScannerActive||retailScannerCheckoutOpen)return;
+ input.blur();
+ const opened=await openRetailBarcodeCamera("pos");
+ if(opened===false&&section.classList.contains("active")){
+  closeRetailBarcodeCamera(false);
+  setTimeout(()=>{input.focus();input.select()},100);
+  toast("No se pudo usar la cámara. Puedes escribir o escanear el código manualmente.")
+ }
+}
 async function loadRetailPos(){
  if(!currentRestaurant)return;
  const [productsResult,salesResult,cashResult]=await Promise.all([
@@ -3543,7 +3555,7 @@ async function loadRetailPos(){
   const stateClass=x.refund_status==="full"||x.status==="voided"?"status-inactive":x.refund_status==="partial"?"pill":"status-active";
   return '<div class="item"><div class="row between"><div><div class="row" style="gap:7px;flex-wrap:wrap"><b>'+esc(x.sale_code||("#"+x.id))+'</b><span class="'+stateClass+'">'+esc(state)+'</span></div><div class="mut">'+new Date(x.created_at).toLocaleString(currentRestaurantConfig?.locale||"es-CL")+' · '+esc(x.payment_method)+(x.customer_name?" · "+esc(x.customer_name):"")+'</div>'+(refunded>0?'<div class="mut">Venta '+money(x.total)+' · devuelto '+money(refunded)+' · neto '+money(net)+'</div>':'')+'</div><div style="text-align:right"><strong>'+money(net)+'</strong><div class="actions" style="margin-top:7px"><button class="ghost" type="button" onclick="printRetailSale('+x.id+')">🧾 Ticket</button><button class="ghost" type="button" onclick="openRetailSaleDetail('+x.id+')">Ver / devolver</button></div></div></div></div>'
  }).join("")||'<p class="mut">Aún no hay ventas retail.</p>';
- syncRetailAutoPrint();renderRetailPosCart();updateRetailCheckoutState();setTimeout(()=>document.getElementById("retailBarcodeInput")?.focus(),100)
+ syncRetailAutoPrint();renderRetailPosCart();updateRetailCheckoutState();document.getElementById("retailBarcodeInput")?.blur();setTimeout(()=>autoOpenRetailPosScanner(),120)
 }
 function retailCodeKeys(value){
  const raw=String(value||"").trim();if(!raw)return [];
@@ -5758,7 +5770,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.44</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.45</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
