@@ -1868,8 +1868,8 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
 </section>
 
 <div id="retailBarcodeCameraModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closeRetailBarcodeCamera()"></div><div class="card product-modal-card">
-  <div class="row between"><div><span class="eyebrow">ESCÁNER</span><h2>Leer código de barra</h2></div><button class="ghost modal-close" type="button" onclick="closeRetailBarcodeCamera()">✕</button></div>
-  <p class="mut">Apunta la cámara trasera al código. Puedes escanear varios productos sin cerrar esta ventana.</p>
+  <div class="row between"><div><span class="eyebrow">ESCÁNER</span><h2 id="retailBarcodeCameraTitle">Leer código de barra</h2></div><button class="ghost modal-close" type="button" onclick="closeRetailBarcodeCamera()">✕</button></div>
+  <p id="retailBarcodeCameraHelp" class="mut">Apunta la cámara trasera al código. Puedes escanear varios productos sin cerrar esta ventana.</p>
   <div style="position:relative;background:#000;border-radius:14px;overflow:hidden;min-height:260px"><video id="retailBarcodeVideo" autoplay playsinline muted style="width:100%;height:100%;min-height:260px;object-fit:cover"></video><div style="position:absolute;left:10%;right:10%;top:42%;height:2px;background:#ffb000;box-shadow:0 0 12px #ffb000"></div></div>
   <div id="retailBarcodeCameraStatus" class="item" style="margin-top:12px">Preparando cámara…</div>
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="closeRetailBarcodeCamera()">Cerrar</button></div>
@@ -1894,7 +1894,7 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
 <div id="retailProductModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closeRetailProductModal()"></div><div class="card product-modal-card">
   <div class="row between"><div><span class="eyebrow">PRODUCTO RETAIL</span><h2 id="retailProductModalTitle">Nuevo producto</h2></div><button class="ghost modal-close" type="button" onclick="closeRetailProductModal()">✕</button></div>
   <input id="retailProductId" type="hidden">
-  <div class="two"><div><label>Código de barra</label><input id="retailProductBarcode" inputmode="numeric" placeholder="Ej. 7801234567890"></div><div><label>SKU</label><input id="retailProductSku" placeholder="Código interno"></div></div>
+  <div class="two"><div><label>Código de barra</label><div class="row" style="gap:8px;align-items:stretch;flex-wrap:nowrap"><input id="retailProductBarcode" inputmode="numeric" autocomplete="off" placeholder="Ej. 7801234567890" style="min-width:0;flex:1"><button class="ghost" type="button" onclick="openRetailProductBarcodeCamera()" aria-label="Escanear código de barra con la cámara" title="Escanear código de barra con la cámara" style="white-space:nowrap">📷 Escanear</button></div><small class="mut">Puedes escribir el código o leerlo con la cámara del teléfono.</small></div><div><label>SKU</label><input id="retailProductSku" placeholder="Código interno"><small class="mut">El SKU es el código interno opcional del negocio.</small></div></div>
   <label>Nombre</label><input id="retailProductName" placeholder="Ej. Coca-Cola 2 L">
   <div class="two"><div><label>Marca</label><input id="retailProductBrand"></div><div><label>Categoría</label><input id="retailProductCategory" placeholder="Bebidas"></div></div>
   <div class="two"><div><label>Costo</label><input id="retailProductCost" type="number" min="0" step="0.01" value="0"></div><div><label>Precio de venta</label><input id="retailProductPrice" type="number" min="0" step="0.01" value="0"></div></div>
@@ -2227,7 +2227,7 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b){const next=theme==="dark"?"claro":"oscuro",icon=theme==="dark"?"☀️":"🌙";b.innerHTML='<span class="header-action-icon" aria-hidden="true">'+icon+'</span><span class="action-label">Modo '+next+'</span>';b.setAttribute("aria-label","Activar modo "+next);b.title="Activar modo "+next}}
 function toggleAdminTheme(){applyAdminTheme(document.documentElement.dataset.theme==="light"?"dark":"light")}
 applyAdminTheme(localStorage.getItem("admin_theme")||"dark");setTimeout(bindRestaurantMpButtons,0);
-let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",veripagosSubscriptionConfigured=false,veripagosRestaurantConfigured=false,currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[],retailProducts=[],retailSuppliers=[],retailSales=[],retailPurchases=[],retailPosCart={},retailPurchaseCart=[],retailCashSession=null,retailOnlineOrders=[],retailOrderFilter="active",retailOnlineOrdersChannel=null,retailOnlineOrdersChannelRestaurant=null,retailScannerStream=null,retailScannerDetector=null,retailScannerActive=false,retailScannerLastCode="",retailScannerLastAt=0,retailReturnContext=null;
+let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",veripagosSubscriptionConfigured=false,veripagosRestaurantConfigured=false,currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[],retailProducts=[],retailSuppliers=[],retailSales=[],retailPurchases=[],retailPosCart={},retailPurchaseCart=[],retailCashSession=null,retailOnlineOrders=[],retailOrderFilter="active",retailOnlineOrdersChannel=null,retailOnlineOrdersChannelRestaurant=null,retailScannerStream=null,retailScannerDetector=null,retailScannerActive=false,retailScannerLastCode="",retailScannerLastAt=0,retailScannerMode="pos",retailReturnContext=null;
 const REST_TELEMETRY_KEY="yummy_restaurant_telemetry_session_v1";
 function restaurantTelemetrySession(){try{let v=localStorage.getItem(REST_TELEMETRY_KEY);if(!v){v=(crypto.randomUUID?.()||Date.now()+"-"+Math.random().toString(16).slice(2));localStorage.setItem(REST_TELEMETRY_KEY,v)}return v}catch(_){return "restaurant-"+Date.now()}}
 async function trackRestaurantEvent(eventName,module=null,metadata={},planId=null){try{await sb.rpc("log_app_event",{p_app_context:"restaurant",p_event_name:eventName,p_module:module,p_restaurant_id:currentRestaurant||null,p_plan_id:planId||null,p_session_id:restaurantTelemetrySession(),p_route:location.pathname+location.search,p_metadata:metadata||{}})}catch(_){}}
@@ -3073,19 +3073,40 @@ function retailScanBarcode(){
  const input=document.getElementById("retailBarcodeInput"),code=String(input?.value||"").trim();if(!code)return;
  const ok=retailAddCode(code,false);if(input){if(ok)input.value="";else input.select();input.focus()}
 }
-async function openRetailBarcodeCamera(){
- const modal=document.getElementById("retailBarcodeCameraModal"),status=document.getElementById("retailBarcodeCameraStatus"),video=document.getElementById("retailBarcodeVideo");
+function openRetailProductBarcodeCamera(){openRetailBarcodeCamera("product")}
+function applyScannedRetailProductCode(code){
+ const input=document.getElementById("retailProductBarcode"),currentId=Number(document.getElementById("retailProductId")?.value)||null;
+ if(!input)return false;
+ const existing=retailProducts.find(p=>(String(p.barcode||"").trim()===code||String(p.sku||"").trim()===code)&&Number(p.id)!==Number(currentId));
+ if(existing){
+  closeRetailBarcodeCamera();
+  editRetailProduct(existing.id);
+  toast("Ese código ya pertenece a "+existing.name+". Abrimos el producto existente.");
+  return true
+ }
+ input.value=code;
+ input.dispatchEvent(new Event("input",{bubbles:true}));
+ closeRetailBarcodeCamera();
+ setTimeout(()=>document.getElementById("retailProductName")?.focus(),120);
+ toast("Código leído correctamente. Completa los datos del producto.");
+ return true
+}
+async function openRetailBarcodeCamera(mode="pos"){
+ retailScannerMode=mode==="product"?"product":"pos";
+ const modal=document.getElementById("retailBarcodeCameraModal"),status=document.getElementById("retailBarcodeCameraStatus"),video=document.getElementById("retailBarcodeVideo"),title=document.getElementById("retailBarcodeCameraTitle"),help=document.getElementById("retailBarcodeCameraHelp");
  if(!modal||!video)return;
+ if(title)title.textContent=retailScannerMode==="product"?"Escanear código del producto":"Leer código de barra";
+ if(help)help.textContent=retailScannerMode==="product"?"Apunta la cámara trasera al código de barra. Al leerlo, se copiará automáticamente al formulario del producto.":"Apunta la cámara trasera al código. Puedes escanear varios productos sin cerrar esta ventana.";
  modal.classList.add("open");modal.setAttribute("aria-hidden","false");if(status)status.textContent="Preparando cámara…";
- if(!navigator.mediaDevices?.getUserMedia){if(status)status.textContent="Este dispositivo no permite acceso a cámara desde el navegador. Puedes usar el lector USB o escribir el código.";return}
- if(!("BarcodeDetector" in window)){if(status)status.textContent="Tu navegador no tiene lector de códigos integrado. En Android usa Chrome actualizado o un lector USB.";return}
+ if(!navigator.mediaDevices?.getUserMedia){if(status)status.textContent="Este dispositivo no permite acceso a cámara desde el navegador. Puedes escribir el código manualmente.";return}
+ if(!("BarcodeDetector" in window)){if(status)status.textContent="Tu navegador no tiene lector de códigos integrado. En Android usa Chrome actualizado o escribe el código manualmente.";return}
  try{
   const formats=BarcodeDetector.getSupportedFormats?await BarcodeDetector.getSupportedFormats():[];
   const preferred=["ean_13","ean_8","upc_a","upc_e","code_128","code_39","itf","codabar","qr_code"];
   retailScannerDetector=new BarcodeDetector({formats:formats.length?preferred.filter(x=>formats.includes(x)):undefined});
   retailScannerStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false});
   video.srcObject=retailScannerStream;await video.play();retailScannerActive=true;retailScannerLastCode="";retailScannerLastAt=0;if(status)status.textContent="Cámara lista. Apunta al código de barra.";retailBarcodeCameraLoop()
- }catch(e){console.error("Cámara código de barra",e);if(status)status.textContent="No se pudo abrir la cámara. Revisa el permiso de cámara o usa el lector manual.";stopRetailBarcodeCameraStream()}
+ }catch(e){console.error("Cámara código de barra",e);if(status)status.textContent="No se pudo abrir la cámara. Revisa el permiso de cámara o usa el ingreso manual.";stopRetailBarcodeCameraStream()}
 }
 async function retailBarcodeCameraLoop(){
  if(!retailScannerActive||!retailScannerDetector)return;
@@ -3097,6 +3118,11 @@ async function retailBarcodeCameraLoop(){
     const code=String(found[0].rawValue||"").trim(),now=Date.now();
     if(code&&(code!==retailScannerLastCode||now-retailScannerLastAt>1300)){
      retailScannerLastCode=code;retailScannerLastAt=now;
+     if(retailScannerMode==="product"){
+      if(status)status.innerHTML='✅ Código detectado: <b>'+esc(code)+'</b>';
+      applyScannedRetailProductCode(code);
+      return
+     }
      const ok=retailAddCode(code,true);
      if(status)status.innerHTML=ok?'✅ Agregado: <b>'+esc(code)+'</b>':'⚠ Código no registrado: <b>'+esc(code)+'</b>';
     }
@@ -3110,7 +3136,12 @@ function stopRetailBarcodeCameraStream(){
  try{retailScannerStream?.getTracks?.().forEach(t=>t.stop())}catch(_){}
  retailScannerStream=null;const video=document.getElementById("retailBarcodeVideo");if(video)video.srcObject=null
 }
-function closeRetailBarcodeCamera(){stopRetailBarcodeCameraStream();const m=document.getElementById("retailBarcodeCameraModal");m?.classList.remove("open");m?.setAttribute("aria-hidden","true");setTimeout(()=>document.getElementById("retailBarcodeInput")?.focus(),80)}
+function closeRetailBarcodeCamera(){
+ const mode=retailScannerMode;
+ stopRetailBarcodeCameraStream();
+ const m=document.getElementById("retailBarcodeCameraModal");m?.classList.remove("open");m?.setAttribute("aria-hidden","true");
+ setTimeout(()=>document.getElementById(mode==="product"?"retailProductBarcode":"retailBarcodeInput")?.focus(),80)
+}
 function retailChangeQty(id,delta){
  const row=retailPosCart[id],p=retailProducts.find(x=>Number(x.id)===Number(id));if(!row||!p)return;const next=Number(row.quantity)+delta;
  if(next<=0){delete retailPosCart[id];return renderRetailPosCart()}
@@ -4936,7 +4967,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.15</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.16</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
