@@ -159,3 +159,81 @@ restaurar desde `backup/pre-retail-infra-2026-09-23`.
 
 Base de datos:
 los cambios son aditivos. Antes de eliminar tablas retail se deben exportar ventas, compras y movimientos. No es necesario eliminar las tablas para volver temporalmente al frontend anterior.
+
+
+## Fase 2 — cámara, ticket y devoluciones
+
+Versión de panel: `v2.5.11`.
+
+### Escáner con cámara
+En POS Retail se agregó **📷 Cámara**.
+
+Implementación:
+- usa `BarcodeDetector` cuando el navegador lo soporta;
+- solicita cámara trasera con `getUserMedia`;
+- reconoce EAN-13, EAN-8, UPC, Code 128, Code 39, ITF, Codabar y QR cuando estén disponibles;
+- permite escanear varios productos sin cerrar el visor;
+- evita lecturas repetidas del mismo código durante un intervalo corto;
+- si el navegador no soporta lectura por cámara, el lector USB/manual sigue disponible.
+
+### Ticket retail
+Se agregó impresión de ticket de 80 mm:
+- negocio;
+- dirección y WhatsApp;
+- número de venta;
+- fecha;
+- productos/cantidades;
+- subtotal;
+- descuento;
+- total;
+- monto recibido;
+- cambio;
+- devoluciones.
+
+Existe opción local por dispositivo:
+**“Imprimir ticket automáticamente al cobrar”**.
+
+### Devoluciones y anulación
+Nuevas tablas:
+- `retail_returns`
+- `retail_return_items`
+
+Nuevos campos en `retail_sales`:
+- `refunded_amount`
+- `refund_status`
+
+Nueva relación de caja:
+- `restaurant_cash_movements.retail_return_id`
+
+RPC:
+- `retail_return_sale_items`: devolución parcial;
+- `retail_void_sale`: devuelve todo lo pendiente de una venta.
+
+Reglas:
+1. requiere caja abierta;
+2. valida cantidades ya devueltas;
+3. repone stock;
+4. registra movimiento de inventario;
+5. registra movimiento negativo en caja;
+6. prorratea el descuento original;
+7. una devolución total deja la venta como `voided`;
+8. una devolución parcial mantiene la venta activa con `refund_status=partial`.
+
+El dashboard retail usa **venta neta** después de devoluciones.
+
+## Negocio de prueba creado
+Se creó en producción un negocio controlado para pruebas:
+
+- Nombre: **Minimarket Demo YummyPro**
+- Slug: `minimarket-demo-yummypro`
+- Tipo: `minimarket`
+- 3 productos demo
+- 1 proveedor demo
+- 1 caja demo abierta
+
+Códigos demo:
+- `7801234500010` — Agua mineral 500 ml
+- `7801234500027` — Bebida cola 1.5 L
+- `7801234500034` — Arroz 1 kg
+
+Este negocio existe para validar POS, códigos de barra, caja, tickets, compras y devoluciones desde la vista administrativa.
