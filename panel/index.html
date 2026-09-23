@@ -2907,12 +2907,19 @@ function renderRetailOnlineOrders(){
  el.innerHTML=rows.map(o=>{
    const payment=String(o.payment_status||"pending"),method=String(o.payment_method||""),approved=payment==="approved",items=o.items||[];
    const buttons=[];
+   if(payment!=="approved"&&!["mercado pago","qr bolivia","veripagos","veripagos qr","efectivo"].includes(method.toLowerCase()))buttons.push('<button class="ghost" type="button" onclick="markRetailOnlineOrderPaid('+o.id+')">✓ Pago recibido</button>');
    if(o.status==="received")buttons.push('<button class="primary" type="button" onclick="setRetailOnlineOrderStatus('+o.id+',\'preparing\')">Preparar</button>');
    if(o.status==="preparing")buttons.push('<button class="primary" type="button" onclick="setRetailOnlineOrderStatus('+o.id+',\'ready\')">Marcar listo</button>');
    if(o.status==="ready")buttons.push('<button class="primary" type="button" onclick="setRetailOnlineOrderStatus('+o.id+',\'delivered\')">Entregado</button>');
    if(!["delivered","cancelled"].includes(o.status))buttons.push('<button class="danger" type="button" onclick="cancelRetailOnlineOrder('+o.id+')">'+(approved&&method==="Mercado Pago"?"Devolver pago y cancelar":"Cancelar")+'</button>');
    return '<article class="item"><div class="row between" style="align-items:flex-start;gap:14px"><div style="min-width:0"><div class="row" style="gap:7px;flex-wrap:wrap"><b>'+esc(o.order_code||("#"+o.id))+'</b><span class="pill">'+esc(retailOnlineStatusLabel(o.status))+'</span><span class="pill">'+esc(method||"Sin método")+' · '+esc(payment)+'</span></div><div class="mut" style="margin-top:5px">'+new Date(o.created_at).toLocaleString(currentRestaurantConfig?.locale||"es-CL")+' · '+esc(o.customer_name||"Cliente")+(o.customer_phone?" · "+esc(o.customer_phone):"")+'</div><div class="mut">'+esc(o.order_type||"Retiro")+(o.delivery_address?" · "+esc(o.delivery_address):"")+'</div><div style="margin-top:9px">'+items.map(i=>'<div>'+retailQty(i.quantity)+' × '+esc(i.name_snapshot)+' · '+money(i.line_total)+'</div>').join("")+'</div>'+(o.notes?'<div class="mut" style="margin-top:7px">Nota: '+esc(o.notes)+'</div>':'')+'</div><div style="text-align:right;min-width:150px"><strong style="font-size:18px">'+money(o.total)+'</strong><div class="actions" style="margin-top:10px;justify-content:flex-end;flex-wrap:wrap">'+buttons.join("")+'</div></div></div></article>'
  }).join("")||'<p class="mut">No hay pedidos en esta vista.</p>';
+}
+async function markRetailOnlineOrderPaid(id){
+ const o=retailOnlineOrders.find(x=>Number(x.id)===Number(id));if(!o)return;
+ const {error}=await sb.rpc("retail_mark_online_order_paid",{p_restaurant_id:currentRestaurant,p_order_id:Number(id)});
+ if(error)return toast(error.message);
+ await trackRestaurantEvent("retail_online_payment_confirmed","retail_orders",{order_id:Number(id),payment_method:o.payment_method||null});await loadRetailOnlineOrders();toast("Pago marcado como recibido")
 }
 async function setRetailOnlineOrderStatus(id,status){
  const o=retailOnlineOrders.find(x=>Number(x.id)===Number(id));if(!o)return;
