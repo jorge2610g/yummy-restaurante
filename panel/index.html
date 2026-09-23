@@ -2591,7 +2591,7 @@ function isProfessionalBusiness(){return currentBusinessType()==="professional"}
 function currentBusinessLabel(){const type=currentBusinessType();return type==="supermarket"?"Supermercado":type==="minimarket"?"Minimarket":type==="professional"?"Profesional / Servicios":"Restaurante"}
 function setNavTabLabel(tabName,label,title=label){const tab=document.querySelector('.tab[data-tab="'+tabName+'"]');if(!tab)return;const text=tab.querySelector(".nav-label");if(text)text.textContent=label;tab.title=title;tab.dataset.baseTitle=title}
 function syncBusinessTypeUi(){
- const type=currentBusinessType(),retail=isRetailBusiness(),label=currentBusinessLabel();
+ const type=currentBusinessType(),retail=isRetailBusiness(),professional=isProfessionalBusiness(),label=currentBusinessLabel();
  const retailGroup=document.getElementById("retailNavGroupLabel");
  if(retailGroup)retailGroup.textContent=retail?label.toUpperCase():"RETAIL";
  if(retail){
@@ -2608,21 +2608,27 @@ function syncBusinessTypeUi(){
   setNavTabLabel("retail_purchases","Compras","Compras");
  }
  const cashTitle=document.getElementById("cashSectionTitle"),cashDescription=document.getElementById("cashSectionDescription"),cashActions=document.getElementById("cashMainActions");
- if(cashTitle)cashTitle.textContent=retail?"Caja del "+label.toLowerCase():"Caja del restaurante";
- if(cashDescription)cashDescription.textContent=retail?"Apertura, ventas del POS, entradas, retiros, devoluciones y cierre de caja.":"Apertura, ventas, entradas, retiros y cierre con diferencia calculada.";
+ if(cashTitle)cashTitle.textContent=retail?"Caja del "+label.toLowerCase():professional?"Caja de servicios":"Caja del restaurante";
+ if(cashDescription)cashDescription.textContent=retail?"Apertura, ventas del POS, entradas, retiros, devoluciones y cierre de caja.":professional?"Apertura, ingresos, gastos y cierre de caja para servicios profesionales.":"Apertura, ventas, entradas, retiros y cierre con diferencia calculada.";
  if(cashActions)cashActions.innerHTML=retail
   ? '<button class="primary" type="button" onclick="document.querySelector(\'.tab[data-tab=&quot;retail_pos&quot;]\')?.click()">▥ Ir a POS '+label+'</button><button class="ghost" type="button" onclick="document.querySelector(\'.tab[data-tab=&quot;retail_orders&quot;]\')?.click()">🛒 Pedidos Online</button>'
-  : '<button class="primary" type="button" onclick="openCashNewOrder()">＋ Nuevo pedido</button><button class="ghost" type="button" onclick="openCashSalesHistory()">✓ Pedidos culminados</button>';
+  : professional
+   ? '<button class="primary" type="button" onclick="document.querySelector(\'.tab[data-tab=&quot;appointments&quot;]\')?.click()">📅 Ir a agenda</button>'
+   : '<button class="primary" type="button" onclick="openCashNewOrder()">＋ Nuevo pedido</button><button class="ghost" type="button" onclick="openCashSalesHistory()">✓ Pedidos culminados</button>';
  const counterBlock=document.getElementById("counterQrCashBlock"),tableBlock=document.getElementById("tableQrCashBlock");
- if(counterBlock)counterBlock.hidden=retail;if(tableBlock)tableBlock.hidden=retail;
+ if(counterBlock)counterBlock.hidden=retail||professional;if(tableBlock)tableBlock.hidden=retail||professional;
  const staffDescription=document.getElementById("staffSectionDescription"),staffEditDescription=document.getElementById("staffEditDescription"),staffEmail=document.getElementById("staffEmail");
  if(staffDescription)staffDescription.textContent=retail
   ? "Crea accesos solo para funciones de "+label.toLowerCase()+": caja/POS, productos e inventario, compras/proveedores o pedidos online."
-  : "Registra el nombre de cada persona para identificar quién atendió cada pedido.";
+  : professional
+   ? "Crea accesos solo para agenda, recepción y profesionales de este negocio de servicios."
+   : "Registra el nombre de cada persona para identificar quién atendió cada pedido.";
  if(staffEditDescription)staffEditDescription.textContent=retail
   ? "El acceso se limita a los módulos correspondientes al "+label.toLowerCase()+"."
-  : "El nombre se usará en pedidos, cocina y caja.";
- if(staffEmail)staffEmail.placeholder=retail?"persona@"+label.toLowerCase()+".com":"persona@restaurante.cl";
+  : professional
+   ? "El acceso se limita a agenda, clientes y las funciones del rol profesional."
+   : "El nombre se usará en pedidos, cocina y caja.";
+ if(staffEmail)staffEmail.placeholder=retail?"persona@"+label.toLowerCase()+".com":professional?"persona@servicios.cl":"persona@restaurante.cl";
  syncStaffRoleOptions();
  const posEyebrow=document.querySelector("#retail_pos .eyebrow"),posTitle=document.querySelector("#retail_pos h2");
  if(posEyebrow)posEyebrow.textContent=retail?label.toUpperCase():"SUPERMERCADO / MINIMARKET";
@@ -2633,8 +2639,8 @@ function syncBusinessTypeUi(){
  const ordersEyebrow=document.querySelector("#retail_orders .eyebrow");
  if(ordersEyebrow)ordersEyebrow.textContent=retail?"TIENDA ONLINE · "+label.toUpperCase():"TIENDA ONLINE";
  const systemLabels=document.querySelectorAll("#dashboard .system-status-list b");
- if(systemLabels[0])systemLabels[0].textContent=retail?"Tienda y catálogo":"Menú y catálogo";
- if(systemLabels[1])systemLabels[1].textContent=retail?"Ventas y pedidos":"Pedidos";
+ if(systemLabels[0])systemLabels[0].textContent=retail?"Tienda y catálogo":professional?"Servicios y agenda":"Menú y catálogo";
+ if(systemLabels[1])systemLabels[1].textContent=retail?"Ventas y pedidos":professional?"Reservas":"Pedidos";
 }
 let subscriptionModuleAccess=null;let adminPreviewMode=false;let adminPreviewTab="dashboard";let adminPreviewBootPromise=null;let adminPreviewInitialized=false;
 function subscriptionIsUsable(r){if(!r)return false;const s=String(r.subscription_status||"").toLowerCase();const exp=r.subscription_expires_at?new Date(r.subscription_expires_at).getTime():null;return (s==="active"||s==="trial")&&(!exp||exp>=Date.now())}
