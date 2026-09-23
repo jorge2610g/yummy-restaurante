@@ -13,6 +13,7 @@ for(const marker of ['id="posCartPanel"','id="posCartFab"','id="posCartBackdrop"
 if(panel.includes('Enviar a cocina e imprimir'))throw new Error('panel/index.html: el POS no debe imprimir en el dispositivo del mesero');
 if(!panel.includes('data-cash-date="today"')||!panel.includes('data-inventory-date="today"')||!panel.includes('data-pos-date="today"'))throw new Error('panel/index.html: faltan filtros por periodo en POS, caja o inventario');
 if(!panel.includes('deleteInventoryItem'))throw new Error('panel/index.html: falta eliminación controlada de insumos');
+for(const marker of ['inventoryImage','inventoryImageGalleryFile','inventoryImageCameraFile','uploadInventoryImage','syncInventoryImagePreview','image_url:inventoryImage.value','inventory-item'])if(!panel.includes(marker))throw new Error('panel/index.html: falta foto de inventario restaurante '+marker);
 console.log('Landing y panel restaurante validados');
 
 // Subscription module access regression checks
@@ -72,7 +73,7 @@ if(landing.includes('<div class="trial"><span class="tag">PRUEBA GRATIS</span>')
 
 for(const marker of ['data-tab="retail_pos"','data-tab="retail_products"','data-tab="retail_suppliers"','data-tab="retail_purchases"','retail_save_product','retail_complete_sale','retail_receive_purchase','retail_adjust_stock','isRetailBusiness','business_type','create_my_trial_restaurant_v3'])if(!panel.includes(marker)&&!landing.includes(marker))throw new Error('falta infraestructura retail '+marker);
 
-for(const marker of ['retailBarcodeCameraModal','openRetailBarcodeCamera','BarcodeDetector','retailAutoPrint','printRetailSale','retailSaleModal','processRetailPartialReturn','retail_void_sale','retail_return_sale_items','refunded_amount','refund_status'])if(!panel.includes(marker))throw new Error('panel/index.html: falta fase 2 retail '+marker);
+for(const marker of ['retailBarcodeCameraModal','openRetailBarcodeCamera','BarcodeDetector','Html5Qrcode','loadRetailScannerFallbackLibrary','retailBarcodeFallbackReader','NotAllowedError','retailAutoPrint','printRetailSale','retailSaleModal','processRetailPartialReturn','retail_void_sale','retail_return_sale_items','refunded_amount','refund_status'])if(!panel.includes(marker))throw new Error('panel/index.html: falta fase 2 retail '+marker);
 
 for(const marker of ['data-tab="retail_orders"','id="retail_orders"','loadRetailOnlineOrders','retail_online_orders','retail_update_online_order_status','refund-retail-payment','Pedidos Online'])if(!panel.includes(marker))throw new Error('panel/index.html: falta gestión de tienda online retail '+marker);
 for(const marker of ['id="qr"','Código QR de tu negocio','businessPublicPageInfo','downloadBusinessQr','shareBusinessQr','copyBusinessPublicLink','Código QR del negocio','x==="qr"','retail_purchases","staff","qr","plans','reports","qr","plans'])if(!panel.includes(marker))throw new Error('panel/index.html: falta QR público común '+marker);
