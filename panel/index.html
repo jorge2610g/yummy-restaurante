@@ -2735,6 +2735,188 @@ function syncRestaurantHeader(r){
  const label=type==="supermarket"?"Supermercado":type==="minimarket"?"Minimarket":"Restaurante";
  if(adminPreviewMode){who.textContent="Vista administrador · "+name;document.getElementById("panelMainTitle").textContent="Panel de "+name}else{document.getElementById("panelMainTitle").textContent="Panel "+label;who.textContent=name+(sessionEmail?" · "+sessionEmail:"")}
 }
+
+function retailLabel(){return currentBusinessType()==="supermarket"?"Supermercado":"Minimarket"}
+function retailQty(v){return Number(v||0).toLocaleString(currentRestaurantConfig?.locale||"es-CL",{maximumFractionDigits:3})}
+async function loadRetailProducts(){
+ if(!currentRestaurant)return;
+ const {data,error}=await sb.from("retail_products").select("*").eq("restaurant_id",currentRestaurant).order("active",{ascending:false}).order("name");
+ if(error){console.error(error);toast("No se pudieron cargar los productos retail");return}
+ retailProducts=data||[];
+ renderRetailProducts();
+}
+function renderRetailProducts(){
+ const list=document.getElementById("retailProductList");if(!list)return;
+ const q=String(document.getElementById("retailProductSearch")?.value||"").trim().toLowerCase();
+ const rows=retailProducts.filter(p=>!q||[p.name,p.brand,p.category,p.barcode,p.sku].some(v=>String(v||"").toLowerCase().includes(q)));
+ const active=retailProducts.filter(p=>p.active),low=active.filter(p=>Number(p.current_stock)<=Number(p.minimum_stock));
+ const value=retailProducts.reduce((a,p)=>a+Number(p.current_stock||0)*Number(p.cost||0),0);
+ const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+ set("retailProductCount",active.length);set("retailLowStockCount",low.length);set("retailInventoryValue",money(value));
+ list.innerHTML=rows.map(p=>{
+  const lowStock=p.active&&Number(p.current_stock)<=Number(p.minimum_stock);
+  return '<article class="item"><div class="row between"><div><div class="row" style="gap:7px;flex-wrap:wrap"><span class="pill">'+esc(p.category||"Sin categoría")+'</span>'+(p.barcode?'<span class="pill">▥ '+esc(p.barcode)+'</span>':'')+(p.sku?'<span class="pill">SKU '+esc(p.sku)+'</span>':'')+'</div><h3 style="margin:9px 0 4px">'+esc(p.name)+'</h3><div class="mut">'+(p.brand?esc(p.brand)+' · ':'')+'Costo '+money(p.cost)+' · Venta '+money(p.price)+'</div><div style="margin-top:6px"><b>Stock: '+retailQty(p.current_stock)+' '+esc(p.unit||"unidad")+'</b> · mínimo '+retailQty(p.minimum_stock)+'</div>'+(lowStock?'<div style="color:var(--bad);font-weight:800;margin-top:5px">⚠ Stock bajo</div>':!p.active?'<div class="mut" style="margin-top:5px">Producto desactivado</div>':'')+'</div><div class="actions"><button class="ghost" type="button" onclick="editRetailProduct('+p.id+')">Editar</button><button class="ghost" type="button" onclick="adjustRetailProductStock('+p.id+')">Ajustar stock</button></div></div></article>'
+ }).join("")||'<p class="mut">No hay productos que coincidan.</p>';
+}
+function openRetailProductModal(){
+ const g=id=>document.getElementById(id);
+ g("retailProductId").value="";g("retailProductBarcode").value="";g("retailProductSku").value="";g("retailProductName").value="";g("retailProductBrand").value="";g("retailProductCategory").value="";g("retailProductCost").value=0;g("retailProductPrice").value=0;g("retailProductInitialStock").value=0;g("retailProductInitialStock").disabled=false;g("retailInitialStockLabel").textContent="Stock inicial";g("retailProductMinimum").value=0;g("retailProductUnit").value="unidad";g("retailProductImage").value="";g("retailProductFractional").checked=false;g("retailProductActive").checked=true;g("retailProductModalTitle").textContent="Nuevo producto";g("retailProductModal").classList.add("open");g("retailProductModal").setAttribute("aria-hidden","false");setTimeout(()=>g("retailProductBarcode")?.focus(),80)
+}
+function editRetailProduct(id){
+ const p=retailProducts.find(x=>Number(x.id)===Number(id));if(!p)return;
+ const g=id=>document.getElementById(id);
+ g("retailProductId").value=p.id;g("retailProductBarcode").value=p.barcode||"";g("retailProductSku").value=p.sku||"";g("retailProductName").value=p.name||"";g("retailProductBrand").value=p.brand||"";g("retailProductCategory").value=p.category||"";g("retailProductCost").value=Number(p.cost||0);g("retailProductPrice").value=Number(p.price||0);g("retailProductInitialStock").value=Number(p.current_stock||0);g("retailProductInitialStock").disabled=true;g("retailInitialStockLabel").textContent="Stock actual (usa Ajustar stock)";g("retailProductMinimum").value=Number(p.minimum_stock||0);g("retailProductUnit").value=p.unit||"unidad";g("retailProductImage").value=p.image_url||"";g("retailProductFractional").checked=!!p.allow_fractional;g("retailProductActive").checked=!!p.active;g("retailProductModalTitle").textContent="Editar producto";g("retailProductModal").classList.add("open");g("retailProductModal").setAttribute("aria-hidden","false")
+}
+function closeRetailProductModal(){const m=document.getElementById("retailProductModal");m?.classList.remove("open");m?.setAttribute("aria-hidden","true")}
+async function saveRetailProduct(){
+ const g=id=>document.getElementById(id),id=Number(g("retailProductId")?.value)||null,name=g("retailProductName")?.value.trim();
+ if(!name)return toast("Escribe el nombre del producto");
+ const {error}=await sb.rpc("retail_save_product",{
+  p_restaurant_id:currentRestaurant,p_product_id:id,p_barcode:g("retailProductBarcode")?.value.trim()||null,p_sku:g("retailProductSku")?.value.trim()||null,
+  p_name:name,p_description:"",p_category:g("retailProductCategory")?.value.trim()||null,p_brand:g("retailProductBrand")?.value.trim()||null,p_unit:g("retailProductUnit")?.value||"unidad",
+  p_cost:Number(g("retailProductCost")?.value||0),p_price:Number(g("retailProductPrice")?.value||0),p_initial_stock:id?0:Number(g("retailProductInitialStock")?.value||0),
+  p_minimum_stock:Number(g("retailProductMinimum")?.value||0),p_allow_fractional:!!g("retailProductFractional")?.checked,p_image_url:g("retailProductImage")?.value.trim()||null,p_active:!!g("retailProductActive")?.checked
+ });
+ if(error)return toast(error.message);
+ closeRetailProductModal();await loadRetailProducts();toast("Producto guardado")
+}
+async function adjustRetailProductStock(id){
+ const p=retailProducts.find(x=>Number(x.id)===Number(id));if(!p)return;
+ const value=prompt("Nuevo stock para "+p.name,Number(p.current_stock||0));if(value===null)return;
+ const stock=Number(value);if(!Number.isFinite(stock)||stock<0)return toast("Stock inválido");
+ const note=prompt("Motivo del ajuste (opcional)","Conteo físico")||"";
+ const {error}=await sb.rpc("retail_adjust_stock",{p_restaurant_id:currentRestaurant,p_product_id:p.id,p_new_stock:stock,p_note:note||null});
+ if(error)return toast(error.message);await loadRetailProducts();toast("Stock actualizado")
+}
+
+async function loadRetailSuppliers(){
+ if(!currentRestaurant)return;
+ const {data,error}=await sb.from("retail_suppliers").select("*").eq("restaurant_id",currentRestaurant).order("active",{ascending:false}).order("name");
+ if(error){console.error(error);return toast("No se pudieron cargar los proveedores")}
+ retailSuppliers=data||[];renderRetailSuppliers();syncRetailPurchaseSelectors()
+}
+function renderRetailSuppliers(){
+ const el=document.getElementById("retailSupplierList");if(!el)return;
+ el.innerHTML=retailSuppliers.map(x=>'<article class="item"><div class="row between"><div><h3>'+esc(x.name)+'</h3><div class="mut">'+[x.tax_id,x.phone,x.email].filter(Boolean).map(esc).join(" · ")+'</div>'+(x.address?'<div class="mut">'+esc(x.address)+'</div>':'')+'</div><div class="actions"><button class="ghost" type="button" onclick="editRetailSupplier('+x.id+')">Editar</button></div></div></article>').join("")||'<p class="mut">Todavía no registraste proveedores.</p>'
+}
+function openRetailSupplierModal(){
+ const g=id=>document.getElementById(id);["retailSupplierId","retailSupplierName","retailSupplierTaxId","retailSupplierPhone","retailSupplierEmail","retailSupplierAddress","retailSupplierNotes"].forEach(id=>g(id).value="");g("retailSupplierActive").checked=true;g("retailSupplierModalTitle").textContent="Nuevo proveedor";g("retailSupplierModal").classList.add("open");g("retailSupplierModal").setAttribute("aria-hidden","false")
+}
+function editRetailSupplier(id){
+ const x=retailSuppliers.find(v=>Number(v.id)===Number(id));if(!x)return;const g=id=>document.getElementById(id);
+ g("retailSupplierId").value=x.id;g("retailSupplierName").value=x.name||"";g("retailSupplierTaxId").value=x.tax_id||"";g("retailSupplierPhone").value=x.phone||"";g("retailSupplierEmail").value=x.email||"";g("retailSupplierAddress").value=x.address||"";g("retailSupplierNotes").value=x.notes||"";g("retailSupplierActive").checked=!!x.active;g("retailSupplierModalTitle").textContent="Editar proveedor";g("retailSupplierModal").classList.add("open");g("retailSupplierModal").setAttribute("aria-hidden","false")
+}
+function closeRetailSupplierModal(){const m=document.getElementById("retailSupplierModal");m?.classList.remove("open");m?.setAttribute("aria-hidden","true")}
+async function saveRetailSupplier(){
+ const g=id=>document.getElementById(id),id=Number(g("retailSupplierId")?.value)||null,row={restaurant_id:currentRestaurant,name:g("retailSupplierName")?.value.trim(),tax_id:g("retailSupplierTaxId")?.value.trim()||null,phone:g("retailSupplierPhone")?.value.trim()||null,email:g("retailSupplierEmail")?.value.trim()||null,address:g("retailSupplierAddress")?.value.trim()||null,notes:g("retailSupplierNotes")?.value.trim()||null,active:!!g("retailSupplierActive")?.checked,updated_at:new Date().toISOString()};
+ if(!row.name)return toast("Escribe el nombre del proveedor");
+ const result=id?await sb.from("retail_suppliers").update(row).eq("id",id).eq("restaurant_id",currentRestaurant):await sb.from("retail_suppliers").insert(row);
+ if(result.error)return toast(result.error.message);closeRetailSupplierModal();await loadRetailSuppliers();toast("Proveedor guardado")
+}
+
+function syncRetailPurchaseSelectors(){
+ const supplier=document.getElementById("retailPurchaseSupplier"),product=document.getElementById("retailPurchaseProduct");
+ if(supplier){const selected=supplier.value;supplier.innerHTML='<option value="">Sin proveedor</option>'+retailSuppliers.filter(x=>x.active).map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join("");supplier.value=selected}
+ if(product){const selected=product.value;product.innerHTML=retailProducts.filter(x=>x.active).map(x=>'<option value="'+x.id+'">'+esc(x.name)+(x.barcode?" · "+esc(x.barcode):"")+'</option>').join("");product.value=selected&&retailProducts.some(x=>String(x.id)===String(selected))?selected:(product.options[0]?.value||"");product.onchange=()=>{const p=retailProducts.find(x=>String(x.id)===String(product.value));const c=document.getElementById("retailPurchaseCost");if(c&&p)c.value=Number(p.cost||0)};product.onchange()}
+}
+function addRetailPurchaseItem(){
+ const productId=Number(document.getElementById("retailPurchaseProduct")?.value),qty=Number(document.getElementById("retailPurchaseQty")?.value||0),cost=Number(document.getElementById("retailPurchaseCost")?.value||0),p=retailProducts.find(x=>Number(x.id)===productId);
+ if(!p||qty<=0||cost<0)return toast("Completa producto, cantidad y costo");
+ const existing=retailPurchaseCart.find(x=>Number(x.product_id)===productId&&Number(x.unit_cost)===cost);
+ if(existing)existing.quantity+=qty;else retailPurchaseCart.push({product_id:productId,quantity:qty,unit_cost:cost});
+ renderRetailPurchaseCart()
+}
+function removeRetailPurchaseItem(index){retailPurchaseCart.splice(index,1);renderRetailPurchaseCart()}
+function renderRetailPurchaseCart(){
+ const el=document.getElementById("retailPurchaseCart"),totalEl=document.getElementById("retailPurchaseTotal");if(!el)return;
+ let total=0;el.innerHTML=retailPurchaseCart.map((x,i)=>{const p=retailProducts.find(v=>Number(v.id)===Number(x.product_id)),line=Number(x.quantity)*Number(x.unit_cost);total+=line;return '<div class="item row between"><div><b>'+esc(p?.name||"Producto")+'</b><div class="mut">'+retailQty(x.quantity)+' × '+money(x.unit_cost)+'</div></div><div class="row"><strong>'+money(line)+'</strong><button class="ghost" type="button" onclick="removeRetailPurchaseItem('+i+')">✕</button></div></div>'}).join("")||'<p class="mut">Agrega productos a la compra.</p>';if(totalEl)totalEl.textContent=money(total)
+}
+async function loadRetailPurchases(){
+ if(!currentRestaurant)return;
+ await Promise.allSettled([loadRetailProducts(),loadRetailSuppliers()]);
+ const {data,error}=await sb.from("retail_purchases").select("*").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(50);
+ if(error){console.error(error);return toast("No se pudieron cargar las compras")}
+ retailPurchases=data||[];syncRetailPurchaseSelectors();renderRetailPurchaseCart();
+ const el=document.getElementById("retailPurchaseHistory");if(el)el.innerHTML=retailPurchases.map(x=>{const sup=retailSuppliers.find(s=>Number(s.id)===Number(x.supplier_id));return '<div class="item row between"><div><b>Compra #'+x.id+'</b><div class="mut">'+new Date(x.created_at).toLocaleString(currentRestaurantConfig?.locale||"es-CL")+(sup?" · "+esc(sup.name):"")+(x.document_number?" · Doc. "+esc(x.document_number):"")+'</div></div><strong>'+money(x.total)+'</strong></div>'}).join("")||'<p class="mut">Todavía no hay compras registradas.</p>'
+}
+async function receiveRetailPurchase(){
+ if(!retailPurchaseCart.length)return toast("Agrega productos a la compra");
+ const {data,error}=await sb.rpc("retail_receive_purchase",{p_restaurant_id:currentRestaurant,p_supplier_id:Number(document.getElementById("retailPurchaseSupplier")?.value)||null,p_document_number:document.getElementById("retailPurchaseDocument")?.value.trim()||null,p_notes:document.getElementById("retailPurchaseNotes")?.value.trim()||null,p_items:retailPurchaseCart});
+ if(error)return toast(error.message);
+ retailPurchaseCart=[];document.getElementById("retailPurchaseDocument").value="";document.getElementById("retailPurchaseNotes").value="";await loadRetailPurchases();toast("Mercadería ingresada · "+money(data?.total||0))
+}
+
+async function loadRetailPos(){
+ if(!currentRestaurant)return;
+ const [productsResult,salesResult,cashResult]=await Promise.all([
+  sb.from("retail_products").select("*").eq("restaurant_id",currentRestaurant).eq("active",true).order("name"),
+  sb.from("retail_sales").select("id,sale_code,total,payment_method,created_at,status").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(20),
+  sb.from("restaurant_cash_sessions").select("*").eq("restaurant_id",currentRestaurant).eq("status","open").order("opened_at",{ascending:false}).limit(1)
+ ]);
+ if(productsResult.error)return toast(productsResult.error.message);
+ retailProducts=productsResult.data||[];retailSales=salesResult.data||[];retailCashSession=cashResult.data?.[0]||null;
+ const warning=document.getElementById("retailCashWarning");
+ if(warning)warning.innerHTML=retailCashSession?'<div class="row between"><div><b>🟢 Caja abierta</b><div class="mut">Sesión #'+retailCashSession.id+' · lista para vender</div></div><button class="ghost" type="button" onclick="document.querySelector(\'.tab[data-tab=&quot;cash&quot;]\')?.click()">Ver caja</button></div>':'<div class="row between"><div><b>🔴 Caja cerrada</b><div class="mut">Abre una caja antes de registrar ventas.</div></div><button class="primary" type="button" onclick="document.querySelector(\'.tab[data-tab=&quot;cash&quot;]\')?.click()">Abrir caja</button></div>';
+ const recent=document.getElementById("retailRecentSales");if(recent)recent.innerHTML=retailSales.map(x=>'<div class="item row between"><div><b>'+esc(x.sale_code||("#"+x.id))+'</b><div class="mut">'+new Date(x.created_at).toLocaleString(currentRestaurantConfig?.locale||"es-CL")+' · '+esc(x.payment_method)+'</div></div><strong>'+money(x.total)+'</strong></div>').join("")||'<p class="mut">Aún no hay ventas retail.</p>';
+ renderRetailPosCart();setTimeout(()=>document.getElementById("retailBarcodeInput")?.focus(),100)
+}
+function addRetailProductToCart(p){
+ const row=retailPosCart[p.id]||{product_id:p.id,quantity:0};const next=Number(row.quantity)+1;
+ if(next>Number(p.current_stock||0))return toast("Stock insuficiente para "+p.name);
+ row.quantity=next;retailPosCart[p.id]=row;renderRetailPosCart()
+}
+function retailScanBarcode(){
+ const input=document.getElementById("retailBarcodeInput"),code=String(input?.value||"").trim();if(!code)return;
+ const p=retailProducts.find(x=>String(x.barcode||"")===code||String(x.sku||"")===code);
+ if(!p){toast("No encontramos ese código. Créalo en Productos Retail.");if(input)input.select();return}
+ addRetailProductToCart(p);if(input){input.value="";input.focus()}
+}
+function retailChangeQty(id,delta){
+ const row=retailPosCart[id],p=retailProducts.find(x=>Number(x.id)===Number(id));if(!row||!p)return;const next=Number(row.quantity)+delta;
+ if(next<=0){delete retailPosCart[id];return renderRetailPosCart()}
+ if(next>Number(p.current_stock||0))return toast("No hay más stock disponible");row.quantity=next;renderRetailPosCart()
+}
+function retailRemoveCart(id){delete retailPosCart[id];renderRetailPosCart()}
+function retailCartSubtotal(){return Object.values(retailPosCart).reduce((a,x)=>{const p=retailProducts.find(v=>Number(v.id)===Number(x.product_id));return a+Number(x.quantity||0)*Number(p?.price||0)},0)}
+function renderRetailPosCart(){
+ const el=document.getElementById("retailPosCart");if(!el)return;const rows=Object.values(retailPosCart);
+ el.innerHTML=rows.map(x=>{const p=retailProducts.find(v=>Number(v.id)===Number(x.product_id));if(!p)return "";const line=Number(x.quantity)*Number(p.price);return '<div class="item row between"><div><b>'+esc(p.name)+'</b><div class="mut">'+money(p.price)+' · Stock '+retailQty(p.current_stock)+'</div></div><div class="row"><button class="ghost" type="button" onclick="retailChangeQty('+p.id+',-1)">−</button><b>'+retailQty(x.quantity)+'</b><button class="ghost" type="button" onclick="retailChangeQty('+p.id+',1)">＋</button><strong>'+money(line)+'</strong><button class="ghost" type="button" onclick="retailRemoveCart('+p.id+')">✕</button></div></div>'}).join("")||'<p class="mut">Escanea el primer producto para comenzar.</p>';
+ const subtotal=retailCartSubtotal(),discount=Math.min(Math.max(Number(document.getElementById("retailPosDiscount")?.value||0),0),subtotal),total=subtotal-discount;
+ const a=document.getElementById("retailPosSubtotal"),b=document.getElementById("retailPosTotal"),btn=document.getElementById("retailPosCheckoutBtn");if(a)a.textContent=money(subtotal);if(b)b.textContent=money(total);if(btn)btn.disabled=!retailCashSession||!rows.length
+}
+async function completeRetailSale(){
+ const items=Object.values(retailPosCart).map(x=>({product_id:Number(x.product_id),quantity:Number(x.quantity)}));if(!items.length)return toast("Agrega productos");
+ if(!retailCashSession)return toast("Debes abrir una caja antes de vender");
+ const method=document.getElementById("retailPosPayment")?.value||"Efectivo",received=method==="Efectivo"?Number(document.getElementById("retailPosReceived")?.value||0):null;
+ const btn=document.getElementById("retailPosCheckoutBtn");if(btn){btn.disabled=true;btn.textContent="Procesando…"}
+ try{
+  const {data,error}=await sb.rpc("retail_complete_sale",{p_restaurant_id:currentRestaurant,p_cash_session_id:retailCashSession.id,p_payment_method:method,p_discount:Number(document.getElementById("retailPosDiscount")?.value||0),p_amount_received:received||null,p_customer_name:document.getElementById("retailPosCustomer")?.value.trim()||null,p_notes:null,p_items:items});
+  if(error)throw error;
+  retailPosCart={};document.getElementById("retailPosDiscount").value=0;document.getElementById("retailPosReceived").value="";document.getElementById("retailPosCustomer").value="";
+  await loadRetailPos();trackRestaurantEvent("retail_sale_completed","retail_pos",{sale_id:data?.sale_id,total:data?.total});toast("Venta "+(data?.sale_code||"")+" completada · "+money(data?.total||0)+(Number(data?.change||0)>0?" · Cambio "+money(data.change):""))
+ }catch(e){trackRestaurantError("retail","retail_sale_failure",e.message||"No se pudo completar la venta",false);toast(e.message||"No se pudo completar la venta")}
+ finally{if(btn){btn.disabled=!retailCashSession||!Object.keys(retailPosCart).length;btn.textContent="Cobrar venta"}}
+}
+
+async function refreshRetailDashboard(){
+ const since=new Date();since.setHours(0,0,0,0);
+ const week=new Date();week.setHours(0,0,0,0);week.setDate(week.getDate()-6);
+ const [productsResult,salesResult]=await Promise.all([
+  sb.from("retail_products").select("*").eq("restaurant_id",currentRestaurant),
+  sb.from("retail_sales").select("id,total,payment_method,created_at,status").eq("restaurant_id",currentRestaurant).eq("status","completed").gte("created_at",week.toISOString()).order("created_at")
+ ]);
+ retailProducts=productsResult.data||[];const sales=salesResult.data||[],today=sales.filter(x=>new Date(x.created_at)>=since),todayTotal=today.reduce((a,x)=>a+Number(x.total||0),0);
+ const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};set("statProducts",retailProducts.filter(x=>x.active).length);set("statOrdersToday",today.length);set("statSalesToday",money(todayTotal));set("statAverage",money(today.length?todayTotal/today.length:0));
+ const metrics=document.querySelectorAll("#dashboard .restaurant-metric span");if(metrics[1])metrics[1].textContent="Ventas de hoy";if(metrics[2])metrics[2].textContent="Productos activos";
+ const hero=document.querySelector("#dashboard .restaurant-dashboard-hero p");if(hero)hero.textContent="Ventas, caja e inventario de "+retailLabel().toLowerCase()+" en una sola vista.";
+ const quick=document.querySelector("#dashboard .dashboard-quick-actions");if(quick)quick.innerHTML='<button type="button" class="dashboard-quick-action" onclick="document.querySelector(\'.tab[data-tab=&quot;retail_pos&quot;]\')?.click()"><span>▥</span><div><b>Ir a POS Retail</b><small>Escanear y cobrar productos</small></div><i>›</i></button><button type="button" class="dashboard-quick-action" onclick="document.querySelector(\'.tab[data-tab=&quot;retail_products&quot;]\')?.click()"><span>📦</span><div><b>Productos Retail</b><small>Precios, códigos y stock</small></div><i>›</i></button><button type="button" class="dashboard-quick-action" onclick="document.querySelector(\'.tab[data-tab=&quot;cash&quot;]\')?.click()"><span>💵</span><div><b>Caja</b><small>Abrir, cerrar y revisar movimientos</small></div><i>›</i></button>';
+ const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);days.push(d)}
+ const vals=days.map(d=>sales.filter(x=>new Date(x.created_at).toDateString()===d.toDateString()).reduce((a,x)=>a+Number(x.total||0),0)),max=Math.max(...vals,1),chart=document.getElementById("salesChart");
+ if(chart)chart.innerHTML='<div style="display:flex;align-items:end;gap:10px;height:190px;padding-top:12px">'+vals.map((v,i)=>'<div style="flex:1;text-align:center;min-width:0"><div class="mut" style="font-size:11px">'+money(v)+'</div><div style="height:'+Math.max(5,Math.round(v/max*125))+'px;background:var(--a);border-radius:8px 8px 3px 3px;margin:5px auto;width:70%"></div><small class="mut">'+days[i].toLocaleDateString("es",{weekday:"short"})+'</small></div>').join("")+'</div>';
+ const byMethod={};sales.forEach(x=>byMethod[x.payment_method||"Otro"]=(byMethod[x.payment_method||"Otro"]||0)+1);const status=document.getElementById("statusChart");if(status)status.innerHTML=Object.entries(byMethod).map(([k,v])=>'<div class="item row between"><b>'+esc(k)+'</b><span class="pill">'+v+' ventas</span></div>').join("")||'<p class="mut">Sin ventas todavía.</p>';
+ const top=document.getElementById("topProducts"),low=retailProducts.filter(x=>x.active&&Number(x.current_stock)<=Number(x.minimum_stock)).sort((a,b)=>Number(a.current_stock)-Number(b.current_stock)).slice(0,6);const topTitle=top?.closest("article")?.querySelector("h2");if(topTitle)topTitle.textContent="Stock bajo";if(top)top.innerHTML=low.map(x=>'<div class="item row between"><div><b>'+esc(x.name)+'</b><div class="mut">Mínimo '+retailQty(x.minimum_stock)+'</div></div><span class="pill">'+retailQty(x.current_stock)+' '+esc(x.unit||"unidad")+'</span></div>').join("")||'<p class="mut">No hay alertas de stock bajo.</p>'
+}
+
 async function loadRestaurants(){
   const {data,error}=await sb.from("restaurants").select("*").eq("id",currentRestaurant).limit(1);
   if(error)throw error;
