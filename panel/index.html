@@ -1734,6 +1734,7 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
   <button class="tab" data-tab="inventory" title="Inventario"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M8 9h8M8 13h8M8 17h5"/></svg></span><span class="nav-label">Inventario</span></button>
 
   <div class="nav-group-label retail-nav-group">RETAIL</div>
+  <button class="tab retail-tab" data-tab="retail_orders" title="Pedidos Online"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M7 9h10M7 13h6M16 13h1M7 17h4"/></svg></span><span class="nav-label">Pedidos Online</span></button>
   <button class="tab retail-tab" data-tab="retail_pos" title="POS Retail"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H4z"/><path d="M7 19h10M9 16v3M15 16v3M7 9h4M14 9h3M7 12h10"/></svg></span><span class="nav-label">POS Retail</span></button>
   <button class="tab retail-tab" data-tab="retail_products" title="Productos Retail"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1 11H5z"/><path d="M8 8a4 4 0 0 1 8 0M8 12h8"/></svg></span><span class="nav-label">Productos Retail</span></button>
   <button class="tab retail-tab" data-tab="retail_suppliers" title="Proveedores"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></span><span class="nav-label">Proveedores</span></button>
@@ -1827,6 +1828,21 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
 <div id="inventoryMovementModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closeInventoryMovementModal()"></div><div class="card product-modal-card"><div class="row between"><h2 id="inventoryMovementTitle">Registrar movimiento</h2><button class="ghost modal-close" type="button" onclick="closeInventoryMovementModal()">✕</button></div><input id="inventoryMovementItemId" type="hidden"><label>Tipo de movimiento</label><select id="inventoryMovementType"><option value="entrada">Entrada de stock</option><option value="salida">Salida</option><option value="consumo">Consumo</option><option value="ajuste">Ajustar stock final</option></select><label id="inventoryMovementQuantityLabel">Cantidad</label><input id="inventoryMovementQuantity" type="number" min="0" step="0.001"><label>Motivo o referencia</label><input id="inventoryMovementNote" placeholder="Ej: Compra proveedor / merma"><button class="primary full" onclick="saveInventoryMovement()">Registrar movimiento</button></div></div>
 
 
+
+<section id="retail_orders" class="section">
+  <div class="card">
+    <div class="module-head"><div><span class="eyebrow">TIENDA ONLINE</span><h2>Pedidos Online</h2><p class="mut">Compras hechas desde menu.yummypro.online con stock reservado automáticamente.</p></div><button class="ghost" type="button" onclick="loadRetailOnlineOrders()">↻ Actualizar</button></div>
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin:14px 0">
+      <button class="ghost retail-order-filter active" data-retail-order-filter="active" type="button" onclick="setRetailOrderFilter('active')">Activos</button>
+      <button class="ghost retail-order-filter" data-retail-order-filter="pending_payment" type="button" onclick="setRetailOrderFilter('pending_payment')">Esperando pago</button>
+      <button class="ghost retail-order-filter" data-retail-order-filter="delivered" type="button" onclick="setRetailOrderFilter('delivered')">Entregados</button>
+      <button class="ghost retail-order-filter" data-retail-order-filter="cancelled" type="button" onclick="setRetailOrderFilter('cancelled')">Cancelados</button>
+      <button class="ghost retail-order-filter" data-retail-order-filter="all" type="button" onclick="setRetailOrderFilter('all')">Todos</button>
+    </div>
+    <div class="restaurant-metrics" style="margin-bottom:16px"><article class="restaurant-metric"><span>Activos</span><strong id="retailOnlineActiveCount">0</strong></article><article class="restaurant-metric"><span>Esperando pago</span><strong id="retailOnlinePendingCount">0</strong></article><article class="restaurant-metric"><span>Listos</span><strong id="retailOnlineReadyCount">0</strong></article><article class="restaurant-metric"><span>Venta online</span><strong id="retailOnlineSalesTotal">$0</strong></article></div>
+    <div id="retailOnlineOrderList" class="list"></div>
+  </div>
+</section>
 
 <section id="retail_pos" class="section">
   <div class="card">
@@ -2403,8 +2419,8 @@ async function enter(user){
     msg.textContent=e.message||"No se pudo cargar la información del restaurante.";
   }
 }
-const roleTabs={restaurant:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","retail_pos","retail_products","retail_suppliers","retail_purchases","staff","promotions","reviews","table_qr","qr","plans","settings"],manager:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","retail_pos","retail_products","retail_suppliers","retail_purchases","staff","promotions","reviews","table_qr","qr","settings"],editor:["orders","kitchen","products","categories","inventory","retail_products"],cashier:["orders","cash","retail_pos"],kitchen:["kitchen"],waiter:["pos"],courier:["orders"]};
-const retailTabModule={retail_pos:"cash",retail_products:"products",retail_suppliers:"inventory",retail_purchases:"inventory"};
+const roleTabs={restaurant:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","retail_orders","retail_pos","retail_products","retail_suppliers","retail_purchases","staff","promotions","reviews","table_qr","qr","plans","settings"],manager:["dashboard","orders","pos","kitchen","cash","products","categories","inventory","retail_orders","retail_pos","retail_products","retail_suppliers","retail_purchases","staff","promotions","reviews","table_qr","qr","settings"],editor:["orders","kitchen","products","categories","inventory","retail_products"],cashier:["orders","cash","retail_orders","retail_pos"],kitchen:["kitchen"],waiter:["pos"],courier:["orders"]};
+const retailTabModule={retail_orders:"cash",retail_pos:"cash",retail_products:"products",retail_suppliers:"inventory",retail_purchases:"inventory"};
 const restaurantOnlyTabs=new Set(["orders","pos","kitchen","products","categories","inventory","promotions","reviews","table_qr","qr"]);
 function currentBusinessType(){return String(currentRestaurantConfig?.business_type||restaurants.find(x=>Number(x.id)===Number(currentRestaurant))?.business_type||"restaurant").toLowerCase()}
 function isRetailBusiness(){return ["supermarket","minimarket"].includes(currentBusinessType())}
