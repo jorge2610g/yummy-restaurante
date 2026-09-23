@@ -53,7 +53,7 @@ for(const marker of ['pwaNotificationBtn','activateYummyProNotifications','syncR
 
 for(const marker of ['apple-touch-icon.png','icon-192.png','icon-512.png'])if(!panel.includes(marker)&&marker==='apple-touch-icon.png')throw new Error('panel/index.html: falta icono iOS '+marker);
 
-for(const marker of ['restaurant.webmanifest','restaurantPwaInstallBtn','installRestaurantLandingPwa','restaurantPwaInstallBtn','v2.0.8'])if(!landing.includes(marker))throw new Error('index.html: falta PWA landing restaurante '+marker);
+for(const marker of ['restaurant.webmanifest','restaurantPwaInstallBtn','installRestaurantLandingPwa','restaurantPwaInstallBtn','v2.0.9'])if(!landing.includes(marker))throw new Error('index.html: falta PWA landing restaurante '+marker);
 
 if(!panel.includes('/manifest.webmanifest?v=2507'))throw new Error('panel/index.html: falta manifest versionado v2507');
 if(!landing.includes('/restaurant.webmanifest?v=207'))throw new Error('index.html: falta manifest landing versionado v207');
@@ -61,3 +61,8 @@ if(!landing.includes('/restaurant.webmanifest?v=207'))throw new Error('index.htm
 if(landing.includes('rel="manifest" href="/restaurant.webmanifest'))throw new Error('index.html: la landing no debe competir como PWA independiente');
 if(!panel.includes('/manifest.webmanifest?v=2508'))throw new Error('panel/index.html: falta manifest PWA panel v2508');
 if(!panel.includes('install=pwa'))throw new Error('panel/index.html: falta entrada de instalación desde landing');
+
+for(const marker of ['restaurantIssueButton','restaurantIssueDialog','submitRestaurantIssueReport','trackRestaurantEvent','trackRestaurantError','submit_issue_report'])if(!panel.includes(marker))throw new Error('panel/index.html: falta observabilidad/reporte '+marker);
+
+for(const marker of ['plan_interest_selected','trial_intended_plan_id','create_my_trial_restaurant_v2','Prueba 30 días gratis','landingHasRestaurant','syncLandingSession'])if(!landing.includes(marker))throw new Error('index.html: falta nuevo flujo de prueba '+marker);
+if(landing.includes('<div class="trial"><span class="tag">PRUEBA GRATIS</span>'))throw new Error('index.html: todavía existe tarjeta separada de prueba gratis');
