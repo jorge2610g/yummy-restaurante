@@ -3878,10 +3878,12 @@ async function handleRetailCameraCode(raw,status){
  retailScannerLastCode=code;retailScannerLastAt=now;
  if(retailScannerMode==="product"){
   if(status)status.innerHTML='✅ Código detectado: <b>'+esc(code)+'</b>';
+  playRetailScanBeep();
   applyScannedRetailProductCode(code);
   return
  }
  const ok=await retailAddCode(code,true),product=retailProducts.find(x=>retailProductMatchesCode(x,code));
+ if(ok)playRetailScanBeep();
  renderRetailScannerCartSummary();
  if(status)status.innerHTML=ok
   ?'✅ <b>'+esc(product?.name||code)+'</b> agregado · cantidad: <b>'+retailQty(product?retailPosCart[product.id]?.quantity||1:1)+'</b>'
@@ -4284,6 +4286,17 @@ async function enableRestaurantNotifications(){
  if(Notification.permission==="granted"){try{await registerRestaurantPush()}catch(e){console.error("No se pudo activar Web Push",e)}}
  try{window.refreshYummyProNotificationButton?.()}catch(_){}
  return Notification.permission==="granted";
+}
+function playRetailScanBeep(){
+ try{
+  unlockRestaurantSound();const ac=restaurantAudioContext;if(!ac)return;
+  const now=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();
+  o.type="sine";o.frequency.setValueAtTime(1450,now);
+  g.gain.setValueAtTime(.0001,now);
+  g.gain.exponentialRampToValueAtTime(.22,now+.008);
+  g.gain.exponentialRampToValueAtTime(.0001,now+.095);
+  o.connect(g);g.connect(ac.destination);o.start(now);o.stop(now+.105);
+ }catch(e){console.error("No se pudo reproducir el sonido del escáner",e)}
 }
 function playNewOrderSound(){
  try{
@@ -5980,7 +5993,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.47</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.48</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
