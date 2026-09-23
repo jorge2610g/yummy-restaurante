@@ -1747,6 +1747,127 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
  .retail-scanner-payment-actions{display:grid!important;grid-template-columns:1fr 1fr!important}
  .retail-scanner-payment-actions button{width:100%!important;min-height:46px!important;padding:8px!important;font-size:12px!important}
 }
+</style><style id="retail-scanner-mobile-full-v2546">
+body.retail-scanner-open{overflow:hidden!important}
+@media(max-width:600px){
+ #retailBarcodeCameraModal{
+   align-items:stretch!important;
+   justify-content:stretch!important;
+   padding:0!important;
+ }
+ #retailBarcodeCameraModal .retail-scanner-card{
+   width:100%!important;
+   height:100dvh!important;
+   min-height:100dvh!important;
+   max-height:100dvh!important;
+   margin:0!important;
+   padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))!important;
+   border-radius:0!important;
+   overflow:hidden!important;
+   display:flex!important;
+   flex-direction:column!important;
+ }
+ #retailBarcodeCameraModal .retail-scanner-head{
+   flex:0 0 auto!important;
+   display:grid!important;
+   grid-template-columns:minmax(0,1fr) 44px!important;
+   align-items:center!important;
+   gap:10px!important;
+   width:100%!important;
+   margin:0 0 8px!important;
+ }
+ #retailBarcodeCameraModal .retail-scanner-head>div{min-width:0!important}
+ #retailBarcodeCameraModal .retail-scanner-head .modal-close{
+   display:grid!important;
+   place-items:center!important;
+   width:44px!important;
+   min-width:44px!important;
+   height:44px!important;
+   min-height:44px!important;
+   padding:0!important;
+   margin:0!important;
+ }
+ #retailBarcodeCameraModal h2{
+   font-size:20px!important;
+   line-height:1.15!important;
+   margin:2px 0 0!important;
+ }
+ #retailScannerScanView{
+   flex:1 1 auto!important;
+   min-height:0!important;
+   display:flex!important;
+   flex-direction:column!important;
+   overflow:hidden!important;
+ }
+ #retailScannerScanView[hidden]{display:none!important}
+ #retailBarcodeCameraHelp{
+   flex:0 0 auto!important;
+   margin:0 0 8px!important;
+   font-size:12px!important;
+   line-height:1.3!important;
+ }
+ #retailBarcodeNativeFrame,
+ #retailBarcodeFallbackReader{
+   flex:0 0 clamp(180px,30dvh,250px)!important;
+   width:100%!important;
+   height:clamp(180px,30dvh,250px)!important;
+   min-height:180px!important;
+   max-height:250px!important;
+   border-radius:14px!important;
+ }
+ #retailBarcodeVideo,
+ #retailBarcodeFallbackReader video,
+ #retailBarcodeFallbackReader canvas{
+   width:100%!important;
+   height:100%!important;
+   min-height:0!important;
+   max-height:none!important;
+   object-fit:cover!important;
+ }
+ #retailBarcodeCameraStatus{
+   flex:0 0 auto!important;
+   margin:8px 0 0!important;
+   padding:9px 10px!important;
+   font-size:12px!important;
+ }
+ #retailBarcodeCameraItems{
+   flex:1 1 auto!important;
+   min-height:0!important;
+   max-height:none!important;
+   overflow:auto!important;
+   margin:8px 0 0!important;
+   padding-right:2px!important;
+ }
+ #retailBarcodeCameraItems .scanner-cart-row{
+   padding:8px 9px!important;
+ }
+ #retailScannerCheckoutBar{
+   flex:0 0 auto!important;
+   position:static!important;
+   margin:8px 0 0!important;
+   padding:10px 11px!important;
+   box-shadow:0 -8px 24px #0006!important;
+ }
+ #retailScannerCheckoutBar .primary{
+   min-width:120px!important;
+   min-height:46px!important;
+ }
+ #retailScannerPaymentPanel{
+   flex:1 1 auto!important;
+   min-height:0!important;
+   overflow:auto!important;
+   padding-bottom:max(4px,env(safe-area-inset-bottom))!important;
+ }
+ #retailScannerPaymentPanel[hidden]{display:none!important}
+ #retailScannerPaymentPanel .retail-scanner-payment-actions{
+   position:sticky!important;
+   bottom:0!important;
+   z-index:3!important;
+   padding-top:8px!important;
+   padding-bottom:max(2px,env(safe-area-inset-bottom))!important;
+   background:linear-gradient(180deg,transparent,var(--card) 24%)!important;
+ }
+}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -3701,7 +3822,7 @@ async function openRetailBarcodeCamera(mode="pos"){
  if(title)title.textContent=retailScannerMode==="product"?"Escanear código del producto":"Leer código de barra";
  if(help)help.textContent=retailScannerMode==="product"?"Apunta la cámara trasera al código de barra. Al leerlo, se copiará automáticamente al formulario del producto.":"Apunta la cámara trasera al código. Puedes escanear varios productos sin cerrar esta ventana.";
  if(nativeFrame)nativeFrame.hidden=false;if(fallback){fallback.hidden=true;fallback.innerHTML=""}
- modal.style.zIndex="3200";modal.classList.add("open");modal.setAttribute("aria-hidden","false");if(status)status.textContent="Preparando cámara…";renderRetailScannerCartSummary();
+ modal.style.zIndex="3200";modal.classList.add("open");modal.setAttribute("aria-hidden","false");document.body.classList.add("retail-scanner-open");if(status)status.textContent="Preparando cámara…";renderRetailScannerCartSummary();
  if(!window.isSecureContext){if(status)status.textContent="La cámara requiere una conexión HTTPS segura.";return false}
  if(!navigator.mediaDevices?.getUserMedia){if(status)status.textContent="Este dispositivo no permite acceso a cámara desde el navegador.";return false}
  try{
@@ -3749,7 +3870,7 @@ function closeRetailBarcodeCamera(focusAfter=true){
  stopRetailBarcodeCameraStream();retailScannerCheckoutOpen=false;
  const nativeFrame=document.getElementById("retailBarcodeNativeFrame"),fallback=document.getElementById("retailBarcodeFallbackReader"),scan=document.getElementById("retailScannerScanView"),payment=document.getElementById("retailScannerPaymentPanel");
  if(nativeFrame)nativeFrame.hidden=false;if(fallback){fallback.hidden=true;fallback.innerHTML=""};if(scan)scan.hidden=false;if(payment)payment.hidden=true;
- const m=document.getElementById("retailBarcodeCameraModal");m?.classList.remove("open");m?.setAttribute("aria-hidden","true");if(m)m.style.zIndex="";
+ const m=document.getElementById("retailBarcodeCameraModal");m?.classList.remove("open");m?.setAttribute("aria-hidden","true");if(m)m.style.zIndex="";document.body.classList.remove("retail-scanner-open");
  if(focusAfter)setTimeout(()=>document.getElementById(mode==="product"?"retailProductBarcode":"retailBarcodeInput")?.focus(),80)
 }
 function retailChangeQty(id,delta){
@@ -5770,7 +5891,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.45</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.46</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
