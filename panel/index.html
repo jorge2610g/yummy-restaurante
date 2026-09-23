@@ -1715,6 +1715,38 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
  #dashboardDetails .dashboard-detail-panel>.card{margin:0!important}
  #dashboardDetails .dashboard-detail-sales #salesChart{min-height:190px}
 }
+</style><style id="retail-scanner-checkout-v2543">
+.retail-auto-ticket-card{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.retail-auto-ticket-card>div{min-width:0}
+.retail-auto-ticket-toggle{flex:0 0 auto!important}
+.retail-scanner-card{width:min(620px,100%)!important}
+.retail-scanner-checkout-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:10px!important;position:sticky;bottom:0;z-index:4;box-shadow:0 10px 26px #0007}
+.retail-scanner-checkout-bar>div{display:flex;flex-direction:column;gap:2px}
+.retail-scanner-checkout-bar strong{font-size:24px;line-height:1.05}
+.retail-scanner-checkout-bar .primary{min-width:130px}
+.retail-scanner-close-row{justify-content:flex-end;margin-top:8px}
+.retail-scanner-payment-panel[hidden],#retailScannerScanView[hidden],#retailScannerCheckoutBar[hidden]{display:none!important}
+.retail-scanner-payment-panel{display:grid;gap:10px}
+.retail-scanner-payment-summary{margin-top:4px}
+.retail-scanner-payment-panel label{margin:0}
+.retail-scanner-checkout-status{margin:0!important}
+.retail-scanner-payment-actions{margin-top:2px!important}
+@media(max-width:600px){
+ .retail-auto-ticket-card{align-items:flex-start;gap:10px;padding:11px 12px!important}
+ .retail-auto-ticket-card .mut{font-size:11px!important;line-height:1.3}
+ .retail-auto-ticket-toggle{padding:7px 9px!important;white-space:nowrap}
+ #retailBarcodeCameraModal .retail-scanner-card{max-height:88dvh!important}
+ #retailBarcodeCameraItems{max-height:118px!important}
+ .retail-scanner-checkout-bar{margin-top:8px!important;padding:10px 11px!important;bottom:-1px}
+ .retail-scanner-checkout-bar strong{font-size:21px!important}
+ .retail-scanner-checkout-bar .primary{min-width:118px!important;min-height:44px!important}
+ .retail-scanner-close-row{display:none!important}
+ .retail-scanner-payment-panel{gap:8px}
+ .retail-scanner-payment-summary{padding:11px!important}
+ .retail-scanner-payment-panel input,.retail-scanner-payment-panel select{min-height:42px!important;padding:8px 10px!important}
+ .retail-scanner-payment-actions{display:grid!important;grid-template-columns:1fr 1fr!important}
+ .retail-scanner-payment-actions button{width:100%!important;min-height:46px!important;padding:8px!important;font-size:12px!important}
+}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -2125,7 +2157,7 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
     <div>
       <label>Código de barra o SKU</label>
       <div class="retail-barcode-row"><input id="retailBarcodeInput" inputmode="numeric" autocomplete="off" placeholder="Escanea o escribe el código" onkeydown="if(event.key==='Enter'){event.preventDefault();retailScanBarcode()}"><button class="primary retail-barcode-action retail-barcode-add" type="button" onclick="retailScanBarcode()" aria-label="Agregar código" title="Agregar">Agregar</button><button class="ghost retail-barcode-action retail-barcode-camera" type="button" onclick="openRetailBarcodeCamera()" aria-label="Abrir cámara para escanear" title="Cámara">📷</button></div><div id="retailPosScanStatus" class="mut" style="margin-top:8px">Cargando productos disponibles…</div>
-      <div class="item" style="margin-top:10px"><b>🧾 Ticket automático activado</b><div class="mut">Al completar cada venta se abrirá automáticamente el ticket listo para imprimir. Puedes ver o reimprimir ventas desde el ícono 🕘.</div></div>
+      <div class="item retail-auto-ticket-card" style="margin-top:10px"><div><b>🧾 Ticket automático</b><div class="mut">Actívalo solo cuando quieras abrir el ticket al terminar cada venta. Si está apagado, podrás imprimirlo después desde 🕘.</div></div><label class="auto-print-toggle retail-auto-ticket-toggle" title="Abrir automáticamente el ticket después de cobrar"><input id="retailAutoPrintToggle" type="checkbox" onchange="setRetailAutoPrint(this.checked)"><span class="toggle-track"></span><span id="retailAutoPrintState">Desactivado</span></label></div>
       <div id="retailPosCart" class="list" style="margin-top:14px"></div>
       <div class="item retail-pos-quick-checkout">
         <div><span class="mut">Total de la venta</span><strong id="retailCheckoutQuickTotal">$0</strong></div>
@@ -2151,14 +2183,37 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
   <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="ghost" type="button" onclick="closeRetailRecentSalesModal()">Cerrar</button></div>
 </div></div>
 
-<div id="retailBarcodeCameraModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closeRetailBarcodeCamera()"></div><div class="card product-modal-card">
-  <div class="row between"><div><span class="eyebrow">ESCÁNER</span><h2 id="retailBarcodeCameraTitle">Leer código de barra</h2></div><button class="ghost modal-close" type="button" onclick="closeRetailBarcodeCamera()">✕</button></div>
-  <p id="retailBarcodeCameraHelp" class="mut">Apunta la cámara trasera al código. Puedes escanear varios productos sin cerrar esta ventana.</p>
-  <div id="retailBarcodeNativeFrame" style="position:relative;background:#000;border-radius:14px;overflow:hidden;min-height:260px"><video id="retailBarcodeVideo" autoplay playsinline muted style="width:100%;height:100%;min-height:260px;object-fit:cover"></video><div style="position:absolute;left:10%;right:10%;top:42%;height:2px;background:#ffb000;box-shadow:0 0 12px #ffb000"></div></div>
-  <div id="retailBarcodeFallbackReader" hidden style="background:#000;border-radius:14px;overflow:hidden;min-height:260px"></div>
-  <div id="retailBarcodeCameraStatus" class="item" style="margin-top:12px">Preparando cámara…</div>
-  <div id="retailBarcodeCameraItems" class="list" hidden></div>
-  <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="closeRetailBarcodeCamera()">Cerrar</button></div>
+<div id="retailBarcodeCameraModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closeRetailBarcodeCamera()"></div><div class="card product-modal-card retail-scanner-card">
+  <div class="row between retail-scanner-head"><div><span class="eyebrow">ESCÁNER</span><h2 id="retailBarcodeCameraTitle">Leer código de barra</h2></div><button class="ghost modal-close" type="button" onclick="closeRetailBarcodeCamera()">✕</button></div>
+
+  <div id="retailScannerScanView">
+    <p id="retailBarcodeCameraHelp" class="mut">Apunta la cámara trasera al código. Puedes escanear varios productos sin cerrar esta ventana.</p>
+    <div id="retailBarcodeNativeFrame" style="position:relative;background:#000;border-radius:14px;overflow:hidden;min-height:260px"><video id="retailBarcodeVideo" autoplay playsinline muted style="width:100%;height:100%;min-height:260px;object-fit:cover"></video><div style="position:absolute;left:10%;right:10%;top:42%;height:2px;background:#ffb000;box-shadow:0 0 12px #ffb000"></div></div>
+    <div id="retailBarcodeFallbackReader" hidden style="background:#000;border-radius:14px;overflow:hidden;min-height:260px"></div>
+    <div id="retailBarcodeCameraStatus" class="item" style="margin-top:12px">Preparando cámara…</div>
+    <div id="retailBarcodeCameraItems" class="list" hidden></div>
+    <div id="retailScannerCheckoutBar" class="item retail-scanner-checkout-bar">
+      <div><span class="mut">Total actual</span><strong id="retailScannerQuickTotal">$0</strong></div>
+      <button class="primary" id="retailScannerCheckoutStart" type="button" onclick="openRetailScannerCheckout()">Cobrar</button>
+    </div>
+    <div class="row retail-scanner-close-row"><button class="ghost" type="button" onclick="closeRetailBarcodeCamera()">Cerrar</button></div>
+  </div>
+
+  <div id="retailScannerPaymentPanel" class="retail-scanner-payment-panel" hidden>
+    <div class="item retail-scanner-payment-summary">
+      <div class="row between"><b>Subtotal</b><strong id="retailScannerSubtotal">$0</strong></div>
+      <label>Descuento<input id="retailScannerDiscount" type="number" min="0" step="1" value="0" oninput="updateRetailCheckoutState('scanner')"></label>
+      <div class="row between retail-checkout-total"><b>Total</b><strong id="retailScannerTotal">$0</strong></div>
+    </div>
+    <label>Método de pago<select id="retailScannerPayment" onchange="updateRetailCheckoutState('scanner')"><option>Efectivo</option><option>Tarjeta POS</option><option>Transferencia</option><option>QR</option></select></label>
+    <label>Monto recibido<input id="retailScannerReceived" type="number" min="0" step="1" placeholder="Solo efectivo" oninput="updateRetailCheckoutState('scanner')"></label>
+    <label>Cliente (opcional)<input id="retailScannerCustomer" placeholder="Nombre del cliente"></label>
+    <div id="retailScannerCheckoutStatus" class="item retail-scanner-checkout-status">Completa los datos del pago.</div>
+    <div class="row product-modal-actions retail-scanner-payment-actions">
+      <button class="ghost" type="button" onclick="backToRetailScanner()">← Seguir escaneando</button>
+      <button class="primary" id="retailScannerCheckoutBtn" type="button" onclick="completeRetailSale('scanner')">Cobrar venta</button>
+    </div>
+  </div>
 </div></div>
 
 <div id="retailSaleModal" class="product-modal" aria-hidden="true"><div class="product-modal-backdrop" onclick="closeRetailSaleDetail()"></div><div class="card product-modal-card" style="max-width:760px">
@@ -2545,7 +2600,7 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b){const next=theme==="dark"?"claro":"oscuro",icon=theme==="dark"?"☀️":"🌙";b.innerHTML='<span class="header-action-icon" aria-hidden="true">'+icon+'</span><span class="action-label">Modo '+next+'</span>';b.setAttribute("aria-label","Activar modo "+next);b.title="Activar modo "+next}}
 function toggleAdminTheme(){applyAdminTheme(document.documentElement.dataset.theme==="light"?"dark":"light")}
 applyAdminTheme(localStorage.getItem("admin_theme")||"dark");setTimeout(bindRestaurantMpButtons,0);
-let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",veripagosSubscriptionConfigured=false,veripagosRestaurantConfigured=false,currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[],retailProducts=[],retailSuppliers=[],retailSales=[],retailPurchases=[],retailPosCart={},retailPurchaseCart=[],retailCashSession=null,retailOnlineOrders=[],retailOrderFilter="active",retailOnlineOrdersChannel=null,retailOnlineOrdersChannelRestaurant=null,retailScannerStream=null,retailScannerDetector=null,retailHtml5Scanner=null,retailScannerActive=false,retailScannerLastCode="",retailScannerLastAt=0,retailScannerMode="pos",retailReturnContext=null;
+let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",veripagosSubscriptionConfigured=false,veripagosRestaurantConfigured=false,currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[],retailProducts=[],retailSuppliers=[],retailSales=[],retailPurchases=[],retailPosCart={},retailPurchaseCart=[],retailCashSession=null,retailOnlineOrders=[],retailOrderFilter="active",retailOnlineOrdersChannel=null,retailOnlineOrdersChannelRestaurant=null,retailScannerStream=null,retailScannerDetector=null,retailHtml5Scanner=null,retailScannerActive=false,retailScannerLastCode="",retailScannerLastAt=0,retailScannerMode="pos",retailScannerCheckoutOpen=false,retailReturnContext=null;
 const REST_TELEMETRY_KEY="yummy_restaurant_telemetry_session_v1";
 function restaurantTelemetrySession(){try{let v=localStorage.getItem(REST_TELEMETRY_KEY);if(!v){v=(crypto.randomUUID?.()||Date.now()+"-"+Math.random().toString(16).slice(2));localStorage.setItem(REST_TELEMETRY_KEY,v)}return v}catch(_){return "restaurant-"+Date.now()}}
 async function trackRestaurantEvent(eventName,module=null,metadata={},planId=null){try{await sb.rpc("log_app_event",{p_app_context:"restaurant",p_event_name:eventName,p_module:module,p_restaurant_id:currentRestaurant||null,p_plan_id:planId||null,p_session_id:restaurantTelemetrySession(),p_route:location.pathname+location.search,p_metadata:metadata||{}})}catch(_){}}
@@ -3458,8 +3513,18 @@ async function cancelRetailOnlineOrder(id){
 }
 
 function retailAutoPrintKey(){return "yummy_retail_auto_print_"+String(currentRestaurant||"0")}
-function syncRetailAutoPrint(){try{localStorage.setItem(retailAutoPrintKey(),"1")}catch(_){}}
-function saveRetailAutoPrint(){try{localStorage.setItem(retailAutoPrintKey(),"1")}catch(_){}}
+function retailAutoPrintEnabled(){try{return localStorage.getItem(retailAutoPrintKey())==="1"}catch(_){return false}}
+function syncRetailAutoPrint(){
+ const enabled=retailAutoPrintEnabled(),toggle=document.getElementById("retailAutoPrintToggle"),state=document.getElementById("retailAutoPrintState");
+ if(toggle)toggle.checked=enabled;
+ if(state)state.textContent=enabled?"Activado":"Desactivado"
+}
+function setRetailAutoPrint(v){
+ try{localStorage.setItem(retailAutoPrintKey(),v?"1":"0")}catch(_){}
+ syncRetailAutoPrint();
+ toast(v?"Ticket automático activado":"Ticket automático desactivado")
+}
+function saveRetailAutoPrint(v){setRetailAutoPrint(!!v)}
 async function loadRetailPos(){
  if(!currentRestaurant)return;
  const [productsResult,salesResult,cashResult]=await Promise.all([
@@ -3574,8 +3639,13 @@ function loadRetailScannerFallbackLibrary(){
  })
 }
 function renderRetailScannerCartSummary(){
- const box=document.getElementById("retailBarcodeCameraItems");if(!box)return;
- if(retailScannerMode!=="pos"){box.hidden=true;box.innerHTML="";return}
+ const box=document.getElementById("retailBarcodeCameraItems"),bar=document.getElementById("retailScannerCheckoutBar"),quick=document.getElementById("retailScannerQuickTotal"),startBtn=document.getElementById("retailScannerCheckoutStart");
+ const isPos=retailScannerMode==="pos";
+ if(bar)bar.hidden=!isPos;
+ if(quick)quick.textContent=money(retailCartSubtotal());
+ if(startBtn)startBtn.disabled=!retailCashSession||!Object.keys(retailPosCart).length;
+ if(!box)return;
+ if(!isPos){box.hidden=true;box.innerHTML="";return}
  box.hidden=false;
  const rows=Object.values(retailPosCart);
  if(!rows.length){box.innerHTML='<div class="item mut">Aún no hay productos escaneados.</div>';return}
@@ -3613,6 +3683,7 @@ async function startRetailFallbackScanner(status){
 }
 async function openRetailBarcodeCamera(mode="pos"){
  retailScannerMode=mode==="product"?"product":"pos";
+ if(retailScannerMode==="pos")prepareRetailScannerScanView();
  const modal=document.getElementById("retailBarcodeCameraModal"),status=document.getElementById("retailBarcodeCameraStatus"),video=document.getElementById("retailBarcodeVideo"),title=document.getElementById("retailBarcodeCameraTitle"),help=document.getElementById("retailBarcodeCameraHelp"),nativeFrame=document.getElementById("retailBarcodeNativeFrame"),fallback=document.getElementById("retailBarcodeFallbackReader");
  if(!modal||!video)return false;
  if(title)title.textContent=retailScannerMode==="product"?"Escanear código del producto":"Leer código de barra";
@@ -3663,9 +3734,9 @@ function stopRetailBarcodeCameraStream(){
 }
 function closeRetailBarcodeCamera(focusAfter=true){
  const mode=retailScannerMode;
- stopRetailBarcodeCameraStream();
- const nativeFrame=document.getElementById("retailBarcodeNativeFrame"),fallback=document.getElementById("retailBarcodeFallbackReader");
- if(nativeFrame)nativeFrame.hidden=false;if(fallback){fallback.hidden=true;fallback.innerHTML=""}
+ stopRetailBarcodeCameraStream();retailScannerCheckoutOpen=false;
+ const nativeFrame=document.getElementById("retailBarcodeNativeFrame"),fallback=document.getElementById("retailBarcodeFallbackReader"),scan=document.getElementById("retailScannerScanView"),payment=document.getElementById("retailScannerPaymentPanel");
+ if(nativeFrame)nativeFrame.hidden=false;if(fallback){fallback.hidden=true;fallback.innerHTML=""};if(scan)scan.hidden=false;if(payment)payment.hidden=true;
  const m=document.getElementById("retailBarcodeCameraModal");m?.classList.remove("open");m?.setAttribute("aria-hidden","true");if(m)m.style.zIndex="";
  if(focusAfter)setTimeout(()=>document.getElementById(mode==="product"?"retailProductBarcode":"retailBarcodeInput")?.focus(),80)
 }
@@ -3682,31 +3753,48 @@ function renderRetailPosCart(){
  const subtotal=retailCartSubtotal(),discount=Math.min(Math.max(Number(document.getElementById("retailPosDiscount")?.value||0),0),subtotal),total=subtotal-discount;
  const a=document.getElementById("retailPosSubtotal"),b=document.getElementById("retailPosTotal");if(a)a.textContent=money(subtotal);if(b)b.textContent=money(total);updateRetailCheckoutState();renderRetailScannerCartSummary()
 }
-function retailCheckoutState(){
- const rows=Object.values(retailPosCart),subtotal=retailCartSubtotal(),discount=Math.min(Math.max(Number(document.getElementById("retailPosDiscount")?.value||0),0),subtotal),total=Math.max(subtotal-discount,0),method=document.getElementById("retailPosPayment")?.value||"Efectivo",received=Number(document.getElementById("retailPosReceived")?.value||0);
- if(!retailCashSession)return {ok:false,total,method,received,message:"Debes abrir una caja antes de cobrar."};
- if(!rows.length)return {ok:false,total,method,received,message:"Agrega al menos un producto al carrito."};
- if(method==="Efectivo"){
-  if(!Number.isFinite(received)||received<=0)return {ok:false,total,method,received,message:"Ingresa el monto recibido en efectivo."};
-  if(received<total)return {ok:false,total,method,received,message:"Monto insuficiente. Faltan "+money(total-received)+"."};
-  return {ok:true,total,method,received,message:received>total?"Cambio a entregar: "+money(received-total)+".":"Monto exacto. Puedes cobrar la venta."}
+function retailCheckoutRefs(source="main"){
+ const scanner=source==="scanner";
+ return {
+  discount:document.getElementById(scanner?"retailScannerDiscount":"retailPosDiscount"),
+  subtotal:document.getElementById(scanner?"retailScannerSubtotal":"retailPosSubtotal"),
+  total:document.getElementById(scanner?"retailScannerTotal":"retailPosTotal"),
+  payment:document.getElementById(scanner?"retailScannerPayment":"retailPosPayment"),
+  received:document.getElementById(scanner?"retailScannerReceived":"retailPosReceived"),
+  customer:document.getElementById(scanner?"retailScannerCustomer":"retailPosCustomer"),
+  status:document.getElementById(scanner?"retailScannerCheckoutStatus":"retailCheckoutStatus"),
+  button:document.getElementById(scanner?"retailScannerCheckoutBtn":"retailPosCheckoutBtn")
  }
- return {ok:true,total,method,received:null,message:"Listo para cobrar con "+method+"."}
 }
-function updateRetailCheckoutState(){
- const state=retailCheckoutState(),box=document.getElementById("retailCheckoutStatus"),btn=document.getElementById("retailPosCheckoutBtn"),quickBtn=document.getElementById("retailCheckoutQuickBtn"),quickTotal=document.getElementById("retailCheckoutQuickTotal"),received=document.getElementById("retailPosReceived");
- if(received)received.disabled=state.method!=="Efectivo";
- if(box){box.textContent=state.message;box.style.borderColor=state.ok?"var(--ok)":"var(--line)"}
- if(btn&&!btn.dataset.processing){btn.disabled=!state.ok}
+function retailCheckoutState(source="main"){
+ const refs=retailCheckoutRefs(source),rows=Object.values(retailPosCart),subtotal=retailCartSubtotal(),discount=Math.min(Math.max(Number(refs.discount?.value||0),0),subtotal),total=Math.max(subtotal-discount,0),method=refs.payment?.value||"Efectivo",received=Number(refs.received?.value||0);
+ if(!retailCashSession)return {ok:false,subtotal,discount,total,method,received,message:"Debes abrir una caja antes de cobrar."};
+ if(!rows.length)return {ok:false,subtotal,discount,total,method,received,message:"Agrega al menos un producto al carrito."};
+ if(method==="Efectivo"){
+  if(!Number.isFinite(received)||received<=0)return {ok:false,subtotal,discount,total,method,received,message:"Ingresa el monto recibido en efectivo."};
+  if(received<total)return {ok:false,subtotal,discount,total,method,received,message:"Monto insuficiente. Faltan "+money(total-received)+"."};
+  return {ok:true,subtotal,discount,total,method,received,message:received>total?"Cambio a entregar: "+money(received-total)+".":"Monto exacto. Puedes cobrar la venta."}
+ }
+ return {ok:true,subtotal,discount,total,method,received:null,message:"Listo para cobrar con "+method+"."}
+}
+function updateRetailCheckoutState(source="main"){
+ const refs=retailCheckoutRefs(source),state=retailCheckoutState(source),quickBtn=document.getElementById("retailCheckoutQuickBtn"),quickTotal=document.getElementById("retailCheckoutQuickTotal"),scannerStart=document.getElementById("retailScannerCheckoutStart"),scannerQuick=document.getElementById("retailScannerQuickTotal");
+ if(refs.received)refs.received.disabled=state.method!=="Efectivo";
+ if(refs.subtotal)refs.subtotal.textContent=money(state.subtotal||0);
+ if(refs.total)refs.total.textContent=money(state.total||0);
+ if(refs.status){refs.status.textContent=state.message;refs.status.style.borderColor=state.ok?"var(--ok)":"var(--line)"}
+ if(refs.button&&!refs.button.dataset.processing)refs.button.disabled=!state.ok;
  const hasItems=Object.keys(retailPosCart).length>0;
  if(quickBtn)quickBtn.disabled=!retailCashSession||!hasItems;
- if(quickTotal)quickTotal.textContent=money(state.total||0);
+ if(quickTotal)quickTotal.textContent=money(retailCheckoutState("main").total||0);
+ if(scannerStart)scannerStart.disabled=!retailCashSession||!hasItems;
+ if(scannerQuick&&!retailScannerCheckoutOpen)scannerQuick.textContent=money(retailCartSubtotal());
  return state
 }
 function openRetailCheckoutModal(){
  if(!retailCashSession)return toast("Debes abrir una caja antes de cobrar.");
  if(!Object.keys(retailPosCart).length)return toast("Agrega al menos un producto antes de cobrar.");
- updateRetailCheckoutState();
+ updateRetailCheckoutState("main");
  const modal=document.getElementById("retailCheckoutModal");if(!modal)return;
  modal.classList.add("open");modal.setAttribute("aria-hidden","false");
  setTimeout(()=>{const method=document.getElementById("retailPosPayment");if(method)method.focus()},80)
@@ -3715,6 +3803,32 @@ function closeRetailCheckoutModal(){
  const modal=document.getElementById("retailCheckoutModal");if(!modal)return;
  modal.classList.remove("open");modal.setAttribute("aria-hidden","true");
  setTimeout(()=>document.getElementById("retailBarcodeInput")?.focus(),80)
+}
+function prepareRetailScannerScanView(){
+ retailScannerCheckoutOpen=false;
+ const scan=document.getElementById("retailScannerScanView"),payment=document.getElementById("retailScannerPaymentPanel"),title=document.getElementById("retailBarcodeCameraTitle");
+ if(scan)scan.hidden=false;if(payment)payment.hidden=true;if(title&&retailScannerMode==="pos")title.textContent="Leer código de barra";
+ renderRetailScannerCartSummary()
+}
+function openRetailScannerCheckout(){
+ if(retailScannerMode!=="pos")return;
+ if(!retailCashSession)return toast("Debes abrir una caja antes de cobrar.");
+ if(!Object.keys(retailPosCart).length)return toast("Escanea al menos un producto antes de cobrar.");
+ retailScannerCheckoutOpen=true;stopRetailBarcodeCameraStream();
+ const scan=document.getElementById("retailScannerScanView"),payment=document.getElementById("retailScannerPaymentPanel"),title=document.getElementById("retailBarcodeCameraTitle");
+ if(scan)scan.hidden=true;if(payment)payment.hidden=false;if(title)title.textContent="Cobrar venta";
+ updateRetailCheckoutState("scanner");
+ setTimeout(()=>document.getElementById("retailScannerPayment")?.focus(),80)
+}
+async function backToRetailScanner(){
+ if(retailScannerMode!=="pos")return;
+ prepareRetailScannerScanView();
+ await openRetailBarcodeCamera("pos")
+}
+function resetRetailCheckoutForms(){
+ ["retailPosDiscount","retailScannerDiscount"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=0});
+ ["retailPosReceived","retailScannerReceived","retailPosCustomer","retailScannerCustomer"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=""});
+ ["retailPosPayment","retailScannerPayment"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="Efectivo"})
 }
 function openRetailRecentSalesModal(){
  const modal=document.getElementById("retailRecentSalesModal");if(!modal)return;
@@ -3781,26 +3895,29 @@ async function voidRetailSale(){
  if(error)return toast(error.message);
  trackRestaurantEvent("retail_sale_voided","retail_pos",{sale_id:ctx.sale.id,refund_total:data?.refund_total||0});toast("Venta anulada y stock repuesto · "+money(data?.refund_total||0));await loadRetailPos();await openRetailSaleDetail(ctx.sale.id)
 }
-async function completeRetailSale(){
- const state=updateRetailCheckoutState(),status=document.getElementById("retailCheckoutStatus"),btn=document.getElementById("retailPosCheckoutBtn");
+async async function completeRetailSale(source="main"){
+ const refs=retailCheckoutRefs(source),state=updateRetailCheckoutState(source),status=refs.status,btn=refs.button;
  if(!state.ok){toast(state.message);if(status)status.textContent="⚠ "+state.message;return}
  const items=Object.values(retailPosCart).map(x=>({product_id:Number(x.product_id),quantity:Number(x.quantity)}));
- const method=state.method,received=method==="Efectivo"?state.received:null;
+ const method=state.method,received=method==="Efectivo"?state.received:null,autoPrint=retailAutoPrintEnabled();
  if(btn?.dataset.processing==="1")return;
  if(btn){btn.dataset.processing="1";btn.disabled=true;btn.textContent="Procesando cobro…"}
  if(status)status.textContent="Procesando venta, espera un momento…";
  try{
-  const rpc=sb.rpc("retail_complete_sale",{p_restaurant_id:currentRestaurant,p_cash_session_id:retailCashSession.id,p_payment_method:method,p_discount:Number(document.getElementById("retailPosDiscount")?.value||0),p_amount_received:received,p_customer_name:document.getElementById("retailPosCustomer")?.value.trim()||null,p_notes:null,p_items:items});
+  const rpc=sb.rpc("retail_complete_sale",{p_restaurant_id:currentRestaurant,p_cash_session_id:retailCashSession.id,p_payment_method:method,p_discount:Number(state.discount||0),p_amount_received:received,p_customer_name:refs.customer?.value.trim()||null,p_notes:null,p_items:items});
   const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error("El cobro está tardando demasiado. Verifica tu conexión e intenta nuevamente.")),18000));
   const {data,error}=await Promise.race([rpc,timeout]);
   if(error)throw error;
   const saleId=data?.sale_id;
-  if(saleId)printRetailSale(saleId,true);
-  retailPosCart={};document.getElementById("retailPosDiscount").value=0;document.getElementById("retailPosReceived").value="";document.getElementById("retailPosCustomer").value="";
+  if(saleId&&autoPrint)printRetailSale(saleId,true);
+  retailPosCart={};resetRetailCheckoutForms();
   await loadRetailPos();
-  closeRetailCheckoutModal();
-  trackRestaurantEvent("retail_sale_completed","retail_pos",{sale_id:saleId,total:data?.total});
-  const success="Venta "+(data?.sale_code||"")+" completada · "+money(data?.total||0)+(Number(data?.change||0)>0?" · Cambio "+money(data.change):"")+" · ticket generado";
+  if(source==="scanner"&&document.getElementById("retailBarcodeCameraModal")?.classList.contains("open")){
+   prepareRetailScannerScanView();
+   setTimeout(()=>openRetailBarcodeCamera("pos"),140)
+  }else closeRetailCheckoutModal();
+  trackRestaurantEvent("retail_sale_completed","retail_pos",{sale_id:saleId,total:data?.total,auto_print:autoPrint});
+  const success="Venta "+(data?.sale_code||"")+" completada · "+money(data?.total||0)+(Number(data?.change||0)>0?" · Cambio "+money(data.change):"")+(autoPrint?" · ticket abierto":"");
   if(status)status.textContent="✅ "+success;toast(success)
  }catch(e){
   const msg=e?.message||"No se pudo completar la venta";
@@ -3809,10 +3926,9 @@ async function completeRetailSale(){
   toast(msg)
  }finally{
   if(btn){delete btn.dataset.processing;btn.textContent="Cobrar venta"}
-  updateRetailCheckoutState()
+  updateRetailCheckoutState(source)
  }
 }
-
 async function refreshRetailDashboard(){
  const since=new Date();since.setHours(0,0,0,0);
  const week=new Date();week.setHours(0,0,0,0);week.setDate(week.getDate()-6);
@@ -5642,7 +5758,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.42</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.43</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
