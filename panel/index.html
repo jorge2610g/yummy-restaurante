@@ -2227,7 +2227,7 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b){const next=theme==="dark"?"claro":"oscuro",icon=theme==="dark"?"☀️":"🌙";b.innerHTML='<span class="header-action-icon" aria-hidden="true">'+icon+'</span><span class="action-label">Modo '+next+'</span>';b.setAttribute("aria-label","Activar modo "+next);b.title="Activar modo "+next}}
 function toggleAdminTheme(){applyAdminTheme(document.documentElement.dataset.theme==="light"?"dark":"light")}
 applyAdminTheme(localStorage.getItem("admin_theme")||"dark");setTimeout(bindRestaurantMpButtons,0);
-let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",veripagosSubscriptionConfigured=false,veripagosRestaurantConfigured=false,currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[],retailProducts=[],retailSuppliers=[],retailSales=[],retailPurchases=[],retailPosCart={},retailPurchaseCart=[],retailCashSession=null,retailOnlineOrders=[],retailOrderFilter="active",retailScannerStream=null,retailScannerDetector=null,retailScannerActive=false,retailScannerLastCode="",retailScannerLastAt=0,retailReturnContext=null;
+let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",veripagosSubscriptionConfigured=false,veripagosRestaurantConfigured=false,currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[],retailProducts=[],retailSuppliers=[],retailSales=[],retailPurchases=[],retailPosCart={},retailPurchaseCart=[],retailCashSession=null,retailOnlineOrders=[],retailOrderFilter="active",retailOnlineOrdersChannel=null,retailOnlineOrdersChannelRestaurant=null,retailScannerStream=null,retailScannerDetector=null,retailScannerActive=false,retailScannerLastCode="",retailScannerLastAt=0,retailReturnContext=null;
 const REST_TELEMETRY_KEY="yummy_restaurant_telemetry_session_v1";
 function restaurantTelemetrySession(){try{let v=localStorage.getItem(REST_TELEMETRY_KEY);if(!v){v=(crypto.randomUUID?.()||Date.now()+"-"+Math.random().toString(16).slice(2));localStorage.setItem(REST_TELEMETRY_KEY,v)}return v}catch(_){return "restaurant-"+Date.now()}}
 async function trackRestaurantEvent(eventName,module=null,metadata={},planId=null){try{await sb.rpc("log_app_event",{p_app_context:"restaurant",p_event_name:eventName,p_module:module,p_restaurant_id:currentRestaurant||null,p_plan_id:planId||null,p_session_id:restaurantTelemetrySession(),p_route:location.pathname+location.search,p_metadata:metadata||{}})}catch(_){}}
@@ -2888,8 +2888,20 @@ function setRetailOrderFilter(filter){
  document.querySelectorAll(".retail-order-filter").forEach(b=>b.classList.toggle("active",b.dataset.retailOrderFilter===retailOrderFilter));
  renderRetailOnlineOrders();
 }
+function startRetailOnlineOrdersRealtime(){
+ if(!currentRestaurant)return;
+ if(retailOnlineOrdersChannel&&Number(retailOnlineOrdersChannelRestaurant)===Number(currentRestaurant))return;
+ if(retailOnlineOrdersChannel){try{sb.removeChannel(retailOnlineOrdersChannel)}catch(_){}retailOnlineOrdersChannel=null}
+ retailOnlineOrdersChannelRestaurant=currentRestaurant;
+ retailOnlineOrdersChannel=sb.channel("retail-online-orders-"+currentRestaurant)
+  .on("postgres_changes",{event:"*",schema:"public",table:"retail_online_orders",filter:"restaurant_id=eq."+currentRestaurant},payload=>{
+    if(payload.eventType==="INSERT")toast("🛒 Nueva compra online "+(payload.new?.order_code||""));
+    loadRetailOnlineOrders().catch(()=>{});
+  }).subscribe();
+}
 async function loadRetailOnlineOrders(){
  if(!currentRestaurant)return;
+ startRetailOnlineOrdersRealtime();
  const {data,error}=await sb.from("retail_online_orders").select("*").eq("restaurant_id",currentRestaurant).order("created_at",{ascending:false}).limit(150);
  if(error){console.error(error);return toast("No se pudieron cargar los pedidos online")}
  const orders=data||[],ids=orders.map(x=>x.id);let items=[];
