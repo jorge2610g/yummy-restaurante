@@ -1590,6 +1590,14 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
 .app-boot-mark{width:54px;height:54px;margin:0 auto 16px;border-radius:16px;display:grid;place-items:center;background:var(--a);color:#171000;font-size:27px;font-weight:900}
 .app-boot-card h2{margin:0 0 7px;font-size:20px}.app-boot-card p{margin:0;color:var(--mut);font-size:13px}
 .app-boot-spinner{width:28px;height:28px;margin:18px auto 0;border:3px solid var(--line);border-top-color:var(--a);border-radius:50%;animation:appBootSpin .8s linear infinite}
+.boot-connection-chip{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:7px 10px;border-radius:999px;border:1px solid var(--line);background:var(--ghost);font-size:12px;font-weight:850;color:var(--mut)}
+.boot-connection-chip::before{content:"";width:8px;height:8px;border-radius:50%;background:#94a3b8}
+.boot-connection-chip.online{color:#86efac;border-color:#166534;background:#052e1633}.boot-connection-chip.online::before{background:#22c55e}
+.boot-connection-chip.offline{color:#fecdd3;border-color:#7f1d1d;background:#3b1720}.boot-connection-chip.offline::before{background:#fb7185}
+.boot-connection-chip.degraded{color:#fde68a;border-color:#92400e;background:#451a0333}.boot-connection-chip.degraded::before{background:#f59e0b}
+.boot-diagnostic{display:none;margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:13px;background:var(--surface-2);text-align:left}
+.boot-diagnostic.show{display:block}.boot-diagnostic b{display:block;margin-bottom:5px;font-size:13px}.boot-diagnostic span{display:block;color:var(--mut);font-size:12px;line-height:1.4}
+.boot-diagnostic-actions{display:flex;gap:8px;margin-top:10px}.boot-diagnostic-actions button{flex:1;padding:8px 10px;font-size:12px}
 @keyframes appBootSpin{to{transform:rotate(360deg)}}
 @media(max-width:800px){
  html:has(body.waiter-mobile-shell){height:100%;overflow:hidden!important}
@@ -1704,7 +1712,50 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
  <div class="pwa-update-copy"><b>Nueva versión disponible</b><span>Actualiza YummyPro para usar la versión más reciente.</span></div>
  <div class="pwa-update-actions"><button class="ghost" type="button" onclick="dismissYummyProUpdate()">Después</button><button class="primary" type="button" onclick="applyYummyProUpdate()">Actualizar ahora</button></div>
 </div>
-<div id="appBootLoader" role="status" aria-live="polite"><div class="app-boot-card"><div class="app-boot-mark">Y</div><h2>Cargando tu restaurante…</h2><p>Estamos verificando tu sesión y tus accesos.</p><div class="app-boot-spinner" aria-hidden="true"></div></div></div>
+<div id="appBootLoader" role="status" aria-live="polite"><div class="app-boot-card"><div class="app-boot-mark">Y</div><h2 id="bootLoaderTitle">Cargando tu restaurante…</h2><p id="bootLoaderText">Estamos verificando tu sesión y tus accesos.</p><div id="bootConnectionChip" class="boot-connection-chip">Comprobando conexión…</div><div class="app-boot-spinner" aria-hidden="true"></div><div id="bootDiagnostic" class="boot-diagnostic"><b id="bootDiagnosticTitle">Diagnóstico de carga</b><span id="bootDiagnosticText">Estamos comprobando si el problema es la conexión o una carga bloqueada.</span><div class="boot-diagnostic-actions"><button class="ghost" type="button" onclick="window.yummyCheckConnection?.(true)">Probar conexión</button><button class="primary" type="button" onclick="window.yummyRetryBoot?.()">Reintentar</button></div></div></div></div>
+<script id="boot-connectivity-diagnostic-v2525">
+(function(){
+ const BACKEND_HEALTH="https://gulctljitzlwokqydigx.supabase.co/auth/v1/health";
+ const startedAt=Date.now();
+ let lastProbe={online:navigator.onLine,backend:null,checkedAt:0};
+ function el(id){return document.getElementById(id)}
+ function loaderActive(){return document.body?.classList.contains("auth-loading")}
+ function setChip(kind,text){const chip=el("bootConnectionChip");if(!chip)return;chip.className="boot-connection-chip "+kind;chip.textContent=text}
+ function showDiagnostic(title,text){const box=el("bootDiagnostic");if(!box)return;box.classList.add("show");if(el("bootDiagnosticTitle"))el("bootDiagnosticTitle").textContent=title;if(el("bootDiagnosticText"))el("bootDiagnosticText").textContent=text}
+ async function probeBackend(timeoutMs=4500){
+  if(!navigator.onLine)return false;
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{await fetch(BACKEND_HEALTH+"?t="+Date.now(),{method:"GET",cache:"no-store",signal:controller.signal,credentials:"omit"});return true}catch(_){return false}finally{clearTimeout(timer)}
+ }
+ window.yummyCheckConnection=async function(manual=false){
+  const online=navigator.onLine;
+  if(!online){
+   lastProbe={online:false,backend:false,checkedAt:Date.now()};
+   setChip("offline","Sin internet");
+   if(loaderActive())showDiagnostic("Sin conexión a internet","El dispositivo está sin conexión. El panel seguirá intentando cuando vuelva internet.");
+   const banner=el("pwaNetworkStatus");if(banner){banner.classList.add("show");const t=banner.querySelector("span:last-child");if(t)t.textContent="Sin internet · el sistema no puede cargar ni enviar datos."}
+   return lastProbe
+  }
+  setChip("","Internet detectado · verificando servidor…");
+  const backend=await probeBackend();
+  lastProbe={online:true,backend,checkedAt:Date.now()};
+  if(backend){
+   setChip("online","Internet y servidor OK");
+   if(loaderActive()&&(manual||Date.now()-startedAt>7500))showDiagnostic("La conexión funciona","Internet y el servidor responden. Si esta pantalla continúa cargando, el sistema quedó detenido en una operación. Pulsa Reintentar.");
+  }else{
+   setChip("degraded","Internet detectado · servidor sin respuesta");
+   if(loaderActive())showDiagnostic("Conexión inestable o servidor no disponible","El dispositivo detecta internet, pero YummyPro no logra comunicarse con el servidor. Puede ser señal inestable o una interrupción temporal del servicio.");
+  }
+  return lastProbe
+ };
+ window.yummyRetryBoot=function(){location.reload()};
+ window.addEventListener("offline",()=>window.yummyCheckConnection?.());
+ window.addEventListener("online",()=>setTimeout(()=>window.yummyCheckConnection?.(),500));
+ setTimeout(()=>window.yummyCheckConnection?.(),500);
+ setTimeout(()=>{if(loaderActive())window.yummyCheckConnection?.(true)},8000);
+ setTimeout(async()=>{if(!loaderActive())return;const r=await window.yummyCheckConnection?.(true);if(loaderActive()&&r?.online&&r?.backend){showDiagnostic("El sistema parece bloqueado","Tu internet está funcionando y el servidor responde, pero el panel lleva más de 18 segundos cargando. El problema no parece ser tu conexión. Pulsa Reintentar.");if(el("bootLoaderTitle"))el("bootLoaderTitle").textContent="La carga está tardando demasiado";if(el("bootLoaderText"))el("bootLoaderText").textContent="Diagnóstico: conexión correcta, carga del panel detenida."}},18000);
+})();
+</script>
 <div id="login" class="wrap login hidden"><div class="card"><h1>Panel de administración</h1><p class="mut">Gestiona menú, precios, disponibilidad y datos del negocio.</p>
 <label>Correo administrador</label><input id="email" type="email" autocomplete="username" placeholder="tu@email.com">
 <label>Contraseña</label><div class="row"><input id="password" type="password" autocomplete="current-password" placeholder="••••••••"><button type="button" class="ghost" aria-label="Mostrar contraseña" onclick="return togglePassword('password',this)">Ver</button></div>
@@ -5088,7 +5139,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.24</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.25</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
@@ -5173,8 +5224,8 @@ function updateYummyProNetworkStatus(){
 }
 function setupYummyProNetworkStatus(){
  updateYummyProNetworkStatus();
- window.addEventListener("offline",()=>{updateYummyProNetworkStatus();try{toast("⚠️ Sin conexión. No se enviarán pedidos ni pagos.")}catch(_){}});
- window.addEventListener("online",()=>{updateYummyProNetworkStatus();try{toast("✅ Conexión restablecida.")}catch(_){};syncRestaurantPushIfGranted().catch(()=>{})});
+ window.addEventListener("offline",()=>{updateYummyProNetworkStatus();window.yummyCheckConnection?.();try{toast("⚠️ Sin conexión. No se enviarán pedidos ni pagos.")}catch(_){}});
+ window.addEventListener("online",()=>{updateYummyProNetworkStatus();setTimeout(()=>window.yummyCheckConnection?.(),500);try{toast("✅ Conexión de red restablecida. Verificando servidor…")}catch(_){};syncRestaurantPushIfGranted().catch(()=>{})});
 }
 function yummyProStandalone(){return window.matchMedia?.("(display-mode: standalone)")?.matches===true||window.navigator.standalone===true}
 function yummyProIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(/macintosh/i.test(navigator.userAgent)&&navigator.maxTouchPoints>1)}
