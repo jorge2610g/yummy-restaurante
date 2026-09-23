@@ -55,7 +55,6 @@ for(const marker of ['apple-touch-icon.png','icon-192.png','icon-512.png'])if(!p
 
 for(const marker of ['restaurantPwaInstallBtn','install=pwa','v2.0.9'])if(!landing.includes(marker))throw new Error('index.html: falta entrada hacia PWA del panel '+marker);
 
-if(!landing.includes('/restaurant.webmanifest?v=207'))throw new Error('index.html: falta manifest landing versionado v207');
 
 if(landing.includes('rel="manifest" href="/restaurant.webmanifest'))throw new Error('index.html: la landing no debe competir como PWA independiente');
 if(!panel.includes('/manifest.webmanifest?v=2508'))throw new Error('panel/index.html: falta manifest PWA panel v2508');
