@@ -1698,6 +1698,23 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
   #settingsPanelWrap .settings-mobile-save button{max-width:680px;margin:0 auto;box-shadow:0 10px 28px #0008}
   #settings .settings-footer-save{display:none!important}
 }
+</style><style id="dashboard-detail-tabs-v2542">
+.dashboard-details-tabs{display:none}
+.dashboard-detail-panels{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-top:14px}
+.dashboard-detail-panel{min-width:0}
+.dashboard-detail-summary,.dashboard-detail-system,.dashboard-detail-stock{grid-column:1/-1}
+.dashboard-detail-panel>.card{height:100%}
+@media(max-width:800px){
+ #dashboardDetails .dashboard-details-tabs{display:flex;position:sticky;top:54px;z-index:4;gap:6px;overflow-x:auto;margin:0 -4px 10px;padding:4px;scrollbar-width:none;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(12px)}
+ #dashboardDetails .dashboard-details-tabs::-webkit-scrollbar{display:none}
+ #dashboardDetails .dashboard-detail-tab{flex:1 0 auto;min-width:78px;min-height:38px;padding:7px 10px;border:1px solid var(--line);border-radius:11px;background:var(--surface-2);color:var(--mut);font-size:11px;font-weight:850}
+ #dashboardDetails .dashboard-detail-tab.active{background:var(--a);border-color:var(--a);color:#171000}
+ #dashboardDetails .dashboard-detail-panels{display:block;margin-top:0}
+ #dashboardDetails .dashboard-detail-panel{display:none}
+ #dashboardDetails .dashboard-detail-panel.active{display:block}
+ #dashboardDetails .dashboard-detail-panel>.card{margin:0!important}
+ #dashboardDetails .dashboard-detail-sales #salesChart{min-height:190px}
+}
 </style></head>
 <body class="auth-loading">
 <style>
@@ -1950,22 +1967,36 @@ html[data-theme="light"] .plan-checkout-dialog{box-shadow:0 30px 80px rgba(33,47
   <div id="dashboardDetails" class="dashboard-details" aria-hidden="false">
     <div class="dashboard-details-backdrop" onclick="closeDashboardDetails()"></div>
     <div class="dashboard-details-shell">
-      <div class="dashboard-details-mobile-head"><div><span class="eyebrow">RESUMEN</span><h2>Estadísticas del negocio</h2></div><button class="ghost modal-close" type="button" onclick="closeDashboardDetails()" aria-label="Cerrar estadísticas">✕</button></div>
-      <div class="restaurant-metrics dashboard-ref-metrics">
-        <article class="restaurant-metric"><span class="dashboard-metric-icon metric-green">💰</span><div><span>Ventas de hoy</span><strong id="statSalesToday">$0</strong><small>Ingresos confirmados</small></div></article>
-        <article class="restaurant-metric"><span class="dashboard-metric-icon metric-blue">🕘</span><div><span>Pedidos de hoy</span><strong id="statOrdersToday">0</strong><small>Actividad del día</small></div></article>
-        <article class="restaurant-metric"><span class="dashboard-metric-icon metric-orange">🍔</span><div><span>Productos disponibles</span><strong id="statProducts">0</strong><small>Catálogo activo</small></div></article>
-        <article class="restaurant-metric"><span class="dashboard-metric-icon metric-violet">✓</span><div><span>Ticket promedio</span><strong id="statAverage">$0</strong><small>Promedio por pedido</small></div></article>
+      <div class="dashboard-details-mobile-head"><div><span class="eyebrow">RESUMEN</span><h2>Información del negocio</h2></div><button class="ghost modal-close" type="button" onclick="closeDashboardDetails()" aria-label="Cerrar estadísticas">✕</button></div>
+      <div class="dashboard-details-tabs" role="tablist" aria-label="Información del dashboard">
+        <button class="dashboard-detail-tab active" type="button" data-dashboard-detail="summary" onclick="showDashboardDetail('summary',this)">Resumen</button>
+        <button class="dashboard-detail-tab" type="button" data-dashboard-detail="sales" onclick="showDashboardDetail('sales',this)">Ventas</button>
+        <button class="dashboard-detail-tab" type="button" data-dashboard-detail="orders" onclick="showDashboardDetail('orders',this)">Pedidos</button>
+        <button class="dashboard-detail-tab" type="button" data-dashboard-detail="stock" onclick="showDashboardDetail('stock',this)">Stock</button>
+        <button class="dashboard-detail-tab" type="button" data-dashboard-detail="system" onclick="showDashboardDetail('system',this)">Sistema</button>
       </div>
-      <article class="card system-status-card dashboard-secondary-card">
-        <div class="module-head"><div><span class="eyebrow">SISTEMA</span><h2>Estado del sistema</h2></div></div>
-        <div class="system-status-list"><div><span class="status-badge">●</span><div><b>Menú y catálogo</b><small>Sincronizado con tu configuración</small></div></div><div><span class="status-badge">●</span><div><b>Pedidos</b><small>Actualización en tiempo real</small></div></div><div><span class="status-badge">●</span><div><b>Módulos</b><small>Visibles según tu suscripción</small></div></div></div>
-      </article>
-      <div class="restaurant-analytics">
-        <article class="card"><div class="module-head"><div><h2>Ventas de los últimos 7 días</h2><p class="mut">Evolución diaria de ingresos confirmados.</p></div></div><div id="salesChart"></div></article>
-        <article class="card"><h2>Estado de pedidos</h2><div id="statusChart" class="list" style="margin-top:14px"></div></article>
+      <div class="dashboard-detail-panels">
+        <div class="dashboard-detail-panel active dashboard-detail-summary" data-dashboard-panel="summary">
+          <div class="restaurant-metrics dashboard-ref-metrics">
+            <article class="restaurant-metric"><span class="dashboard-metric-icon metric-green">💰</span><div><span>Ventas de hoy</span><strong id="statSalesToday">$0</strong><small>Ingresos confirmados</small></div></article>
+            <article class="restaurant-metric"><span class="dashboard-metric-icon metric-blue">🕘</span><div><span>Pedidos de hoy</span><strong id="statOrdersToday">0</strong><small>Actividad del día</small></div></article>
+            <article class="restaurant-metric"><span class="dashboard-metric-icon metric-orange">🍔</span><div><span>Productos disponibles</span><strong id="statProducts">0</strong><small>Catálogo activo</small></div></article>
+            <article class="restaurant-metric"><span class="dashboard-metric-icon metric-violet">✓</span><div><span>Ticket promedio</span><strong id="statAverage">$0</strong><small>Promedio por pedido</small></div></article>
+          </div>
+        </div>
+        <div class="dashboard-detail-panel dashboard-detail-sales" data-dashboard-panel="sales">
+          <article class="card"><div class="module-head"><div><h2>Ventas de los últimos 7 días</h2><p class="mut">Evolución diaria de ingresos confirmados.</p></div></div><div id="salesChart"></div></article>
+        </div>
+        <div class="dashboard-detail-panel dashboard-detail-orders" data-dashboard-panel="orders">
+          <article class="card"><h2>Estado de pedidos</h2><div id="statusChart" class="list" style="margin-top:14px"></div></article>
+        </div>
+        <div class="dashboard-detail-panel dashboard-detail-stock" data-dashboard-panel="stock">
+          <article class="card"><div class="module-head"><div><h2>Productos más vendidos</h2><p class="mut">Ranking calculado a partir de los pedidos.</p></div></div><div id="topProducts" class="list"></div></article>
+        </div>
+        <div class="dashboard-detail-panel dashboard-detail-system" data-dashboard-panel="system">
+          <article class="card system-status-card"><div class="module-head"><div><span class="eyebrow">SISTEMA</span><h2>Estado del sistema</h2></div></div><div class="system-status-list"><div><span class="status-badge">●</span><div><b>Menú y catálogo</b><small>Sincronizado con tu configuración</small></div></div><div><span class="status-badge">●</span><div><b>Pedidos</b><small>Actualización en tiempo real</small></div></div><div><span class="status-badge">●</span><div><b>Módulos</b><small>Visibles según tu suscripción</small></div></div></div></article>
+        </div>
       </div>
-      <article class="card dashboard-secondary-card"><div class="module-head"><div><h2>Productos más vendidos</h2><p class="mut">Ranking calculado a partir de los pedidos.</p></div></div><div id="topProducts" class="list"></div></article>
     </div>
   </div>
 </section>
@@ -2999,8 +3030,19 @@ async function refreshAll(){
  renderRestaurantContent();
  if(isRetailBusiness())await refreshRetailDashboard();else if(isProfessionalBusiness())await refreshProfessionalDashboard();else renderStats();
 }
+function showDashboardDetail(name="summary",button){
+ const requested=String(name||"summary"),panels=[...document.querySelectorAll("#dashboardDetails .dashboard-detail-panel")];
+ const target=panels.find(x=>x.dataset.dashboardPanel===requested)||panels.find(x=>x.dataset.dashboardPanel==="summary");
+ const selected=target?.dataset.dashboardPanel||"summary";
+ panels.forEach(x=>x.classList.toggle("active",x===target));
+ document.querySelectorAll("#dashboardDetails .dashboard-detail-tab").forEach(x=>x.classList.toggle("active",x.dataset.dashboardDetail===selected));
+ const title=document.querySelector("#dashboardDetails .dashboard-details-mobile-head h2");
+ if(title)title.textContent=selected==="summary"?"Resumen del negocio":selected==="sales"?"Ventas":selected==="orders"?"Pedidos":selected==="stock"?"Stock y productos":"Estado del sistema";
+ button?.scrollIntoView?.({behavior:"smooth",inline:"center",block:"nearest"})
+}
 function openDashboardDetails(){
  const details=document.getElementById("dashboardDetails");if(!details)return;
+ showDashboardDetail("summary");
  if(window.matchMedia("(max-width:800px)").matches){details.classList.add("open");details.setAttribute("aria-hidden","false");document.body.classList.add("dashboard-details-open")}
  else details.scrollIntoView({behavior:"smooth",block:"start"})
 }
@@ -5600,7 +5642,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Versión v2.5.41</footer></main></div><script>
+<footer class="admin-version">Versión v2.5.42</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
