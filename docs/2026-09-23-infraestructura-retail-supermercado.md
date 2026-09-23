@@ -237,3 +237,134 @@ Códigos demo:
 - `7801234500034` — Arroz 1 kg
 
 Este negocio existe para validar POS, códigos de barra, caja, tickets, compras y devoluciones desde la vista administrativa.
+
+
+## Respaldo original adicional
+
+Para garantizar que el estado anterior a todo el proyecto retail permanezca intacto se creó también:
+
+`backup-original-pre-retail-2026-09-23`
+
+Commit:
+`2610571c77c40c7ef85ffd6238aef8ecfd038171`
+
+## Fase 3 — tienda online integrada
+
+Versión panel:
+`v2.5.12`
+
+### Pedidos Online
+
+Nuevo módulo:
+`retail_orders`
+
+Funciones:
+- pedidos activos;
+- esperando pago;
+- entregados;
+- cancelados;
+- todos;
+- métricas de pedidos online;
+- datos del cliente;
+- retiro/delivery;
+- productos/cantidades;
+- forma y estado de pago;
+- total.
+
+Flujo:
+`received → preparing → ready → delivered`
+
+Para pagos pendientes de proveedor, el pedido permanece en `pending_payment` y no puede prepararse hasta acreditarse.
+
+### Pagos manuales
+
+RPC:
+`retail_mark_online_order_paid`
+
+Transferencia y otros métodos manuales pueden confirmarse desde Pedidos Online.
+
+Efectivo se confirma al entregar y exige caja abierta. En ese momento se crea `restaurant_cash_movements.retail_online_order_id`.
+
+Mercado Pago y QR Bolivia no pueden confirmarse manualmente: dependen del proveedor.
+
+### Cancelación y reembolso
+
+Pedido sin pago:
+`retail_update_online_order_status(..., 'cancelled')`
+libera el stock.
+
+Mercado Pago aprobado:
+`refund-retail-payment`
+devuelve el pago, libera stock y cancela el pedido.
+
+Otros pagos aprobados requieren gestionar primero el reembolso correspondiente antes de cancelar.
+
+### Tiempo real
+
+`retail_online_orders` y `retail_products` se añadieron a la publicación `supabase_realtime`.
+
+El panel escucha cambios de pedidos online. Una compra nueva puede generar:
+- actualización automática;
+- toast;
+- sonido;
+- notificación del navegador.
+
+### Web Push
+
+`send-order-push` se amplió con:
+- `retail_restaurant`: nueva compra para el negocio;
+- `retail_customer`: cambio de estado para el cliente.
+
+### Dashboard retail
+
+Ahora combina:
+- ventas POS;
+- ventas online reconocidas;
+- total del día;
+- ticket promedio;
+- métodos de pago;
+- stock bajo.
+
+Acciones rápidas:
+- Pedidos Online;
+- POS Retail;
+- Productos Retail.
+
+### Tienda pública
+
+El botón “Ver menú” se reutiliza como **Ver tienda online** para negocios retail y apunta a:
+`https://menu.yummypro.online/?r=<slug>`
+
+### Backend añadido
+
+Tablas:
+- `retail_online_orders`
+- `retail_online_order_items`
+
+Campos de caja:
+- `restaurant_cash_movements.retail_online_order_id`
+
+RPC principales:
+- `get_public_retail_catalog`
+- `retail_create_online_order`
+- `retail_get_online_order_status`
+- `retail_get_my_online_orders`
+- `retail_cancel_online_order`
+- `retail_release_expired_online_orders`
+- `retail_update_online_order_status`
+- `retail_mark_online_order_paid`
+
+Edge Functions:
+- `create-retail-payment`
+- `retail-payment-webhook`
+- `refund-retail-payment`
+- `create-retail-veripagos-payment`
+- `verify-retail-veripagos-payment`
+
+### QA backend
+
+Se probó creación y cancelación de una compra real temporal sobre el Minimarket Demo.
+
+Se verificó que el stock disminuye al crear la compra y vuelve exactamente a su valor inicial al cancelarla.
+
+El pedido y los movimientos de QA se eliminaron después de la prueba.
