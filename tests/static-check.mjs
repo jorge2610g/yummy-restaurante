@@ -70,3 +70,5 @@ for(const marker of ['data-tab="retail_pos"','data-tab="retail_products"','data-
 for(const marker of ['retailBarcodeCameraModal','openRetailBarcodeCamera','BarcodeDetector','retailAutoPrint','printRetailSale','retailSaleModal','processRetailPartialReturn','retail_void_sale','retail_return_sale_items','refunded_amount','refund_status'])if(!panel.includes(marker))throw new Error('panel/index.html: falta fase 2 retail '+marker);
 
 for(const marker of ['data-tab="retail_orders"','id="retail_orders"','loadRetailOnlineOrders','retail_online_orders','retail_update_online_order_status','refund-retail-payment','Pedidos Online'])if(!panel.includes(marker))throw new Error('panel/index.html: falta gestión de tienda online retail '+marker);
+
+for(const marker of ['eq("business_type",businessType)','retail_orders:"retail_orders"','retail_pos:"retail_pos"','retail_products:"retail_products"','retail_suppliers:"retail_suppliers"','retail_purchases:"retail_purchases"'])if(!panel.includes(marker))throw new Error('panel/index.html: falta filtrado de planes retail '+marker);
