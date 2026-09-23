@@ -1,4 +1,4 @@
-/* YummyPro Profesionales v2.5.31
+/* YummyPro Profesionales v2.5.32
    CRUD, agenda, horarios y reportes aislados del rubro restaurante/retail. */
 let professionalServices=[];
 let professionalProviders=[];
@@ -6,6 +6,7 @@ let professionalProviderServices=[];
 let professionalAvailability=[];
 let professionalTimeOff=[];
 let professionalAppointments=[];
+let professionalPaymentIntents=[];
 
 const PROFESSIONAL_STATUS_LABELS={
  pending:"Pendiente",confirmed:"Confirmada",in_service:"En atención",
@@ -126,22 +127,35 @@ async function saveProfessionalSchedule(){
 }
 
 async function loadProfessionalAppointments(){
- if(!professionalGuard())return;const list=document.getElementById("professionalAppointmentList");if(list)list.innerHTML='<p class="mut">Cargando agenda…</p>';
- const [services,providers,links,appointments]=await Promise.all([
+ if(!professionalGuard())return;const list=document.getElementById("professionalAppointmentList"),payments=document.getElementById("professionalPaymentIntentList");if(list)list.innerHTML='<p class="mut">Cargando agenda…</p>';if(payments)payments.innerHTML='<p class="mut">Cargando pagos pendientes…</p>';
+ const [services,providers,links,appointments,paymentIntents]=await Promise.all([
   sb.from("professional_services").select("*").eq("restaurant_id",currentRestaurant).order("sort_order").order("name"),
   sb.from("professional_providers").select("*").eq("restaurant_id",currentRestaurant).order("sort_order").order("name"),
   sb.from("professional_provider_services").select("*").eq("restaurant_id",currentRestaurant),
-  sb.from("professional_appointments").select("*").eq("restaurant_id",currentRestaurant).order("starts_at",{ascending:false}).limit(1200)
+  sb.from("professional_appointments").select("*").eq("restaurant_id",currentRestaurant).order("starts_at",{ascending:false}).limit(1200),
+  sb.from("professional_booking_payment_intents").select("*").eq("restaurant_id",currentRestaurant).in("status",["pending","processing"]).gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(300)
  ]);
- const failed=[services,providers,links,appointments].find(x=>x.error);if(failed)return professionalError("appointments_load",failed.error);
- professionalServices=services.data||[];professionalProviders=providers.data||[];professionalProviderServices=links.data||[];professionalAppointments=appointments.data||[];syncProfessionalBookingSettings();syncProfessionalAppointmentFilters();renderProfessionalAppointments();renderProfessionalClients();renderProfessionalReports();
+ const failed=[services,providers,links,appointments,paymentIntents].find(x=>x.error);if(failed)return professionalError("appointments_load",failed.error);
+ professionalServices=services.data||[];professionalProviders=providers.data||[];professionalProviderServices=links.data||[];professionalAppointments=appointments.data||[];professionalPaymentIntents=paymentIntents.data||[];syncProfessionalBookingSettings();syncProfessionalAppointmentFilters();renderProfessionalPaymentIntents();renderProfessionalAppointments();renderProfessionalClients();renderProfessionalReports();
 }
-function syncProfessionalBookingSettings(){const r=currentRestaurantConfig||{},mode=String(r.professional_booking_payment_mode||(r.professional_booking_deposit_required?"deposit":"full"));professionalAutoConfirm.checked=r.professional_booking_auto_confirm!==false;professionalMinNotice.value=Number(r.professional_booking_min_notice_hours??2);professionalMaxDays.value=Number(r.professional_booking_max_days??60);professionalPaymentMode.value=["none","deposit","full"].includes(mode)?mode:"full";professionalDepositAmount.value=Number(r.professional_booking_deposit_amount||0);professionalDepositAmount.disabled=professionalPaymentMode.value!=="deposit"}
+function syncProfessionalBookingSettings(){const r=currentRestaurantConfig||{},mode=String(r.professional_booking_payment_mode||(r.professional_booking_deposit_required?"deposit":"full"));professionalAutoConfirm.checked=r.professional_booking_auto_confirm!==false;professionalMinNotice.value=Number(r.professional_booking_min_notice_hours??2);professionalMaxDays.value=Number(r.professional_booking_max_days??60);professionalPaymentMode.value=["deposit","full"].includes(mode)?mode:"full";professionalDepositAmount.value=Number(r.professional_booking_deposit_amount||0);professionalDepositAmount.disabled=professionalPaymentMode.value!=="deposit"}
 document.getElementById("professionalPaymentMode")?.addEventListener("change",e=>{professionalDepositAmount.disabled=e.target.value!=="deposit";if(e.target.value!=="deposit")professionalDepositAmount.value=0});
 async function saveProfessionalBookingSettings(){
  if(!professionalGuard())return;const mode=professionalPaymentMode.value,row={professional_booking_auto_confirm:professionalAutoConfirm.checked,professional_booking_min_notice_hours:Math.max(0,Number(professionalMinNotice.value||0)),professional_booking_max_days:Math.max(1,Number(professionalMaxDays.value||60)),professional_booking_payment_mode:mode,professional_booking_deposit_required:mode==="deposit",professional_booking_deposit_amount:mode==="deposit"?Math.max(0,Number(professionalDepositAmount.value||0)):0,updated_at:new Date().toISOString()};if(mode==="deposit"&&row.professional_booking_deposit_amount<=0)return toast("Indica el monto del anticipo");const {error}=await sb.from("restaurants").update(row).eq("id",currentRestaurant).eq("business_type","professional");if(error)return professionalError("booking_settings_save",error);Object.assign(currentRestaurantConfig||{},row);toast("Configuración de reservas guardada")
 }
 function syncProfessionalAppointmentFilters(){const select=document.getElementById("professionalAppointmentProviderFilter"),current=select?.value||"all";if(select){select.innerHTML='<option value="all">Todos</option>'+professionalProviders.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join("");select.value=[...select.options].some(x=>x.value===current)?current:"all"}const date=document.getElementById("professionalAppointmentDateFilter");if(date&&!date.value)date.value=professionalDateKey()}
+function renderProfessionalPaymentIntents(){
+ const list=document.getElementById("professionalPaymentIntentList");if(!list)return;
+ const rows=professionalPaymentIntents.filter(x=>["pending","processing"].includes(String(x.status||""))&&new Date(x.expires_at).getTime()>Date.now());
+ list.innerHTML=rows.map(i=>{const sv=professionalService(i.service_id),p=professionalProvider(i.provider_id),method=String(i.payment_method||""),isManual=!!method&&method.toLowerCase()!=="mercado pago",expires=new Intl.DateTimeFormat(currentRestaurantConfig?.locale||"es-CL",{timeZone:professionalTimeZone(),hour:"2-digit",minute:"2-digit"}).format(new Date(i.expires_at));return '<article class="item"><div class="row between"><div><div class="row" style="gap:8px;flex-wrap:wrap"><h3 style="margin:0">'+esc(i.customer_name)+'</h3><span class="pill">Pago pendiente · '+money(i.amount_due)+'</span></div><div class="mut" style="margin-top:6px">'+esc(sv?.name||"Servicio")+' · '+esc(p?.name||"Profesional")+'</div><div><b>'+esc(professionalDateTime(i.starts_at))+'</b> · '+(method?esc(method):'Método aún no elegido')+'</div><div class="mut">'+esc([i.customer_phone,i.customer_email].filter(Boolean).join(" · ")||"Sin contacto")+' · vence '+esc(expires)+'</div><div class="mut" style="margin-top:5px"><b>No es una reserva todavía.</b> La cita se crea únicamente al validar el pago.</div></div><div class="actions">'+(isManual?'<button class="primary" type="button" onclick="approveProfessionalPaymentIntent('+i.id+')">Confirmar pago y crear reserva</button>':'<span class="pill">'+(method.toLowerCase()==="mercado pago"?'Esperando Mercado Pago':'Esperando al cliente')+'</span>')+'</div></div></article>'}).join("")||'<p class="mut">No hay pagos pendientes de verificación.</p>';
+}
+async function approveProfessionalPaymentIntent(id){
+ const intent=professionalPaymentIntents.find(x=>Number(x.id)===Number(id));if(!intent)return;
+ if(!confirm("¿Confirmar que recibiste "+money(intent.amount_due||0)+" por "+String(intent.payment_method||"este método")+"? Al confirmar se creará la reserva."))return;
+ const {data,error}=await sb.rpc("approve_professional_booking_manual_payment",{p_intent_id:id});
+ if(error)return professionalError("booking_payment_approve",error);
+ await loadProfessionalAppointments();trackRestaurantEvent?.("professional_payment_approved","appointments",{payment_intent_id:id,appointment_id:data?.appointment_id,paid_amount:intent.amount_due});toast("Pago confirmado y reserva creada")
+}
 function renderProfessionalAppointments(){
  const list=document.getElementById("professionalAppointmentList");if(!list)return;const date=document.getElementById("professionalAppointmentDateFilter")?.value||"",status=document.getElementById("professionalAppointmentStatusFilter")?.value||"active",provider=document.getElementById("professionalAppointmentProviderFilter")?.value||"all",active=new Set(["pending","confirmed","in_service"]),view=professionalAppointments.filter(a=>(!date||professionalDateKey(a.starts_at)===date)&&(status==="all"||(status==="active"?active.has(a.status):a.status===status))&&(provider==="all"||Number(a.provider_id)===Number(provider))).sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at));
  const today=professionalDateKey(),set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};set("professionalTodayCount",professionalAppointments.filter(x=>professionalDateKey(x.starts_at)===today&&!["cancelled"].includes(x.status)).length);set("professionalUpcomingCount",professionalAppointments.filter(x=>new Date(x.starts_at)>new Date()&&active.has(x.status)).length);set("professionalCompletedCount",professionalAppointments.filter(x=>x.status==="completed").length);set("professionalNoShowCount",professionalAppointments.filter(x=>x.status==="no_show").length);
