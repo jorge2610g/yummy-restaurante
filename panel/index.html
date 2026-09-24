@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="YummyPro">
+<meta name="apple-mobile-web-app-title" content="YummyPro Restaurante">
 <link rel="manifest" href="/manifest.webmanifest?v=2508">
 <link rel="icon" href="/pwa-icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -2139,7 +2139,7 @@ body.retail-scanner-open{overflow:hidden!important}
 
 <div id="app" class="wrap hidden">
 <div id="subscriptionBanner" class="card" style="margin-bottom:14px;display:none"></div>
-<div class="top"><div><h1 id="panelMainTitle">Panel Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><button class="ghost header-action hidden" id="pwaInstallBtn" type="button" onclick="installYummyProPwa()" aria-label="Instalar YummyPro" title="Instalar YummyPro"><span class="header-action-icon" aria-hidden="true">⬇️</span><span class="action-label">Instalar</span></button><button class="ghost header-action hidden" id="pwaNotificationBtn" type="button" onclick="activateYummyProNotifications()" aria-label="Activar notificaciones" title="Activar notificaciones"><span class="header-action-icon" aria-hidden="true">🔔</span><span class="action-label">Notificaciones</span></button><button id="adminPreviewBackBtn" class="ghost header-action" type="button" onclick="returnFromAdminPreview()" aria-label="Volver al administrador" title="Volver al administrador" style="display:none"><span class="header-action-icon" aria-hidden="true">←</span><span class="action-label">Volver al admin</span></button><a id="viewMenuLink" href="#" target="_blank" style="display:none"><button class="ghost header-action" type="button" aria-label="Ver menú" title="Ver menú"><span class="header-action-icon" aria-hidden="true">👁️</span><span class="action-label">Ver menú</span></button></a><button class="ghost header-action" id="themeBtn" type="button" onclick="toggleAdminTheme()" aria-label="Cambiar modo de color" title="Cambiar tema"><span class="header-action-icon" aria-hidden="true">☀️</span><span class="action-label">Modo claro</span></button><button id="panelLogoutBtn" class="ghost header-action" type="button" onclick="logout()" aria-label="Salir" title="Salir"><span class="header-action-icon" aria-hidden="true">↪</span><span class="action-label">Salir</span></button><button id="sideMenuToggle" class="ghost side-menu-toggle header-action" type="button" onclick="toggleSideMenu()" aria-label="Abrir menú del panel" title="Menú del panel"><span class="header-action-icon" aria-hidden="true">☰</span><span class="action-label">Menú</span></button></div></div>
+<div class="top"><div><h1 id="panelMainTitle">YummyPro Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><button class="ghost header-action hidden" id="pwaInstallBtn" type="button" onclick="installYummyProPwa()" aria-label="Instalar YummyPro" title="Instalar YummyPro"><span class="header-action-icon" aria-hidden="true">⬇️</span><span class="action-label">Instalar</span></button><button class="ghost header-action hidden" id="pwaNotificationBtn" type="button" onclick="activateYummyProNotifications()" aria-label="Activar notificaciones" title="Activar notificaciones"><span class="header-action-icon" aria-hidden="true">🔔</span><span class="action-label">Notificaciones</span></button><button id="adminPreviewBackBtn" class="ghost header-action" type="button" onclick="returnFromAdminPreview()" aria-label="Volver al administrador" title="Volver al administrador" style="display:none"><span class="header-action-icon" aria-hidden="true">←</span><span class="action-label">Volver al admin</span></button><a id="viewMenuLink" href="#" target="_blank" style="display:none"><button class="ghost header-action" type="button" aria-label="Ver menú" title="Ver menú"><span class="header-action-icon" aria-hidden="true">👁️</span><span class="action-label">Ver menú</span></button></a><button class="ghost header-action" id="themeBtn" type="button" onclick="toggleAdminTheme()" aria-label="Cambiar modo de color" title="Cambiar tema"><span class="header-action-icon" aria-hidden="true">☀️</span><span class="action-label">Modo claro</span></button><button id="panelLogoutBtn" class="ghost header-action" type="button" onclick="logout()" aria-label="Salir" title="Salir"><span class="header-action-icon" aria-hidden="true">↪</span><span class="action-label">Salir</span></button><button id="sideMenuToggle" class="ghost side-menu-toggle header-action" type="button" onclick="toggleSideMenu()" aria-label="Abrir menú del panel" title="Menú del panel"><span class="header-action-icon" aria-hidden="true">☰</span><span class="action-label">Menú</span></button></div></div>
 <div id="sideMenuBackdrop" class="side-menu-backdrop" onclick="closeSideMenu()"></div><div id="panelLayout" class="panel-layout"><aside id="sideMenu" class="side-menu">
 <div class="sidebar-brand">
   <span class="sidebar-brand-mark">Y</span>
@@ -2810,6 +2810,7 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 const PANEL_ALLOWED_BUSINESS_TYPES=["restaurant"];
 const PANEL_DEFAULT_BUSINESS_TYPE="restaurant";
 const PANEL_VERTICAL_LABEL="Restaurante";
+const PANEL_BRAND_NAME="YummyPro Restaurante";
 function panelBusinessTypeLabel(type){return type==="restaurant"?"Restaurante":type==="supermarket"?"Supermercado":type==="minimarket"?"Minimarket / Tienda":type==="professional"?"Profesional / Servicios":"Negocio"}
 function panelBusinessTypeAllowed(type){return PANEL_ALLOWED_BUSINESS_TYPES.includes(String(type||"").toLowerCase())}
 function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b){const next=theme==="dark"?"claro":"oscuro",icon=theme==="dark"?"☀️":"🌙";b.innerHTML='<span class="header-action-icon" aria-hidden="true">'+icon+'</span><span class="action-label">Modo '+next+'</span>';b.setAttribute("aria-label","Activar modo "+next);b.title="Activar modo "+next}}
@@ -3602,8 +3603,9 @@ function syncRestaurantHeader(r){
  const slug=String(r.slug||currentRestaurant),menuLink=document.getElementById("viewMenuLink");
  if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(slug);menuLink.title=retail?"Ver tienda online":"Ver menú";menuLink.style.removeProperty("display")}
  const who=document.getElementById("who"),sessionEmail=String(who?.dataset.email||who?.textContent||"").trim();if(who&&!who.dataset.email)who.dataset.email=sessionEmail;
- const label=type==="supermarket"?"Supermercado":type==="minimarket"?"Minimarket":"Restaurante";
- if(adminPreviewMode){who.textContent="Vista administrador · "+name;document.getElementById("panelMainTitle").textContent="Panel de "+name}else{document.getElementById("panelMainTitle").textContent="Panel "+label;who.textContent=name+(sessionEmail?" · "+sessionEmail:"")}
+ const panelTitle=document.getElementById("panelMainTitle");if(panelTitle)panelTitle.textContent=PANEL_BRAND_NAME;
+ document.title=PANEL_BRAND_NAME;
+ if(adminPreviewMode){who.textContent="Vista administrador · "+name}else{who.textContent=name+(sessionEmail?" · "+sessionEmail:"")}
 }
 
 function retailLabel(){return currentBusinessType()==="supermarket"?"Supermercado":"Minimarket"}
