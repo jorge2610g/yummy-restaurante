@@ -69,6 +69,14 @@ section{padding:90px 0}.sectionHead h2{letter-spacing:-2.4px}.grid{gap:18px}.car
 }
 
 /* Unified YummyPro vertical landing v2.1.0 */
+.hero{background:radial-gradient(circle at 82% 35%,color-mix(in srgb,var(--y) 20%,transparent),transparent 32%)!important}
+.phone{box-shadow:0 45px 120px #000,0 0 100px color-mix(in srgb,var(--y) 18%,transparent)!important}
+.phone:before{content:attr(data-label)!important}
+.tag{border-color:color-mix(in srgb,var(--y) 38%,transparent)!important;background:color-mix(in srgb,var(--y) 7%,transparent)!important;color:var(--y2)!important}
+.btn.primary{box-shadow:0 10px 30px color-mix(in srgb,var(--y) 16%,transparent)!important}
+.card:hover{border-color:color-mix(in srgb,var(--y) 32%,#ffffff18)!important}
+.ico{background:color-mix(in srgb,var(--y) 8%,transparent)!important;border-color:color-mix(in srgb,var(--y) 20%,transparent)!important}
+
 .vertical-switch-wrap{position:sticky;top:78px;z-index:19;background:#090909e8;backdrop-filter:blur(14px);border-bottom:1px solid #ffffff10}
 .vertical-switch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 0}
 .vertical-choice{border:1px solid #ffffff20;background:#111;color:#d9d9d9;border-radius:13px;padding:11px 12px;font:800 13px/1.2 inherit;cursor:pointer;transition:.18s ease}
@@ -91,7 +99,7 @@ body[data-vertical="restaurant"] .food:after{content:attr(data-icon)!important}
 <button class="vertical-choice" id="verticalProfessional" type="button" onclick="setLandingVertical('professional',true)">✂️ Profesionales<span class="vertical-kicker">Agenda · servicios · clientes</span></button>
 </div></div>
 <header class="hero"><div class="wrap heroGrid"><div><span class="tag" id="heroTag">30 DÍAS GRATIS · SIN COMPLICACIONES</span><h1 id="heroTitle">Tu restaurante, <span class="accent">más digital.</span><br>Más fácil de vender.</h1><p class="lead" id="heroLead">Crea un menú digital profesional, recibe pedidos y administra tu restaurante desde un solo lugar.</p><div class="heroBtns"><button class="btn primary" onclick="openSignup()">Prueba 30 días gratis</button><button class="btn ghost" id="restaurantPwaInstallBtn" type="button" onclick="openSelectedPanelInstall()">📲 Instalar panel</button><a class="btn ghost" id="landingDemoLink" href="https://menu.yummypro.online/?r=hamburgueseria-demo-yummypro">Ver demostración</a><a class="btn ghost" href="#funciones">Ver todo lo que incluye</a></div></div>
-<div class="phone"><div class="phoneTop"><div><small id="previewEyebrow" style="color:#aaa">TU MENÚ DIGITAL</small><h2 id="previewTitle" style="margin:5px 0">Mi Restaurante</h2></div><div class="miniLogo" id="previewLogo">🍔</div></div><p id="previewSubtitle" style="color:#aaa">Elige tus favoritos</p>
+<div class="phone" data-label="Vista del menú"><div class="phoneTop"><div><small id="previewEyebrow" style="color:#aaa">TU MENÚ DIGITAL</small><h2 id="previewTitle" style="margin:5px 0">Mi Restaurante</h2></div><div class="miniLogo" id="previewLogo">🍔</div></div><p id="previewSubtitle" style="color:#aaa">Elige tus favoritos</p>
 <div class="menuItem"><div class="food" id="previewIcon1" data-icon="🍔"></div><div><b id="previewName1">Hamburguesa Yummy</b><small id="previewDesc1" style="display:block;color:#888;margin-top:5px">Carne, queso y salsa especial</small></div><span class="price" id="previewPrice1">$8.990</span></div>
 <div class="menuItem"><div class="food" id="previewIcon2" data-icon="🍟"></div><div><b id="previewName2">Combo Especial</b><small id="previewDesc2" style="display:block;color:#888;margin-top:5px">Papas + bebida</small></div><span class="price" id="previewPrice2">$11.990</span></div>
 <div class="menuItem"><div class="food" id="previewIcon3" data-icon="🥤"></div><div><b id="previewName3">Promo del día</b><small id="previewDesc3" style="display:block;color:#888;margin-top:5px">Disponible hoy</small></div><span class="price" id="previewPrice3">$6.990</span></div>
@@ -112,21 +120,21 @@ let selectedPlanId=null,landingSessionUser=null,landingHasRestaurant=false;
 let landingCountries=[],landingPlans=[],landingCountryCode="CL",landingFx={};
 const LANDING_VERTICALS={
  restaurant:{
-  hash:"restaurante",label:"Restaurantes",types:["restaurant"],defaultType:"restaurant",domain:"https://web.yummypro.online",accent:"#ffb000",accent2:"#ffcb45",glow:"#ffb00026",demo:{restaurant:"hamburgueseria-demo-yummypro"},
+  hash:"restaurante",label:"Restaurantes",types:["restaurant"],defaultType:"restaurant",domain:"https://web.yummypro.online",accent:"#ffb000",accent2:"#ffcb45",glow:"#ffb00026",demo:{restaurant:"hamburgueseria-demo-yummypro"},previewLabel:"Vista del menú",
   title:'Tu restaurante, <span class="accent">más digital.</span><br>Más fácil de vender.',lead:"Menú digital, pedidos, cocina, caja, mesas, inventario y gestión de tu restaurante desde un solo lugar.",tag:"RESTAURANTES · 30 DÍAS GRATIS",
   preview:["TU MENÚ DIGITAL","Mi Restaurante","🍔","Elige tus favoritos",["🍔","Hamburguesa Yummy","Carne, queso y salsa especial","$8.990"],["🍟","Combo Especial","Papas + bebida","$11.990"],["🥤","Promo del día","Disponible hoy","$6.990"]],
   featuresTitle:"Todo lo que tu restaurante necesita",featuresLead:"Digitaliza el menú, recibe pedidos y controla la operación completa.",
   features:[["📱","Menú digital","Productos, categorías, variantes, extras, fotos y disponibilidad."],["🛒","Pedidos","Recibe y gestiona pedidos, retiro y delivery en tiempo real."],["🍳","Cocina","Comandas y estados de preparación para mantener el flujo ordenado."],["💵","Caja y POS","Ventas, apertura/cierre de caja y atención de mesas."],["📦","Inventario","Controla existencias y productos agotados."],["🔗","QR y presencia digital","Comparte tu menú con enlace o código QR."]]
  },
  retail:{
-  hash:"retail",label:"Tiendas / Market",types:["minimarket","supermarket"],defaultType:"minimarket",domain:"https://retail.yummypro.online",accent:"#27d18b",accent2:"#71eab8",glow:"#27d18b24",demo:{minimarket:"minimarket-demo-yummypro",supermarket:"supermercado-demo"},
+  hash:"retail",label:"Tiendas / Market",types:["minimarket","supermarket"],defaultType:"minimarket",domain:"https://retail.yummypro.online",accent:"#27d18b",accent2:"#71eab8",glow:"#27d18b24",demo:{minimarket:"minimarket-demo-yummypro",supermarket:"supermercado-demo"},previewLabel:"Vista de la tienda",
   title:'Tu tienda, <span class="accent">más rápida.</span><br>Más fácil de controlar.',lead:"POS, código de barras, inventario, proveedores, compras y ventas para minimarkets, tiendas y supermercados.",tag:"RETAIL / MARKET · 30 DÍAS GRATIS",
   preview:["TU TIENDA DIGITAL","Mi Market","🛒","Escanea, vende y controla",["🥫","Producto escaneado","Código 780… · Stock 24","$2.490"],["📦","Inventario","Entradas, salidas y mínimos","24 un."],["🧾","Venta rápida","Caja y comprobante","LISTO"]],
   featuresTitle:"Todo lo que tu tienda necesita",featuresLead:"Una operación Retail pensada para vender rápido y saber exactamente qué tienes.",
   features:[["📷","Escáner de códigos","Abre la cámara, detecta el código y encuentra el producto."],["🧾","POS Retail","Carrito, descuentos, pagos y ventas desde caja."],["📦","Inventario","Stock actual, mínimo, movimientos y alertas."],["🚚","Proveedores y compras","Registra proveedores, recepciones y costos."],["🛍️","Pedidos online","Recibe pedidos para retiro o entrega."],["📊","Control del negocio","Ventas, caja, personal y reportes en un solo panel."]]
  },
  professional:{
-  hash:"profesionales",label:"Profesionales",types:["professional"],defaultType:"professional",domain:"https://pro.yummypro.online",accent:"#45a7f0",accent2:"#8dcbff",glow:"#45a7f024",demo:{professional:"barberia-demo-yummypro"},
+  hash:"profesionales",label:"Profesionales",types:["professional"],defaultType:"professional",domain:"https://pro.yummypro.online",accent:"#45a7f0",accent2:"#8dcbff",glow:"#45a7f024",demo:{professional:"barberia-demo-yummypro"},previewLabel:"Vista de reservas",
   title:'Tus servicios, <span class="accent">más organizados.</span><br>Más fáciles de reservar.',lead:"Agenda, servicios, profesionales, clientes, pagos y reservas para barberías, salones y negocios de servicios.",tag:"PROFESIONALES · 30 DÍAS GRATIS",
   preview:["TU AGENDA DIGITAL","Mi Barbería","✂️","Reserva tu próximo servicio",["✂️","Corte Premium","45 min · Profesional disponible","$12.990"],["🧔","Barba","30 min · Agenda online","$7.990"],["📅","Próxima hora","Hoy · 16:30","RESERVAR"]],
   featuresTitle:"Todo lo que tu negocio de servicios necesita",featuresLead:"Organiza agenda, profesionales y clientes sin mezclarlo con una operación de restaurante o tienda.",
@@ -162,7 +170,7 @@ function syncBusinessTypeControls(){
 function applyLandingVertical(pushHash=false){
  const v=activeLandingVertical();document.body.dataset.vertical=landingVertical;document.documentElement.style.setProperty("--y",v.accent);document.documentElement.style.setProperty("--y2",v.accent2);document.documentElement.style.setProperty("--glow",v.glow);
  document.querySelectorAll(".vertical-choice").forEach(x=>x.classList.remove("active"));document.getElementById(landingVertical==="restaurant"?"verticalRestaurant":landingVertical==="retail"?"verticalRetail":"verticalProfessional")?.classList.add("active");
- document.getElementById("heroTag").textContent=v.tag;document.getElementById("heroTitle").innerHTML=v.title;document.getElementById("heroLead").textContent=v.lead;
+ document.getElementById("heroTag").textContent=v.tag;const phone=document.querySelector(".phone");if(phone)phone.dataset.label=v.previewLabel||"Vista del negocio";document.getElementById("heroTitle").innerHTML=v.title;document.getElementById("heroLead").textContent=v.lead;
  const p=v.preview;document.getElementById("previewEyebrow").textContent=p[0];document.getElementById("previewTitle").textContent=p[1];document.getElementById("previewLogo").textContent=p[2];document.getElementById("previewSubtitle").textContent=p[3];setPreviewItem(1,p[4]);setPreviewItem(2,p[5]);setPreviewItem(3,p[6]);
  document.getElementById("featuresTitle").textContent=v.featuresTitle;document.getElementById("featuresLead").textContent=v.featuresLead;document.getElementById("featuresGrid").innerHTML=v.features.map(x=>'<div class="card"><div class="ico">'+x[0]+'</div><h3>'+x[1]+'</h3><p>'+x[2]+'</p></div>').join("");
  document.getElementById("pricingLead").textContent="Planes exclusivos para "+v.label+". Todos comienzan con 30 días gratis.";document.getElementById("pricingNote").textContent="La prueba gratuita se asigna automáticamente al tipo seleccionado y abre su panel independiente.";
