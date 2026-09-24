@@ -1,0 +1,24 @@
+# YummyPro
+
+YummyPro es una plataforma web de gestión para restaurantes, comercios retail y profesionales de servicios.
+
+Sitio oficial: https://web.yummypro.online/
+
+## Soluciones
+
+- Restaurantes: https://web.yummypro.online/restaurantes/
+  Menú digital, pedidos, cocina, caja, POS, mesas, inventario y administración.
+
+- Retail: https://web.yummypro.online/retail/
+  POS, ventas, productos, inventario, compras y proveedores para tiendas, minimarkets y supermercados.
+
+- Profesionales: https://web.yummypro.online/profesionales/
+  Agenda, servicios, clientes, caja, personal y reportes para profesionales y negocios de servicios.
+
+## Marca
+
+Nombre oficial: YummyPro
+Categoría: software de gestión empresarial basado en web
+Idioma principal: español
+
+La información pública y canónica sobre YummyPro se encuentra en las URLs anteriores.
