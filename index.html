@@ -200,7 +200,25 @@ async function goToUniversalPanel(user=landingSessionUser,knownSession=null){
  const domain=universalPanelDomainForBusinessType(type);
  if(!domain)return false;
  let session=knownSession;
- if(!session){const current=await sb.auth.getSession();session=current.data?.session||null}
+ if(!session){
+  const current=await sb.auth.getSession();
+  if(current.error)throw current.error;
+  session=current.data?.session||null;
+  // La sesión vive por origen. Antes de cruzar a otro subdominio la renovamos
+  // para entregar un access/refresh token vigente y evitar "Auth session missing!".
+  if(session){
+   try{
+    const refreshed=await sb.auth.refreshSession();
+    if(refreshed.data?.session)session=refreshed.data.session;
+    else if(refreshed.error)console.warn("No se pudo renovar la sesión antes del cambio de panel",refreshed.error);
+   }catch(e){console.warn("No se pudo renovar la sesión antes del cambio de panel",e)}
+  }
+ }
+ if(!session?.access_token||!session?.refresh_token){
+  landingSessionUser=null;landingHasRestaurant=false;landingSessionBusinessType=null;
+  await syncLandingSession({force:true});
+  return false
+ }
  landingSessionBusinessType=type;landingHasRestaurant=true;
  location.assign(universalPanelHandoffUrl(domain,session));
  return true;
