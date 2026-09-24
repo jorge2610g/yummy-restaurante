@@ -201,7 +201,10 @@ REGLAS PARA MENÚ:
 - Extras/modificadores ("hazla doble", "hazla triple", extra queso, inyección de queso/salsa, cambio de proteína, agregados) van SOLO en modifiers.
 - IMPORTANTE: que un extra tenga precio propio NO lo convierte en producto principal. Si es una mejora, agregado, sustitución o promoción asociada a otro producto, debe ir en modifiers aunque tenga precio.
 - Si un texto está cortado, mutilado o no puedes asociarlo con seguridad a un producto, omítelo.
-- category debe contener la sección real del menú cuando sea visible.
+- category debe contener SIEMPRE el encabezado/sección real al que pertenece el producto cuando sea visible.
+- Trata encabezados como "HAMBURGUESAS", "LOMOS", "BEBIDAS", "CERVEZAS", "PIZZAS", "POSTRES", etc. como categorías, NO como productos.
+- Mantén la misma categoría para todos los productos visualmente contenidos bajo ese encabezado hasta que aparezca un nuevo encabezado de sección.
+- Si el producto no tiene un encabezado de sección identificable, usa "General"; no inventes una categoría.
 - description debe contener únicamente la descripción/ingredientes que pertenecen a ese producto.
 - price conserva el valor numérico original. cost/stock/minimum_stock=0 y unit/barcode/sku/brand="" si no aplican.
 
