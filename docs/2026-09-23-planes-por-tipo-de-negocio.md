@@ -45,3 +45,14 @@ La copia original anterior a Retail continúa intacta:
 
 También existe el respaldo previo a la fase de filtros del administrador:
 `backup/pre-admin-mobile-filters-2026-09-23` en el repositorio de Admin.
+
+## Landing pública
+
+Desde 2026-09-24 la landing también respeta `business_type`:
+
+- Restaurante carga solo planes `restaurant`.
+- Retail carga solo planes `supermarket` / `minimarket` y permite elegir el tipo Retail sin mezclar categorías.
+- Profesionales carga solo planes `professional`.
+- Al seleccionar un plan, el registro conserva el mismo tipo de negocio.
+
+Commit landing Restaurante: `551b3072ef508836e0e094c49a7d8fe93c02b540`.
