@@ -355,6 +355,18 @@ async function choosePlan(id){
 async function openSignup(){if(landingHasRestaurant){if(await goToUniversalPanel())return}closeModals();const signupType=document.getElementById("sBusinessType");if(signupType){if(landingPlanBusinessTypes().includes(landingBusinessType))signupType.value=landingBusinessType;signupType.onchange=()=>{if(landingPlanBusinessTypes().includes(signupType.value)){landingBusinessType=signupType.value;selectedPlanId=null;const businessSelect=document.getElementById("landingBusinessTypeSelect");if(businessSelect)businessSelect.value=landingBusinessType;renderPublicPlans()}}}signupModal.classList.add("show");const btn=document.getElementById("signupBtn");if(btn)btn.textContent="Prueba 30 días gratis"}
 async function openLogin(){if(landingHasRestaurant){if(await goToUniversalPanel())return}closeModals();loginModal.classList.add("show")}
 function closeModals(){signupModal.classList.remove("show");loginModal.classList.remove("show")}
+async function consumeLandingLogoutRequest(){
+ const url=new URL(location.href);
+ if(url.searchParams.get("logout")!=="1")return false;
+ landingSessionUser=null;landingHasRestaurant=false;landingSessionBusinessType=null;landingAuthResolved=false;
+ try{
+  const result=await sb.auth.signOut({scope:"local"});
+  if(result?.error)console.warn("No se pudo limpiar por completo la sesión local de la landing",result.error);
+ }catch(e){console.warn("No se pudo limpiar por completo la sesión local de la landing",e)}
+ url.searchParams.delete("logout");
+ history.replaceState(null,"",url.pathname+(url.searchParams.toString()?"?"+url.searchParams.toString():"")+url.hash);
+ return true
+}
 async function syncLandingSession({force=false}={}){
  if(landingAuthPromise&&!force)return landingAuthPromise;
  landingAuthPromise=(async()=>{
@@ -397,8 +409,13 @@ window.addEventListener("error",e=>trackLandingError("javascript","window_error"
 window.addEventListener("unhandledrejection",e=>trackLandingError("javascript","unhandled_rejection",String(e.reason?.message||e.reason||"Promesa rechazada"),false));
 initLandingVerticalFromHash();
 window.addEventListener("hashchange",initLandingVerticalFromHash);
-Promise.allSettled([loadPublicPlans(),syncLandingSession()]).then(()=>{applyLandingVertical(false);trackLandingEvent("landing_view","landing",{country_code:landingCountryCode,vertical:landingVertical})});
+(async()=>{
+ await consumeLandingLogoutRequest();
+ await Promise.allSettled([loadPublicPlans(),syncLandingSession({force:true})]);
+ applyLandingVertical(false);
+ trackLandingEvent("landing_view","landing",{country_code:landingCountryCode,vertical:landingVertical});
+})();
 </script>
 
-<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.3</div>
+<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.4</div>
 </body></html>
