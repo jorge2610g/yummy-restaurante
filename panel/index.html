@@ -4367,7 +4367,15 @@ function bulkNum(v){if(typeof v==="number")return Number.isFinite(v)?v:0;let s=S
 function bulkBool(v,def=true){if(v===true||v===1)return true;if(v===false||v===0)return false;const s=bulkNorm(v);if(!s)return def;return ["si","yes","true","1","activo","activa","disponible"].includes(s)}
 function bulkLoadScript(id,src){return new Promise((resolve,reject)=>{if(document.getElementById(id)){const t=setInterval(()=>{if((id==="bulk-xlsx-lib"&&window.XLSX)||(id==="bulk-ocr-lib"&&window.Tesseract)){clearInterval(t);resolve()}},80);setTimeout(()=>{clearInterval(t);((id==="bulk-xlsx-lib"&&window.XLSX)||(id==="bulk-ocr-lib"&&window.Tesseract))?resolve():reject(new Error("No se pudo cargar el lector externo."))},12000);return}const s=document.createElement("script");s.id=id;s.src=src;s.async=true;s.onload=()=>resolve();s.onerror=()=>reject(new Error("No se pudo cargar el lector externo."));document.head.appendChild(s)})}
 async function bulkEnsureXlsx(){if(window.XLSX)return;await bulkLoadScript("bulk-xlsx-lib","https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js")}
-async function bulkEnsureOcr(){if(window.Tesseract)return;await bulkLoadScript("bulk-ocr-lib","https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js")}
+async function bulkEnsureOcr(){
+ if(!window.Tesseract)await bulkLoadScript("bulk-ocr-lib","https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js");
+ if(window.__bulkOcrWorker)return window.__bulkOcrWorker;
+ window.__bulkOcrProgressHandler=null;
+ const worker=await Tesseract.createWorker("spa+eng",1,{logger:m=>{try{window.__bulkOcrProgressHandler?.(m)}catch(_){}}});
+ try{await worker.setParameters({preserve_interword_spaces:"1",user_defined_dpi:"300"})}catch(_){}
+ window.__bulkOcrWorker=worker;
+ return worker
+}
 function openBulkCatalogImport(target){bulkCatalogTarget=target||"restaurant_menu";bulkCatalogRows=[];bulkCatalogSource="file";const modal=document.getElementById("bulkCatalogImportModal"),title=document.getElementById("bulkCatalogImportTitle"),sub=document.getElementById("bulkCatalogImportSubtitle"),hint=document.getElementById("bulkCatalogHint"),active=document.getElementById("bulkCatalogActiveMode");if(bulkCatalogTarget==="retail"){title.textContent="Carga masiva · Productos e inventario";sub.textContent="Supermercado / minimarket: carga códigos, precios, costos y stock desde archivo o foto.";hint.textContent="Columnas recomendadas: codigo_barra, sku, nombre, marca, categoria, costo, precio, stock, stock_minimo, unidad, imagen, activo. XML de guía también es compatible.";active.value="active"}else if(bulkCatalogTarget==="restaurant_inventory"){title.textContent="Carga masiva · Inventario de insumos";sub.textContent="Restaurante: carga insumos, existencias, costos y proveedores en masa.";hint.textContent="Columnas recomendadas: nombre, unidad, stock, stock_minimo, costo_unitario, proveedor, activo.";active.value="active"}else{title.textContent="Carga masiva · Productos del menú";sub.textContent="Restaurante: carga la carta desde Excel/CSV/JSON/XML o usa una foto para crear borradores.";hint.textContent="Columnas recomendadas: nombre, descripcion, precio, categoria, imagen, etiqueta, destacado, disponible, orden. Si no hay imagen se usa una imagen demo.";active.value="active"}for(const id of ["bulkCatalogFile","bulkCatalogPhoto","bulkCatalogCamera"]){const el=document.getElementById(id);if(el)el.value=""}document.getElementById("bulkCatalogProgress").textContent="Selecciona un archivo o toma una foto.";document.getElementById("bulkCatalogPreview").innerHTML='<tr><td colspan="5" class="mut" style="padding:14px">Sin datos todavía.</td></tr>';document.getElementById("bulkCatalogImportBtn").disabled=true;modal.classList.add("open");modal.setAttribute("aria-hidden","false")}
 function closeBulkCatalogImport(){const m=document.getElementById("bulkCatalogImportModal");m?.classList.remove("open");m?.setAttribute("aria-hidden","true")}
 function bulkMapRow(row,i,source){
@@ -4382,30 +4390,63 @@ function bulkOcrLooksGarbage(value){const s=bulkOcrCleanLine(value);if(!s)return
 function bulkOcrPriceMatch(line){const s=String(line||"");let m=s.match(/(?:\$|clp|bs\.?)\s*([0-9]{1,3}(?:[\.,][0-9]{3})+(?:[\.,][0-9]{1,2})?|[0-9]{3,6}(?:[\.,][0-9]{1,2})?)/i);if(!m)m=s.match(/\b([0-9]{1,3}(?:[\.,][0-9]{3})+|[0-9]{3,6})\s*(?:\$|clp|bs\.?)?\s*$/i);if(!m)return null;return {index:m.index,raw:m[0],value:bulkNum(m[1])}}
 function bulkOcrUsefulName(value){const s=bulkOcrCleanLine(value),letters=(s.match(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g)||[]).length;return s.length>=4&&letters>=3&&!/^[0-9\W]+$/.test(s)}
 function bulkOcrCleanDescription(value){let s=bulkOcrCleanLine(value).replace(/\s+\d{5,14}(?:\s+[A-Z!]{1,3})?$/i,"").replace(/\s+[!I]{1,2}$/,"").trim();return bulkOcrLooksGarbage(s)?"":s}
+function bulkOcrAllPriceMatches(line){
+ const out=[],src=String(line||"");let offset=0,guard=0;
+ while(offset<src.length&&guard++<6){
+  const found=bulkOcrPriceMatch(src.slice(offset));
+  if(!found)break;
+  const index=offset+Number(found.index||0),end=index+String(found.raw||"").length;
+  out.push({index,end,raw:found.raw,value:found.value});
+  offset=Math.max(end,offset+1)
+ }
+ return out
+}
+function bulkOcrStructuredText(data){
+ const lines=[];
+ for(const block of (Array.isArray(data?.blocks)?data.blocks:[])){
+  for(const paragraph of (Array.isArray(block?.paragraphs)?block.paragraphs:[])){
+   for(const line of (Array.isArray(paragraph?.lines)?paragraph.lines:[])){
+    const text=bulkOcrCleanLine(line?.text||"");
+    if(text)lines.push(text)
+   }
+  }
+ }
+ return lines.length?lines.join("\n"):String(data?.text||"")
+}
 function bulkParseOcrText(text){
  const lines=String(text||"").split(/\n+/).map(bulkOcrCleanLine).filter(x=>x&&!bulkOcrLooksGarbage(x)),rows=[];
  if(bulkCatalogTarget==="restaurant_menu"){
-  let current=null,lastLoose="";
+  let current=null,lastLoose="",pendingName="";
   for(let i=0;i<lines.length;i++){
-   const line=lines[i],price=bulkOcrPriceMatch(line);
-   if(price&&price.value>0){
-    let name=bulkOcrCleanLine(line.slice(0,price.index)),description=bulkOcrCleanDescription(line.slice(price.index+price.raw.length));
-    if(!bulkOcrUsefulName(name)&&bulkOcrUsefulName(lastLoose)){
-     name=lastLoose;
-     if(current?.description&&current.description.endsWith(lastLoose))current.description=current.description.slice(0,-lastLoose.length).trim().replace(/[;,\-]+$/,"").trim();
+   const line=lines[i],prices=bulkOcrAllPriceMatches(line).filter(p=>p.value>0);
+   if(prices.length){
+    let cursor=0,created=0;
+    for(let pIndex=0;pIndex<prices.length;pIndex++){
+     const price=prices[pIndex];
+     let name=bulkOcrCleanLine(line.slice(cursor,price.index)).replace(/[\-–—:]+$/,"").trim();
+     if(!bulkOcrUsefulName(name)&&bulkOcrUsefulName(pendingName))name=pendingName;
+     if(!bulkOcrUsefulName(name)&&bulkOcrUsefulName(lastLoose))name=lastLoose;
+     if(bulkOcrUsefulName(name)){
+      const nextStart=pIndex+1<prices.length?prices[pIndex+1].index:line.length;
+      let description=pIndex===prices.length-1?bulkOcrCleanDescription(line.slice(price.end,nextStart)):"";
+      const row=bulkMapRow({nombre:name,descripcion:description,precio:price.value,categoria:"Importado por foto"},rows.length,"Foto / reconocimiento preciso");
+      if(row){rows.push(row);current=row;created++}
+     }
+     cursor=price.end;
+     pendingName="";
+     lastLoose=""
     }
-    name=name.replace(/[\-–—:]+$/,"").trim();
-    if(!bulkOcrUsefulName(name)){lastLoose="";continue}
-    const row=bulkMapRow({nombre:name,descripcion:description,precio:price.value,categoria:"Importado por foto"},rows.length,"Foto / IA asistida");
-    if(row){rows.push(row);current=row}
-    lastLoose="";
-    continue;
+    if(created)continue
+   }
+   const nextPrices=i+1<lines.length?bulkOcrAllPriceMatches(lines[i+1]).filter(p=>p.value>0):[];
+   if(bulkOcrUsefulName(line)&&nextPrices.length){
+    pendingName=line;lastLoose=line;continue
    }
    if(current){
     const description=bulkOcrCleanDescription(line);
-    if(description)current.description=((current.description?current.description+" ":"")+description).slice(0,600);
+    if(description)current.description=((current.description?current.description+" ":"")+description).slice(0,600)
    }
-   lastLoose=line;
+   lastLoose=line
   }
  }else{
   for(let i=0;i<lines.length;i++){
@@ -4413,16 +4454,89 @@ function bulkParseOcrText(text){
    let name=price?bulkOcrCleanLine(line.slice(0,price.index)):line;
    name=name.replace(/\b(?:stock|cantidad|qty)\b.*$/i,"").replace(/[\-–—:]+$/,"").trim();
    if(!bulkOcrUsefulName(name))continue;
-   if(bulkCatalogTarget==="retail")rows.push(bulkMapRow({nombre:name,precio:price?price.value:0,stock:qtyMatch?qtyMatch[1]:0,codigo:barcodeMatch?barcodeMatch[1]:"",categoria:"Importado por foto"},i,"Foto / IA asistida"));
-   else rows.push(bulkMapRow({nombre:name,stock:qtyMatch?qtyMatch[1]:(price?price.value:0),categoria:"Importado por foto"},i,"Foto / IA asistida"));
+   if(bulkCatalogTarget==="retail")rows.push(bulkMapRow({nombre:name,precio:price?price.value:0,stock:qtyMatch?qtyMatch[1]:0,codigo:barcodeMatch?barcodeMatch[1]:"",categoria:"Importado por foto"},i,"Foto / reconocimiento preciso"));
+   else rows.push(bulkMapRow({nombre:name,stock:qtyMatch?qtyMatch[1]:(price?price.value:0),categoria:"Importado por foto"},i,"Foto / reconocimiento preciso"))
   }
  }
  const unique=new Map();
- for(const row of rows.filter(Boolean)){const key=bulkNorm(row.name)+"|"+String(row.price||row.cost||"");if(!unique.has(key))unique.set(key,row)}
+ for(const row of rows.filter(Boolean)){
+  const key=bulkNorm(row.name)+"|"+String(row.price||row.cost||"");
+  if(!unique.has(key))unique.set(key,row)
+ }
  return [...unique.values()]
 }
-async function bulkPrepareOcrImage(file){if(!window.createImageBitmap)return file;try{const bmp=await createImageBitmap(file),maxSide=2200,scale=Math.min(1,maxSide/Math.max(bmp.width,bmp.height)),canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bmp.width*scale));canvas.height=Math.max(1,Math.round(bmp.height*scale));const ctx=canvas.getContext("2d",{alpha:false});ctx.fillStyle="#fff";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.filter="grayscale(1) contrast(1.28)";ctx.drawImage(bmp,0,0,canvas.width,canvas.height);bmp.close?.();return await new Promise(resolve=>canvas.toBlob(blob=>resolve(blob||file),"image/jpeg",0.94))}catch(_){return file}}
-async function handleBulkCatalogPhoto(input){const file=input.files?.[0];if(!file)return;bulkCatalogSource="photo";const progress=document.getElementById("bulkCatalogProgress"),btn=document.getElementById("bulkCatalogImportBtn");btn.disabled=true;document.getElementById("bulkCatalogActiveMode").value="draft";progress.textContent="Preparando imagen para reconocimiento…";try{await bulkEnsureOcr();const prepared=await bulkPrepareOcrImage(file),result=await Tesseract.recognize(prepared,"spa+eng",{logger:m=>{if(m.status==="recognizing text")progress.textContent="Analizando la foto… "+Math.round((m.progress||0)*100)+"%"}});bulkCatalogRows=bulkParseOcrText(result?.data?.text||"").slice(0,500);if(!bulkCatalogRows.length)throw new Error("No pudimos reconocer productos claros. Prueba con una foto nítida, de frente y donde se vean nombre y precio.");renderBulkCatalogPreview();progress.innerHTML="<b>"+bulkCatalogRows.length+" productos detectados para revisar.</b><div class=\"mut\">La foto se procesa con OCR y agrupación inteligente. Corrige cualquier campo o elimina detecciones incorrectas antes de importar.</div>"}catch(e){bulkCatalogRows=[];progress.textContent="⚠ "+(e.message||"No se pudo analizar la foto.");toast(e.message||"No se pudo analizar la foto")}}
+function bulkOcrNameDigits(value){return (String(value||"").match(/\d+(?:[\.,]\d+)?/g)||[]).map(x=>x.replace(",",".")).join("|")}
+function bulkOcrNameSimilarity(a,b){
+ const x=bulkNorm(a),y=bulkNorm(b);
+ if(!x||!y)return 0;
+ if(x===y)return 1;
+ if(bulkOcrNameDigits(x)&&bulkOcrNameDigits(y)&&bulkOcrNameDigits(x)!==bulkOcrNameDigits(y))return 0;
+ if((x.includes(y)||y.includes(x))&&Math.min(x.length,y.length)>=5)return .9;
+ const ax=new Set(x.split(/\s+/).filter(w=>w.length>1)),ay=new Set(y.split(/\s+/).filter(w=>w.length>1));
+ let common=0;for(const w of ax)if(ay.has(w))common++;
+ return common/Math.max(ax.size,ay.size,1)
+}
+function bulkMergeDetectedRows(rows){
+ const merged=[];
+ for(const row of rows.filter(Boolean)){
+  const rowAmount=Number(row.price||row.cost||0);
+  let match=null;
+  for(const existing of merged){
+   const existingAmount=Number(existing.price||existing.cost||0),amountCompatible=!rowAmount||!existingAmount||Math.abs(rowAmount-existingAmount)<=Math.max(1,Math.max(rowAmount,existingAmount)*.02);
+   if(amountCompatible&&bulkOcrNameSimilarity(existing.name,row.name)>=.72){match=existing;break}
+  }
+  if(!match){merged.push({...row});continue}
+  if(String(row.name||"").length>String(match.name||"").length)match.name=row.name;
+  if(String(row.description||"").length>String(match.description||"").length)match.description=row.description;
+  for(const key of ["price","cost","stock","minimum"]){if(!Number(match[key]||0)&&Number(row[key]||0))match[key]=row[key]}
+  for(const key of ["barcode","sku","brand","category","unit","supplier"]){if(!match[key]&&row[key])match[key]=row[key]}
+ }
+ return merged
+}
+async function bulkCanvasToBlob(canvas,quality=.95){return await new Promise(resolve=>canvas.toBlob(blob=>resolve(blob),"image/jpeg",quality))}
+async function bulkBuildOcrVariants(file){
+ if(!window.createImageBitmap)return [{label:"foto completa",image:file}];
+ const bmp=await createImageBitmap(file),longSide=Math.max(bmp.width,bmp.height),maxSide=3400,scale=Math.min(2,maxSide/Math.max(1,longSide)),width=Math.max(1,Math.round(bmp.width*scale)),height=Math.max(1,Math.round(bmp.height*scale)),canvas=document.createElement("canvas");
+ canvas.width=width;canvas.height=height;
+ const ctx=canvas.getContext("2d",{alpha:false,willReadFrequently:false});
+ ctx.fillStyle="#fff";ctx.fillRect(0,0,width,height);ctx.filter="grayscale(1) contrast(1.35) brightness(1.04)";ctx.drawImage(bmp,0,0,width,height);ctx.filter="none";bmp.close?.();
+ const full=await bulkCanvasToBlob(canvas,.96)||file,variants=[{label:"foto completa",image:full}];
+ if(width>=1200){
+  const overlap=Math.round(width*.08),cropWidth=Math.min(width,Math.ceil(width/2)+overlap);
+  for(const side of ["izquierda","derecha"]){
+   const sx=side==="izquierda"?0:Math.max(0,width-cropWidth),crop=document.createElement("canvas");
+   crop.width=cropWidth;crop.height=height;
+   const c=crop.getContext("2d",{alpha:false});c.fillStyle="#fff";c.fillRect(0,0,crop.width,crop.height);c.drawImage(canvas,sx,0,cropWidth,height,0,0,cropWidth,height);
+   const blob=await bulkCanvasToBlob(crop,.96);if(blob)variants.push({label:"columna "+side,image:blob})
+  }
+ }
+ return variants
+}
+async function handleBulkCatalogPhoto(input){
+ const file=input.files?.[0];if(!file)return;
+ bulkCatalogSource="photo";
+ const progress=document.getElementById("bulkCatalogProgress"),btn=document.getElementById("bulkCatalogImportBtn");
+ btn.disabled=true;document.getElementById("bulkCatalogActiveMode").value="draft";progress.textContent="Preparando imagen en alta resolución…";
+ try{
+  const worker=await bulkEnsureOcr(),variants=await bulkBuildOcrVariants(file),candidates=[];
+  for(let i=0;i<variants.length;i++){
+   const variant=variants[i];
+   window.__bulkOcrProgressHandler=m=>{if(m.status==="recognizing text")progress.textContent="Analizando "+variant.label+" · pasada "+(i+1)+"/"+variants.length+" · "+Math.round((m.progress||0)*100)+"%"};
+   const result=await worker.recognize(variant.image,{rotateAuto:true},{text:true,blocks:true});
+   const structured=bulkOcrStructuredText(result?.data||{});
+   candidates.push(...bulkParseOcrText(structured));
+   const raw=String(result?.data?.text||"").trim();
+   if(raw&&bulkNorm(raw)!==bulkNorm(structured))candidates.push(...bulkParseOcrText(raw))
+  }
+  window.__bulkOcrProgressHandler=null;
+  bulkCatalogRows=bulkMergeDetectedRows(candidates).slice(0,500);
+  if(!bulkCatalogRows.length)throw new Error("No pudimos reconocer productos claros. Toma la foto de frente, con buena luz, sin reflejos y procurando que nombres y precios ocupen la mayor parte de la imagen.");
+  renderBulkCatalogPreview();
+  progress.innerHTML="<b>"+bulkCatalogRows.length+" productos detectados para revisar.</b><div class=\"mut\">Se usó reconocimiento por bloques y varias pasadas (foto completa + columnas) para evitar unir productos cercanos o saltarse líneas. Revisa los borradores antes de importar.</div>"
+ }catch(e){
+  window.__bulkOcrProgressHandler=null;bulkCatalogRows=[];progress.textContent="⚠ "+(e.message||"No se pudo analizar la foto.");toast(e.message||"No se pudo analizar la foto")
+ }
+}
 function updateBulkCatalogPreviewRow(index,key,value){const row=bulkCatalogRows[index];if(!row)return;if(["price","cost","stock","minimum"].includes(key))row[key]=bulkNum(value);else row[key]=String(value||"").trim()}
 function removeBulkCatalogPreviewRow(index){if(index<0||index>=bulkCatalogRows.length)return;bulkCatalogRows.splice(index,1);renderBulkCatalogPreview();const progress=document.getElementById("bulkCatalogProgress");if(progress&&bulkCatalogSource==="photo")progress.innerHTML="<b>"+bulkCatalogRows.length+" productos detectados para revisar.</b><div class=\"mut\">Puedes editar los campos o eliminar filas antes de importar.</div>"}
 function renderBulkCatalogPreview(){
