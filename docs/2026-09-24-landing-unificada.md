@@ -53,3 +53,16 @@ Flujo:
 “Ir a mi panel” usa la misma resolución universal. La selección Restaurante / Retail / Profesionales de la landing solo cambia la experiencia visual, registro nuevo, demos y planes; ya no restringe el inicio de sesión.
 
 Respaldo previo: backup/pre-universal-login-2026-09-24.
+
+## Traspaso de sesión entre dominios — v2.1.2 / paneles v2.5.54
+Problema corregido: la autenticación de Supabase se guarda por origen del navegador. Iniciar sesión en web.yummypro.online no creaba automáticamente una sesión en retail.yummypro.online o pro.yummypro.online.
+
+Solución:
+- La landing autentica una sola vez.
+- Detecta business_type y el panel destino.
+- Pasa access_token/refresh_token en el fragmento (#) con claves yummy_access/yummy_refresh.
+- El panel destino consume el fragmento, lo elimina inmediatamente de la URL, llama sb.auth.setSession() y entra directamente al Dashboard.
+- El formulario de login del panel solo aparece si no existe una sesión válida.
+- “Ir a mi panel” y el registro con sesión inmediata usan el mismo handoff.
+
+Respaldo previo: backup/pre-universal-session-handoff-2026-09-24.
