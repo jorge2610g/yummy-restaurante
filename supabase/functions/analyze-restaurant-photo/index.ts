@@ -57,8 +57,53 @@ function parseImageDataUrl(dataUrl: string) {
   if (!m) return null;
   return { mimeType: m[1].toLowerCase().replace("jpg", "jpeg"), base64: m[2] };
 }
+function normalizeMenuText(value: unknown) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function menuTokenSimilarity(a: unknown, b: unknown) {
+  const ax = new Set(normalizeMenuText(a).split(" ").filter((x) => x.length > 2));
+  const bx = new Set(normalizeMenuText(b).split(" ").filter((x) => x.length > 2));
+  if (!ax.size || !bx.size) return 0;
+  let common = 0;
+  for (const token of ax) if (bx.has(token)) common++;
+  return common / Math.max(ax.size, bx.size);
+}
+function menuProductLooksLikeModifier(product: any) {
+  const name = normalizeMenuText(product?.name);
+  const text = normalizeMenuText(
+    [product?.name, product?.description, product?.category].filter(Boolean).join(" "),
+  );
+  if (!name) return true;
+  if (/^(new product|extra|extras|adicional|adicionales|agregado|agregados|modificador|modificadores|topping|toppings)$/.test(name)) return true;
+  if (/(^| )(inyeccion|hazla|hazlo|cambiar|cambio|agregar|agregado|adicional|suplemento|upgrade|addon|add on)( |$)/.test(text)) return true;
+  if (/(^| )(extra queso|queso extra|extra salsa|salsa extra|extra cheddar|cheddar extra)( |$)/.test(text)) return true;
+  if ((/(^| )(doble|triple)( |$)/.test(name)) && /(^| )(hazla|hazlo|extra|adicional|por)( |$)/.test(text)) return true;
+  return false;
+}
+function productDuplicatesModifier(product: any, modifier: any) {
+  const productName = normalizeMenuText(product?.name);
+  const modifierName = normalizeMenuText(modifier?.name);
+  if (!productName || !modifierName) return false;
+  const nameSimilarity = menuTokenSimilarity(productName, modifierName);
+  const descriptionSimilarity = menuTokenSimilarity(
+    [product?.name, product?.description].filter(Boolean).join(" "),
+    [modifier?.name, modifier?.description].filter(Boolean).join(" "),
+  );
+  const productPrice = Math.abs(Number(product?.price || 0));
+  const modifierPrice = Math.abs(Number(modifier?.price_delta || 0));
+  const samePrice = productPrice > 0 && modifierPrice > 0 && Math.abs(productPrice - modifierPrice) <= 1;
+  if (nameSimilarity >= 0.72 || descriptionSimilarity >= 0.78) return true;
+  if (samePrice && (nameSimilarity >= 0.28 || descriptionSimilarity >= 0.35 || menuProductLooksLikeModifier(product))) return true;
+  return false;
+}
 function cleanResult(parsed: any) {
-  const products = Array.isArray(parsed?.products)
+  let products = Array.isArray(parsed?.products)
     ? parsed.products.filter((p: any) =>
         p && String(p.name || "").trim() && Number(p.confidence || 0) >= 0.65
       ).slice(0, 250)
@@ -68,11 +113,24 @@ function cleanResult(parsed: any) {
         m && String(m.name || "").trim() && Number(m.confidence || 0) >= 0.65
       ).slice(0, 100)
     : [];
+  const documentType = parsed?.document_type || "unknown";
+  let filteredMenuExtras = 0;
+  if (documentType === "menu") {
+    const before = products.length;
+    products = products.filter((product: any) => {
+      if (Number(product?.price || 0) <= 0) return false;
+      if (menuProductLooksLikeModifier(product)) return false;
+      if (modifiers.some((modifier: any) => productDuplicatesModifier(product, modifier))) return false;
+      return true;
+    });
+    filteredMenuExtras = Math.max(0, before - products.length);
+  }
   return {
-    document_type: parsed?.document_type || "unknown",
+    document_type: documentType,
     currency: String(parsed?.currency || ""),
     products,
     modifiers,
+    filtered_menu_extras: filteredMenuExtras,
     notes: Array.isArray(parsed?.notes) ? parsed.notes.slice(0, 20) : [],
   };
 }
@@ -140,7 +198,8 @@ REGLAS PARA MENÚ:
 - Usa la estructura visual completa: columnas, alineación, proximidad entre nombre y precio, jerarquía tipográfica y secciones.
 - En products incluye SOLO productos principales vendibles con nombre y precio claramente asociados.
 - NO cuentes títulos, nombre del local, categorías, ingredientes sueltos, descripciones, redes sociales, badges NEW, promociones ni textos decorativos.
-- Extras/modificadores ("hazla doble", "hazla triple", extra queso, cambio de proteína, agregados) van SOLO en modifiers.
+- Extras/modificadores ("hazla doble", "hazla triple", extra queso, inyección de queso/salsa, cambio de proteína, agregados) van SOLO en modifiers.
+- IMPORTANTE: que un extra tenga precio propio NO lo convierte en producto principal. Si es una mejora, agregado, sustitución o promoción asociada a otro producto, debe ir en modifiers aunque tenga precio.
 - Si un texto está cortado, mutilado o no puedes asociarlo con seguridad a un producto, omítelo.
 - category debe contener la sección real del menú cuando sea visible.
 - description debe contener únicamente la descripción/ingredientes que pertenecen a ese producto.
