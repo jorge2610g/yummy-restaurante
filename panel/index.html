@@ -4390,6 +4390,30 @@ function bulkOcrLooksGarbage(value){const s=bulkOcrCleanLine(value);if(!s)return
 function bulkOcrPriceMatch(line){const s=String(line||"");let m=s.match(/(?:\$|clp|bs\.?)\s*([0-9]{1,3}(?:[\.,][0-9]{3})+(?:[\.,][0-9]{1,2})?|[0-9]{3,6}(?:[\.,][0-9]{1,2})?)/i);if(!m)m=s.match(/\b([0-9]{1,3}(?:[\.,][0-9]{3})+|[0-9]{3,6})\s*(?:\$|clp|bs\.?)?\s*$/i);if(!m)return null;return {index:m.index,raw:m[0],value:bulkNum(m[1])}}
 function bulkOcrUsefulName(value){const s=bulkOcrCleanLine(value),letters=(s.match(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g)||[]).length;return s.length>=4&&letters>=3&&!/^[0-9\W]+$/.test(s)}
 function bulkOcrCleanDescription(value){let s=bulkOcrCleanLine(value).replace(/\s+\d{5,14}(?:\s+[A-Z!]{1,3})?$/i,"").replace(/\s+[!I]{1,2}$/,"").trim();return bulkOcrLooksGarbage(s)?"":s}
+function bulkOcrReadable(value){return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim()}
+function bulkOcrLikelyMenuText(text){
+ const raw=String(text||""),s=bulkOcrReadable(raw);
+ const explicitPrices=(raw.match(/(?:\$|clp|bs\.?)\s*[0-9]{1,3}(?:[\.,][0-9]{3})+(?:[\.,][0-9]{1,2})?/gi)||[]).length;
+ const plainPrices=(raw.match(/\b[0-9]{1,3}(?:[\.,][0-9]{3})\b/g)||[]).length;
+ const menuCue=/\b(menu|carta|hamburguesa|hamburguesas|burger|burgers|pizza|pizzas|sandwich|sandwiches|bebida|bebidas|postre|postres|entrada|entradas|plato|platos)\b/.test(s);
+ return menuCue&&Math.max(explicitPrices,plainPrices)>=4
+}
+function bulkOcrIsMenuNoise(value){
+ const s=bulkOcrReadable(value);
+ if(!s)return true;
+ if(s.length>74)return true;
+ if(/^(menu|carta|smash burger|hamburguesa|hamburguesas|burgers?|new|new product|productos?|precios?)$/.test(s))return true;
+ if(/\b(hazla (doble|triple)|puedes cambiar|cambiar la carne|inyeccion de extra|inyeccion extra|extra salsa|papas fritas rusticas|solo para pedidos|gratis)\b/.test(s))return true;
+ return false
+}
+function bulkSwitchPhotoToMenuMode(){
+ bulkCatalogTarget="restaurant_menu";
+ const title=document.getElementById("bulkCatalogImportTitle"),sub=document.getElementById("bulkCatalogImportSubtitle"),hint=document.getElementById("bulkCatalogHint"),hintTitle=document.getElementById("bulkCatalogHintTitle");
+ if(title)title.textContent="Carga masiva · Productos del menú";
+ if(sub)sub.textContent="Detectamos una carta de restaurante. Separaremos productos, descripciones y precios; no se tratará como inventario de insumos.";
+ if(hintTitle)hintTitle.textContent="Menú detectado automáticamente";
+ if(hint)hint.textContent="La foto contiene precios y estructura de carta. Solo se mostrarán productos principales; títulos, categorías, promociones y extras se descartarán como productos.";
+}
 function bulkOcrAllPriceMatches(line){
  const out=[],src=String(line||"");let offset=0,guard=0;
  while(offset<src.length&&guard++<6){
@@ -4424,9 +4448,9 @@ function bulkParseOcrText(text){
     for(let pIndex=0;pIndex<prices.length;pIndex++){
      const price=prices[pIndex];
      let name=bulkOcrCleanLine(line.slice(cursor,price.index)).replace(/[\-–—:]+$/,"").trim();
-     if(!bulkOcrUsefulName(name)&&bulkOcrUsefulName(pendingName))name=pendingName;
-     if(!bulkOcrUsefulName(name)&&bulkOcrUsefulName(lastLoose))name=lastLoose;
-     if(bulkOcrUsefulName(name)){
+     if((!bulkOcrUsefulName(name)||bulkOcrIsMenuNoise(name))&&bulkOcrUsefulName(pendingName)&&!bulkOcrIsMenuNoise(pendingName))name=pendingName;
+     if((!bulkOcrUsefulName(name)||bulkOcrIsMenuNoise(name))&&bulkOcrUsefulName(lastLoose)&&!bulkOcrIsMenuNoise(lastLoose))name=lastLoose;
+     if(bulkOcrUsefulName(name)&&!bulkOcrIsMenuNoise(name)){
       const nextStart=pIndex+1<prices.length?prices[pIndex+1].index:line.length;
       let description=pIndex===prices.length-1?bulkOcrCleanDescription(line.slice(price.end,nextStart)):"";
       const row=bulkMapRow({nombre:name,descripcion:description,precio:price.value,categoria:"Importado por foto"},rows.length,"Foto / reconocimiento preciso");
@@ -4439,10 +4463,10 @@ function bulkParseOcrText(text){
     if(created)continue
    }
    const nextPrices=i+1<lines.length?bulkOcrAllPriceMatches(lines[i+1]).filter(p=>p.value>0):[];
-   if(bulkOcrUsefulName(line)&&nextPrices.length){
+   if(bulkOcrUsefulName(line)&&!bulkOcrIsMenuNoise(line)&&nextPrices.length){
     pendingName=line;lastLoose=line;continue
    }
-   if(current){
+   if(current&&!bulkOcrIsMenuNoise(line)){
     const description=bulkOcrCleanDescription(line);
     if(description)current.description=((current.description?current.description+" ":"")+description).slice(0,600)
    }
@@ -4476,6 +4500,13 @@ function bulkOcrNameSimilarity(a,b){
  let common=0;for(const w of ax)if(ay.has(w))common++;
  return common/Math.max(ax.size,ay.size,1)
 }
+function bulkOcrCharSimilarity(a,b){
+ const x=bulkOcrReadable(a).replace(/\s+/g,""),y=bulkOcrReadable(b).replace(/\s+/g,"");
+ if(!x||!y)return 0;if(x===y)return 1;
+ const prev=Array.from({length:y.length+1},(_,i)=>i),cur=new Array(y.length+1);
+ for(let i=1;i<=x.length;i++){cur[0]=i;for(let j=1;j<=y.length;j++)cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+(x[i-1]===y[j-1]?0:1));for(let j=0;j<=y.length;j++)prev[j]=cur[j]}
+ return 1-prev[y.length]/Math.max(x.length,y.length,1)
+}
 function bulkMergeDetectedRows(rows){
  const merged=[];
  for(const row of rows.filter(Boolean)){
@@ -4483,7 +4514,8 @@ function bulkMergeDetectedRows(rows){
   let match=null;
   for(const existing of merged){
    const existingAmount=Number(existing.price||existing.cost||0),amountCompatible=!rowAmount||!existingAmount||Math.abs(rowAmount-existingAmount)<=Math.max(1,Math.max(rowAmount,existingAmount)*.02);
-   if(amountCompatible&&bulkOcrNameSimilarity(existing.name,row.name)>=.72){match=existing;break}
+   const tokenSimilarity=bulkOcrNameSimilarity(existing.name,row.name),charSimilarity=bulkOcrCharSimilarity(existing.name,row.name);
+   if(amountCompatible&&(tokenSimilarity>=.72||charSimilarity>=.72)){match=existing;break}
   }
   if(!match){merged.push({...row});continue}
   if(String(row.name||"").length>String(match.name||"").length)match.name=row.name;
@@ -4518,21 +4550,28 @@ async function handleBulkCatalogPhoto(input){
  const progress=document.getElementById("bulkCatalogProgress"),btn=document.getElementById("bulkCatalogImportBtn");
  btn.disabled=true;document.getElementById("bulkCatalogActiveMode").value="draft";progress.textContent="Preparando imagen en alta resolución…";
  try{
-  const worker=await bulkEnsureOcr(),variants=await bulkBuildOcrVariants(file),candidates=[];
+  const worker=await bulkEnsureOcr(),variants=await bulkBuildOcrVariants(file),recognized=[];
   for(let i=0;i<variants.length;i++){
    const variant=variants[i];
    window.__bulkOcrProgressHandler=m=>{if(m.status==="recognizing text")progress.textContent="Analizando "+variant.label+" · pasada "+(i+1)+"/"+variants.length+" · "+Math.round((m.progress||0)*100)+"%"};
    const result=await worker.recognize(variant.image,{rotateAuto:true},{text:true,blocks:true});
-   const structured=bulkOcrStructuredText(result?.data||{});
-   candidates.push(...bulkParseOcrText(structured));
-   const raw=String(result?.data?.text||"").trim();
-   if(raw&&bulkNorm(raw)!==bulkNorm(structured))candidates.push(...bulkParseOcrText(raw))
+   const structured=bulkOcrStructuredText(result?.data||{}),raw=String(result?.data?.text||"").trim();
+   recognized.push({label:variant.label,structured,raw})
   }
   window.__bulkOcrProgressHandler=null;
-  bulkCatalogRows=bulkMergeDetectedRows(candidates).slice(0,500);
+  const combined=recognized.map(x=>x.structured+"\n"+x.raw).join("\n");
+  let menuAutoDetected=false;
+  if(bulkCatalogTarget==="restaurant_inventory"&&bulkOcrLikelyMenuText(combined)){bulkSwitchPhotoToMenuMode();menuAutoDetected=true}
+  const candidates=[];
+  for(const item of recognized){
+   candidates.push(...bulkParseOcrText(item.structured));
+   if(item.raw&&bulkNorm(item.raw)!==bulkNorm(item.structured))candidates.push(...bulkParseOcrText(item.raw))
+  }
+  bulkCatalogRows=bulkMergeDetectedRows(candidates).filter(r=>bulkCatalogTarget!=="restaurant_menu"||(!bulkOcrIsMenuNoise(r.name)&&Number(r.price||0)>0)).slice(0,500);
   if(!bulkCatalogRows.length)throw new Error("No pudimos reconocer productos claros. Toma la foto de frente, con buena luz, sin reflejos y procurando que nombres y precios ocupen la mayor parte de la imagen.");
   renderBulkCatalogPreview();
-  progress.innerHTML="<b>"+bulkCatalogRows.length+" productos detectados para revisar.</b><div class=\"mut\">Se usó reconocimiento por bloques y varias pasadas (foto completa + columnas) para evitar unir productos cercanos o saltarse líneas. Revisa los borradores antes de importar.</div>"
+  const modeText=menuAutoDetected?"Detectamos que la foto es un menú y cambiamos automáticamente desde Inventario de insumos a Productos del menú. ":"";
+  progress.innerHTML="<b>"+bulkCatalogRows.length+" productos principales detectados para revisar.</b><div class=\"mut\">"+modeText+"Títulos, categorías, promociones y extras no se cuentan como productos. Las distintas pasadas se usan para confirmar y completar detecciones, no para multiplicarlas.</div>"
  }catch(e){
   window.__bulkOcrProgressHandler=null;bulkCatalogRows=[];progress.textContent="⚠ "+(e.message||"No se pudo analizar la foto.");toast(e.message||"No se pudo analizar la foto")
  }
