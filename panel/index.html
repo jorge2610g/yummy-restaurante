@@ -4563,8 +4563,41 @@ async function bulkReadFunctionError(error){
 function bulkAiSourceLabel(result){
  const provider=String(result?.provider||"").toLowerCase();
  if(provider==="gemini")return "Gemini Vision";
- if(provider==="openai")return bulkAiSourceLabel(result);
+ if(provider==="openai")return "OpenAI Vision";
  return "IA visual"
+}
+function bulkCanonicalCategoryName(value){
+ const raw=String(value||"").replace(/[_|]+/g," ").replace(/\s+/g," ").trim();
+ if(!raw)return "General";
+ const norm=bulkNorm(raw);
+ const aliases=new Map([
+  ["hamburguesa","Hamburguesas"],["hamburguesas","Hamburguesas"],["burger","Hamburguesas"],["burgers","Hamburguesas"],
+  ["lomo","Lomos"],["lomos","Lomos"],["lomito","Lomos"],["lomitos","Lomos"],
+  ["bebida","Bebidas"],["bebidas","Bebidas"],
+  ["cerveza","Cervezas"],["cervezas","Cervezas"],
+  ["gaseosa","Gaseosas"],["gaseosas","Gaseosas"],["refresco","Gaseosas"],["refrescos","Gaseosas"],
+  ["pizza","Pizzas"],["pizzas","Pizzas"],
+  ["postre","Postres"],["postres","Postres"],
+  ["entrada","Entradas"],["entradas","Entradas"],
+  ["sandwich","Sándwiches"],["sandwiches","Sándwiches"],["sándwich","Sándwiches"],["sándwiches","Sándwiches"],
+  ["general","General"]
+ ]);
+ if(aliases.has(norm))return aliases.get(norm);
+ const existing=Array.isArray(categories)?categories.find(x=>bulkNorm(x.name)===norm):null;
+ if(existing?.name)return existing.name;
+ if(raw===raw.toUpperCase()||raw===raw.toLowerCase()){
+  return raw.toLowerCase().replace(/(^|\s)(\p{L})/gu,(m,p1,p2)=>p1+p2.toUpperCase())
+ }
+ return raw
+}
+function bulkMenuCategoryNames(rows=bulkCatalogRows){
+ const map=new Map();
+ for(const row of rows||[]){
+  const name=bulkCanonicalCategoryName(row?.category||"General");
+  const key=bulkNorm(name);
+  if(key&&!map.has(key))map.set(key,name)
+ }
+ return [...map.values()]
 }
 function bulkMapAiProducts(result){
  const products=Array.isArray(result?.products)?result.products:[],rows=[];
@@ -4572,7 +4605,7 @@ function bulkMapAiProducts(result){
   if(bulkCatalogTarget!=="restaurant_menu")bulkSwitchPhotoToMenuMode();
   for(let i=0;i<products.length;i++){
    const p=products[i];
-   const row=bulkMapRow({nombre:p.name,descripcion:p.description,precio:p.price,categoria:p.category||"General"},i,bulkAiSourceLabel(result));
+   const row=bulkMapRow({nombre:p.name,descripcion:p.description,precio:p.price,categoria:bulkCanonicalCategoryName(p.category||"General")},i,bulkAiSourceLabel(result));
    if(row)rows.push(row)
   }
   return rows
@@ -4644,8 +4677,9 @@ async function handleBulkCatalogPhoto(input){
   bulkCatalogRows=bulkMergeDetectedRows(bulkMapAiProducts(aiResult)).slice(0,500);
   if(!bulkCatalogRows.length)throw Object.assign(new Error("La IA no encontró productos principales con suficiente confianza."),{code:"AI_EMPTY"});
   renderBulkCatalogPreview();
-  const modifierCount=Array.isArray(aiResult.modifiers)?aiResult.modifiers.length:0,filteredCount=Number(aiResult.filtered_menu_extras||0),currency=String(aiResult.currency||"").trim(),model=String(aiResult.model||"IA visual"),provider=bulkAiSourceLabel(aiResult);
-  progress.innerHTML="<b>"+bulkCatalogRows.length+" productos principales detectados con IA.</b><div class=\"mut\">"+(modifierCount?modifierCount+" modificadores/extras fueron separados y no se contaron como productos. ":"")+(filteredCount?filteredCount+" falso(s) positivo(s) adicional(es) fueron descartados automáticamente. ":"")+"Proveedor: "+esc(provider)+" · Modelo: "+esc(model)+(currency?" · Moneda: "+esc(currency):"")+". Revisa los borradores antes de importar.</div>";
+  const modifierCount=Array.isArray(aiResult.modifiers)?aiResult.modifiers.length:0,filteredCount=Number(aiResult.filtered_menu_extras||0),currency=String(aiResult.currency||"").trim(),model=String(aiResult.model||"IA visual"),provider=bulkAiSourceLabel(aiResult),categoryNames=bulkCatalogTarget==="restaurant_menu"?bulkMenuCategoryNames(bulkCatalogRows):[];
+  const categoryText=categoryNames.length?categoryNames.length+" categoría"+(categoryNames.length===1?"":"s")+" detectada"+(categoryNames.length===1?"":"s")+": "+categoryNames.slice(0,8).map(esc).join(", ")+(categoryNames.length>8?"…":"")+". ":"";
+  progress.innerHTML="<b>"+bulkCatalogRows.length+" productos principales detectados con IA.</b><div class=\"mut\">"+categoryText+(modifierCount?modifierCount+" modificadores/extras fueron separados y no se contaron como productos. ":"")+(filteredCount?filteredCount+" falso(s) positivo(s) adicional(es) fueron descartados automáticamente. ":"")+"Proveedor: "+esc(provider)+" · Modelo: "+esc(model)+(currency?" · Moneda: "+esc(currency):"")+". Revisa los borradores antes de importar.</div>";
   return
  }catch(e){
   aiError=e;console.warn("IA visual no disponible, se usa OCR local",e);
@@ -4689,8 +4723,43 @@ function renderBulkCatalogPreview(){
  btn.disabled=!bulkCatalogRows.length
 }
 async function downloadBulkImportTemplate(){try{await bulkEnsureXlsx();let rows,name;if(bulkCatalogTarget==="retail"){name="plantilla-retail-yummypro.xlsx";rows=[{codigo_barra:"7801234567890",sku:"SKU-001",nombre:"Agua mineral 600 ml",marca:"Demo",categoria:"Bebidas",costo:500,precio:790,stock:24,stock_minimo:6,unidad:"unidad",imagen:"",activo:"Sí"}]}else if(bulkCatalogTarget==="restaurant_inventory"){name="plantilla-inventario-restaurante-yummypro.xlsx";rows=[{nombre:"Queso cheddar",unidad:"kg",stock:8,stock_minimo:2,costo_unitario:6500,proveedor:"Proveedor demo",activo:"Sí"}]}else{name="plantilla-menu-restaurante-yummypro.xlsx";rows=[{nombre:"Hamburguesa clásica",descripcion:"Carne, queso y vegetales",precio:6990,categoria:"Hamburguesas",imagen:"",etiqueta:"Popular",destacado:"Sí",disponible:"Sí",orden:1}]}const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Importar");XLSX.writeFile(wb,name)}catch(e){toast(e.message||"No se pudo generar la plantilla")}}
-async function bulkEnsureRestaurantCategory(name){const clean=String(name||"General").trim()||"General";let found=categories.find(x=>bulkNorm(x.name)===bulkNorm(clean));if(found)return found.id;const base=clean.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"general";let slug=base,n=2;while(categories.some(x=>String(x.slug)===slug)){slug=base+"-"+n++}const {data,error}=await sb.from("restaurant_categories").insert({restaurant_id:currentRestaurant,name:clean,slug,sort_order:categories.length,active:true}).select("id,name,slug,active,sort_order").single();if(error)throw error;categories.push(data);return data.id}
-async function importBulkCatalogRows(){if(!currentRestaurant||!bulkCatalogRows.length)return toast("No hay registros para importar.");const btn=document.getElementById("bulkCatalogImportBtn"),progress=document.getElementById("bulkCatalogProgress"),mode=document.getElementById("bulkCatalogDuplicateMode").value,activate=document.getElementById("bulkCatalogActiveMode").value==="active";btn.disabled=true;btn.textContent="Importando…";progress.textContent="Guardando registros…";try{let inserted=0,updated=0,skipped=0;if(bulkCatalogTarget==="restaurant_menu"){await loadCategories();const {data:existing,error}=await sb.from("restaurant_products").select("*").eq("restaurant_id",currentRestaurant);if(error)throw error;const map=new Map((existing||[]).map(x=>[bulkNorm(x.name),x]));const cats=[...new Set(bulkCatalogRows.map(x=>x.category||"General"))],catMap=new Map();for(const name of cats)catMap.set(bulkNorm(name),await bulkEnsureRestaurantCategory(name));for(const r of bulkCatalogRows){const old=map.get(bulkNorm(r.name));if(old&&mode==="skip"){skipped++;continue}const row={restaurant_id:currentRestaurant,name:r.name,description:r.description||"",price:Number(r.price)||0,category_id:catMap.get(bulkNorm(r.category||"General"))||null,image_url:r.image_url||BULK_DEMO_IMAGE,badge:r.badge||null,featured:!!r.featured,available:activate&&r.available!==false,sort_order:Number(r.sort_order)||0,updated_at:new Date().toISOString()};const q=old?sb.from("restaurant_products").update(row).eq("id",old.id).eq("restaurant_id",currentRestaurant):sb.from("restaurant_products").insert(row);const {error:e}=await q;if(e)throw e;old?updated++:inserted++}await loadProducts()}else if(bulkCatalogTarget==="restaurant_inventory"){const {data:existing,error}=await sb.from("restaurant_inventory_items").select("*").eq("restaurant_id",currentRestaurant);if(error)throw error;const map=new Map((existing||[]).map(x=>[bulkNorm(x.name),x]));for(const r of bulkCatalogRows){const old=map.get(bulkNorm(r.name));if(old&&mode==="skip"){skipped++;continue}const row={restaurant_id:currentRestaurant,name:r.name,unit:r.unit||"unidad",minimum_stock:Number(r.minimum)||0,unit_cost:Number(r.cost)||0,supplier:r.supplier||null,active:activate&&r.active!==false,updated_at:new Date().toISOString()};if(old){const {error:e}=await sb.from("restaurant_inventory_items").update(row).eq("id",old.id).eq("restaurant_id",currentRestaurant);if(e)throw e;const target=Number(r.stock)||0,delta=target-Number(old.current_stock||0);if(delta!==0){const {error:me}=await sb.from("restaurant_inventory_movements").insert({restaurant_id:currentRestaurant,inventory_item_id:old.id,movement_type:"ajuste",quantity_delta:delta,note:"Carga masiva"});if(me)throw me}updated++}else{row.current_stock=Number(r.stock)||0;const {error:e}=await sb.from("restaurant_inventory_items").insert(row);if(e)throw e;inserted++}}await loadInventory()}else{const {data:existing,error}=await sb.from("retail_products").select("*").eq("restaurant_id",currentRestaurant);if(error)throw error;const findExisting=r=>(existing||[]).find(x=>(r.barcode&&String(x.barcode||"")===String(r.barcode))||(r.sku&&String(x.sku||"")===String(r.sku))||bulkNorm(x.name)===bulkNorm(r.name));for(let i=0;i<bulkCatalogRows.length;i+=8){const chunk=bulkCatalogRows.slice(i,i+8);await Promise.all(chunk.map(async r=>{const old=findExisting(r);if(old&&mode==="skip"){skipped++;return}const {error:e}=await sb.rpc("retail_save_product",{p_restaurant_id:currentRestaurant,p_product_id:old?.id||null,p_barcode:r.barcode||null,p_sku:r.sku||null,p_name:r.name,p_description:r.description||"",p_category:r.category||null,p_brand:r.brand||null,p_unit:r.unit||"unidad",p_cost:Number(r.cost)||0,p_price:Number(r.price)||0,p_initial_stock:old?0:Number(r.stock)||0,p_minimum_stock:Number(r.minimum)||0,p_allow_fractional:false,p_image_url:r.image_url||BULK_DEMO_IMAGE,p_active:activate&&r.active!==false});if(e)throw e;if(old&&Number(old.current_stock||0)!==Number(r.stock||0)){const {error:se}=await sb.rpc("retail_adjust_stock",{p_restaurant_id:currentRestaurant,p_product_id:old.id,p_new_stock:Number(r.stock)||0,p_note:"Carga masiva"});if(se)throw se}old?updated++:inserted++}))}await loadRetailProducts()}const msg="Carga completada: "+inserted+" nuevos, "+updated+" actualizados"+(skipped?", "+skipped+" omitidos":"")+".";progress.textContent="✅ "+msg;toast(msg);bulkCatalogRows=[];btn.disabled=true}catch(e){console.error("Carga masiva",e);progress.textContent="⚠ "+(e.message||"No se pudo completar la carga.");toast(e.message||"No se pudo completar la carga")}finally{btn.textContent="Importar registros";if(bulkCatalogRows.length)btn.disabled=false}}
+async function bulkEnsureRestaurantCategory(name){
+ const clean=bulkCanonicalCategoryName(name);
+ let found=categories.find(x=>bulkNorm(x.name)===bulkNorm(clean));
+ if(found)return found.id;
+ const base=clean.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"general";
+ let slug=base,n=2;
+ while(categories.some(x=>String(x.slug)===slug)){slug=base+"-"+n++}
+ const {data,error}=await sb.from("restaurant_categories").insert({restaurant_id:currentRestaurant,name:clean,slug,sort_order:categories.length,active:true}).select("id,name,slug,active,sort_order").single();
+ if(error)throw error;
+ categories.push(data);
+ return data.id
+}
+async function importBulkCatalogRows(){if(!currentRestaurant||!bulkCatalogRows.length)return toast("No hay registros para importar.");const btn=document.getElementById("bulkCatalogImportBtn"),progress=document.getElementById("bulkCatalogProgress"),mode=document.getElementById("bulkCatalogDuplicateMode").value,activate=document.getElementById("bulkCatalogActiveMode").value==="active";btn.disabled=true;btn.textContent="Importando…";progress.textContent="Guardando registros…";try{let inserted=0,updated=0,skipped=0;if(bulkCatalogTarget==="restaurant_menu"){
+ await loadCategories();
+ const {data:existing,error}=await sb.from("restaurant_products").select("*").eq("restaurant_id",currentRestaurant);if(error)throw error;
+ const map=new Map((existing||[]).map(x=>[bulkNorm(x.name),x]));
+ for(const r of bulkCatalogRows)r.category=bulkCanonicalCategoryName(r.category||"General");
+ const cats=bulkMenuCategoryNames(bulkCatalogRows),catMap=new Map(),existingCatKeys=new Set(categories.map(x=>bulkNorm(x.name)));
+ let categoriesCreated=0;
+ for(const name of cats){
+  const key=bulkNorm(name),before=categories.length;
+  catMap.set(key,await bulkEnsureRestaurantCategory(name));
+  if(categories.length>before&&!existingCatKeys.has(key)){categoriesCreated++;existingCatKeys.add(key)}
+ }
+ progress.textContent="Guardando "+bulkCatalogRows.length+" productos en "+cats.length+" categoría"+(cats.length===1?"":"s")+"…";
+ for(const r of bulkCatalogRows){
+  const old=map.get(bulkNorm(r.name));if(old&&mode==="skip"){skipped++;continue}
+  const categoryName=bulkCanonicalCategoryName(r.category||"General");
+  const row={restaurant_id:currentRestaurant,name:r.name,description:r.description||"",price:Number(r.price)||0,category_id:catMap.get(bulkNorm(categoryName))||null,image_url:r.image_url||BULK_DEMO_IMAGE,badge:r.badge||null,featured:!!r.featured,available:activate&&r.available!==false,sort_order:Number(r.sort_order)||0,updated_at:new Date().toISOString()};
+  const q=old?sb.from("restaurant_products").update(row).eq("id",old.id).eq("restaurant_id",currentRestaurant):sb.from("restaurant_products").insert(row);const {error:e}=await q;if(e)throw e;old?updated++:inserted++
+ }
+ window.__lastBulkCategoryImport={total:cats.length,created:categoriesCreated,reused:Math.max(0,cats.length-categoriesCreated)};
+ await loadProducts()
+}else if(bulkCatalogTarget==="restaurant_inventory"){const {data:existing,error}=await sb.from("restaurant_inventory_items").select("*").eq("restaurant_id",currentRestaurant);if(error)throw error;const map=new Map((existing||[]).map(x=>[bulkNorm(x.name),x]));for(const r of bulkCatalogRows){const old=map.get(bulkNorm(r.name));if(old&&mode==="skip"){skipped++;continue}const row={restaurant_id:currentRestaurant,name:r.name,unit:r.unit||"unidad",minimum_stock:Number(r.minimum)||0,unit_cost:Number(r.cost)||0,supplier:r.supplier||null,active:activate&&r.active!==false,updated_at:new Date().toISOString()};if(old){const {error:e}=await sb.from("restaurant_inventory_items").update(row).eq("id",old.id).eq("restaurant_id",currentRestaurant);if(e)throw e;const target=Number(r.stock)||0,delta=target-Number(old.current_stock||0);if(delta!==0){const {error:me}=await sb.from("restaurant_inventory_movements").insert({restaurant_id:currentRestaurant,inventory_item_id:old.id,movement_type:"ajuste",quantity_delta:delta,note:"Carga masiva"});if(me)throw me}updated++}else{row.current_stock=Number(r.stock)||0;const {error:e}=await sb.from("restaurant_inventory_items").insert(row);if(e)throw e;inserted++}}await loadInventory()}else{const {data:existing,error}=await sb.from("retail_products").select("*").eq("restaurant_id",currentRestaurant);if(error)throw error;const findExisting=r=>(existing||[]).find(x=>(r.barcode&&String(x.barcode||"")===String(r.barcode))||(r.sku&&String(x.sku||"")===String(r.sku))||bulkNorm(x.name)===bulkNorm(r.name));for(let i=0;i<bulkCatalogRows.length;i+=8){const chunk=bulkCatalogRows.slice(i,i+8);await Promise.all(chunk.map(async r=>{const old=findExisting(r);if(old&&mode==="skip"){skipped++;return}const {error:e}=await sb.rpc("retail_save_product",{p_restaurant_id:currentRestaurant,p_product_id:old?.id||null,p_barcode:r.barcode||null,p_sku:r.sku||null,p_name:r.name,p_description:r.description||"",p_category:r.category||null,p_brand:r.brand||null,p_unit:r.unit||"unidad",p_cost:Number(r.cost)||0,p_price:Number(r.price)||0,p_initial_stock:old?0:Number(r.stock)||0,p_minimum_stock:Number(r.minimum)||0,p_allow_fractional:false,p_image_url:r.image_url||BULK_DEMO_IMAGE,p_active:activate&&r.active!==false});if(e)throw e;if(old&&Number(old.current_stock||0)!==Number(r.stock||0)){const {error:se}=await sb.rpc("retail_adjust_stock",{p_restaurant_id:currentRestaurant,p_product_id:old.id,p_new_stock:Number(r.stock)||0,p_note:"Carga masiva"});if(se)throw se}old?updated++:inserted++}))}await loadRetailProducts()}const catInfo=bulkCatalogTarget==="restaurant_menu"&&window.__lastBulkCategoryImport?window.__lastBulkCategoryImport:null;
+ const catMsg=catInfo?", "+catInfo.total+" categoría"+(catInfo.total===1?"":"s")+" ("+catInfo.created+" nueva"+(catInfo.created===1?"":"s")+", "+catInfo.reused+" reutilizada"+(catInfo.reused===1?"":"s")+")":"";
+ const msg="Carga completada: "+inserted+" nuevos, "+updated+" actualizados"+(skipped?", "+skipped+" omitidos":"")+catMsg+".";
+ progress.textContent="✅ "+msg;toast(msg);bulkCatalogRows=[];btn.disabled=true}catch(e){console.error("Carga masiva",e);progress.textContent="⚠ "+(e.message||"No se pudo completar la carga.");toast(e.message||"No se pudo completar la carga")}finally{btn.textContent="Importar registros";if(bulkCatalogRows.length)btn.disabled=false}}
 
 async function loadProducts(){const {data,error}=await sb.from("restaurant_products").select("*").eq("restaurant_id",currentRestaurant).order("sort_order");if(error)return toast(error.message);products=data||[];const productListEl=document.getElementById("productList");if(!productListEl)return;productListEl.innerHTML=products.map(p=>`<article class="item product-card">${p.image_url?`<img class="product-thumb" src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`:`<div class="product-thumb product-thumb-placeholder">🍽️</div>`}<div class="product-info"><h3>${esc(p.name)}</h3><div class="mut">${esc(p.description||"Sin descripción")}</div><div class="product-meta"><span class="price">${money(p.price)}</span><span class="pill ${p.available?"status-active":"status-inactive"}">${p.available?"Disponible":"No disponible"}</span>${p.badge?`<span class="pill">${esc(p.badge)}</span>`:""}</div></div><div class="actions"><button class="ghost" onclick="editProduct(${p.id})">Editar</button><button class="ghost" onclick="openOptionsModal(${p.id})">Opciones</button><button class="ghost" onclick="toggleProduct(${p.id},${!p.available})">${p.available?"Desactivar":"Activar"}</button><button class="danger" onclick="deleteProduct(${p.id})">Eliminar</button></div></article>`).join("")||"<p class='mut'>Todavía no tienes productos. Crea el primero para comenzar tu menú.</p>"}
 function openProductModal(){clearProduct();document.getElementById("productModal")?.classList.add("open");document.getElementById("productModal")?.setAttribute("aria-hidden","false");setTimeout(()=>pname?.focus(),80)}
@@ -6458,7 +6527,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Restaurante · Versión v2.5.62</footer></main></div><script>
+<footer class="admin-version">Restaurante · Versión v2.5.63</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
