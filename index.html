@@ -6,10 +6,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Yumi Pro">
+<meta name="apple-mobile-web-app-title" content="YummyPro">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" sizes="192x192" href="/icon-192.png" type="image/png">
-<title>Yumi Pro · Plataforma para restaurantes, retail y profesionales</title>
+<title>YummyPro · Plataforma para restaurantes, retail y profesionales</title>
 <meta name="description" content="Crea tu menú digital, recibe pedidos y administra tu restaurante. Prueba gratis por 30 días.">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -104,7 +104,7 @@ body[data-vertical="restaurant"] .food:after{content:attr(data-icon)!important}
 </style>
 </head>
 <body class="landing-auth-pending">
-<nav><div class="wrap nav"><a class="brand" href="#restaurante">Yumi <span>Pro</span></a><div class="actions"><button class="btn ghost" id="landingLoginBtn" onclick="openLogin()">Iniciar sesión</button><button class="btn primary" id="landingTrialBtn" onclick="openSignup()">Prueba 30 días gratis</button></div></div></nav>
+<nav><div class="wrap nav"><a class="brand" href="#restaurante">Yummy<span>Pro</span></a><div class="actions"><button class="btn ghost" id="landingLoginBtn" onclick="openLogin()">Iniciar sesión</button><button class="btn primary" id="landingTrialBtn" onclick="openSignup()">Prueba 30 días gratis</button></div></div></nav>
 <div class="vertical-switch-wrap"><div class="wrap vertical-switch" role="tablist" aria-label="Tipo de negocio">
 <button class="vertical-choice" id="verticalRestaurant" type="button" onclick="setLandingVertical('restaurant',true)">🍽️ Restaurantes<span class="vertical-kicker">Menú · pedidos · cocina</span></button>
 <button class="vertical-choice" id="verticalRetail" type="button" onclick="setLandingVertical('retail',true)">🛍️ Tiendas / Market<span class="vertical-kicker">POS · inventario · ventas</span></button>
@@ -119,7 +119,7 @@ body[data-vertical="restaurant"] .food:after{content:attr(data-icon)!important}
 <section id="funciones"><div class="wrap"><div class="sectionHead"><h2 id="featuresTitle">Todo lo que tu negocio necesita</h2><p id="featuresLead">YummyPro adapta su panel a tu operación.</p></div><div class="grid" id="featuresGrid"></div></div></section>
 <section id="precios"><div class="wrap"><div class="sectionHead"><span class="tag">PLANES Y PRECIOS</span><h2 style="margin-top:16px" id="pricingTitle">Elige el plan que más te interesa</h2><p id="pricingLead">Todos comienzan con 30 días gratis. Los planes mostrados corresponden al tipo de negocio seleccionado.</p></div><div class="countryPricingBar"><div class="countryText"><b id="pricingCountryTitle">🌎 Precios para tu país</b><small id="pricingCountryNote">Detectando ubicación…</small></div><select id="landingBusinessTypeSelect" aria-label="Seleccionar tipo de negocio" hidden></select><select id="landingCountrySelect" aria-label="Seleccionar país"></select><button class="btn ghost" type="button" id="detectCountryBtn">Detectar automáticamente</button></div><div id="pricingGrid" class="pricingGrid"><div class="card">Cargando planes disponibles…</div></div><p class="pricingNote" id="pricingNote">La prueba gratuita se activa automáticamente al crear tu negocio.</p></div></section>
 <section><div class="wrap"><div class="sectionHead"><h2>Empieza en minutos</h2><p>Elige tu tipo de negocio, crea tu cuenta y YummyPro te llevará al panel correcto.</p></div><div class="grid"><div class="card step"><h3>Elige tu solución</h3><p>Restaurante, Retail o Profesionales desde una sola landing.</p></div><div class="card step"><h3>Crea tu cuenta</h3><p>Tu prueba se asigna automáticamente al tipo de negocio seleccionado.</p></div><div class="card step"><h3>Entra a tu panel</h3><p>Cada vertical conserva su propio dominio, módulos, accesos y datos.</p></div></div></div></section>
-<footer><div class="wrap"><b style="color:#fff">Yumi <span style="color:var(--y)">Pro</span></b> · Una plataforma para cada forma de trabajar</div></footer>
+<footer><div class="wrap"><b style="color:#fff">Yummy<span style="color:var(--y)">Pro</span></b> · Una plataforma para cada forma de trabajar</div></footer>
 
 <div class="modal" id="signupModal"><div class="box"><div class="boxTop"><div><h2 style="margin:0">Crea tu acceso</h2><p style="color:#aaa;margin:6px 0">Activa tus 30 días gratis.</p></div><button class="close" onclick="closeModals()">✕</button></div><form id="signupForm"><label id="signupBusinessTypeLabel">Tipo de negocio</label><select id="sBusinessType" required></select><label>Nombre del negocio</label><input id="sName" required placeholder="Ej. Mi negocio"><label>Correo electrónico</label><input id="sEmail" type="email" required placeholder="tu@negocio.com"><label>Contraseña</label><input id="sPass" type="password" minlength="6" required placeholder="Mínimo 6 caracteres"><label>WhatsApp</label><input id="sPhone" placeholder="+56..."><label>Dirección</label><input id="sAddress" placeholder="Dirección de tu local"><button class="btn primary" style="width:100%;margin-top:18px" id="signupBtn">Prueba 30 días gratis</button><div class="msg" id="signupMsg"></div></form></div></div>
 <div class="modal" id="loginModal"><div class="box"><div class="boxTop"><div><h2 style="margin:0">Iniciar sesión</h2><p style="color:#aaa;margin:6px 0">Entra al panel de tu negocio.</p></div><button class="close" onclick="closeModals()">✕</button></div><form id="loginForm"><label>Correo electrónico</label><input id="lEmail" type="email" required><label>Contraseña</label><input id="lPass" type="password" required><button class="btn primary" style="width:100%;margin-top:18px">Entrar a mi panel</button><div class="msg" id="loginMsg"></div></form></div></div>
@@ -436,5 +436,5 @@ window.addEventListener("hashchange",initLandingVerticalFromHash);
 })();
 </script>
 
-<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.5</div>
+<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.6</div>
 </body></html>
