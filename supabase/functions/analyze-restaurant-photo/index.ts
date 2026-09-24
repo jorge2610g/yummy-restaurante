@@ -33,6 +33,25 @@ function geminiOutputText(payload: any) {
   if (!Array.isArray(parts)) return "";
   return parts.map((p: any) => typeof p?.text === "string" ? p.text : "").join("").trim();
 }
+function parseStructuredJson(text: string) {
+  const clean = String(text || "")
+    .trim()
+    .replace(/^\`\`\`json\s*/i, "")
+    .replace(/^\`\`\`\s*/i, "")
+    .replace(/\s*\`\`\`$/, "")
+    .trim();
+  return JSON.parse(clean);
+}
+function stripAdditionalProperties(value: any): any {
+  if (Array.isArray(value)) return value.map(stripAdditionalProperties);
+  if (!value || typeof value !== "object") return value;
+  const out: any = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (k === "additionalProperties") continue;
+    out[k] = stripAdditionalProperties(v);
+  }
+  return out;
+}
 function parseImageDataUrl(dataUrl: string) {
   const m = dataUrl.match(/^data:(image\/(?:png|jpe?g|webp));base64,(.+)$/i);
   if (!m) return null;
@@ -108,6 +127,7 @@ const schema = {
     notes: { type: "array", items: { type: "string" } },
   },
 };
+const geminiSchema = stripAdditionalProperties(schema);
 
 function buildPrompt(targetHint: string) {
   return `
@@ -149,13 +169,25 @@ REGLAS GENERALES:
 `;
 }
 
+async function sleep(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function callGeminiModel(
   key: string,
   model: string,
   image: { mimeType: string; base64: string },
   prompt: string,
+  useSchema = true,
 ) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const generationConfig: any = {
+    temperature: 0.1,
+    maxOutputTokens: 12000,
+    responseMimeType: "application/json",
+  };
+  if (useSchema) generationConfig.responseSchema = geminiSchema;
+
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -166,16 +198,11 @@ async function callGeminiModel(
       contents: [{
         role: "user",
         parts: [
-          { inline_data: { mime_type: image.mimeType, data: image.base64 } },
+          { inlineData: { mimeType: image.mimeType, data: image.base64 } },
           { text: prompt },
         ],
       }],
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 12000,
-        responseMimeType: "application/json",
-        responseSchema: schema,
-      },
+      generationConfig,
     }),
   });
 
@@ -184,6 +211,7 @@ async function callGeminiModel(
     const msg = String(payload?.error?.message || "Gemini no pudo analizar la imagen.");
     console.error("Gemini response error", {
       model,
+      useSchema,
       status: res.status,
       code: payload?.error?.code,
       statusText: payload?.error?.status,
@@ -193,8 +221,10 @@ async function callGeminiModel(
       ok: false,
       code: res.status === 429 ? "GEMINI_RATE_LIMIT"
         : res.status === 503 ? "GEMINI_UNAVAILABLE"
+        : res.status === 400 ? "GEMINI_BAD_REQUEST"
         : "GEMINI_ERROR",
       retryable: res.status === 429 || res.status === 503 || res.status >= 500,
+      schemaRetryable: res.status === 400 && useSchema,
       message: msg,
       status: res.status,
       model,
@@ -208,10 +238,10 @@ async function callGeminiModel(
       ok: true,
       provider: "gemini",
       model,
-      result: cleanResult(JSON.parse(text)),
+      result: cleanResult(parseStructuredJson(text)),
     };
-  } catch {
-    console.error("Gemini returned invalid structured JSON", { model });
+  } catch (error) {
+    console.error("Gemini returned invalid JSON", { model, error: String(error) });
     return { ok: false, code: "GEMINI_INVALID_JSON", retryable: true, model };
   }
 }
@@ -220,21 +250,62 @@ async function tryGemini(image: { mimeType: string; base64: string }, prompt: st
   const key = Deno.env.get("GEMINI_API_KEY");
   if (!key) return { ok: false, code: "GEMINI_NOT_CONFIGURED", retryable: true };
 
-  const preferred = Deno.env.get("GEMINI_VISION_MODEL") || "gemini-3.8-flash";
-  const models = [...new Set([preferred, "gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash"])];
+  // Prefer stable, widely available models before newer high-demand variants.
+  const configured = String(Deno.env.get("GEMINI_VISION_MODEL") || "").trim();
+  const models = [...new Set([
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    configured,
+    "gemini-3.5-flash",
+    "gemini-3.6-flash",
+    "gemini-3.8-flash",
+  ].filter(Boolean))];
+
   let last: any = { ok: false, code: "GEMINI_ERROR", retryable: true };
+  const tried: string[] = [];
 
   for (const model of models) {
-    const attempt = await callGeminiModel(key, model, image, prompt);
+    tried.push(model);
+
+    // First attempt with structured schema.
+    let attempt = await callGeminiModel(key, model, image, prompt, true);
     if (attempt.ok) {
-      return { ...attempt, fallback_models_tried: models.slice(0, models.indexOf(model)) };
+      return { ...attempt, fallback_models_tried: tried.slice(0, -1) };
     }
-    last = attempt;
-    // Invalid credentials/request will not improve by changing model.
-    if (!attempt.retryable) break;
+
+    // Some Gemini variants can reject schema keywords; retry same model in JSON mode.
+    if (attempt.schemaRetryable) {
+      attempt = await callGeminiModel(key, model, image, prompt, false);
+      if (attempt.ok) {
+        return { ...attempt, fallback_models_tried: tried.slice(0, -1), schema_fallback: true };
+      }
+    }
+
+    // Retry transient overload/rate-limit once before moving to the next model.
+    if (attempt.retryable) {
+      await sleep(attempt.status === 429 ? 900 : 550);
+      const retry = await callGeminiModel(key, model, image, prompt, true);
+      if (retry.ok) {
+        return { ...retry, fallback_models_tried: tried.slice(0, -1), transient_retry: true };
+      }
+      if (retry.schemaRetryable) {
+        const noSchemaRetry = await callGeminiModel(key, model, image, prompt, false);
+        if (noSchemaRetry.ok) {
+          return { ...noSchemaRetry, fallback_models_tried: tried.slice(0, -1), schema_fallback: true, transient_retry: true };
+        }
+        last = noSchemaRetry;
+      } else {
+        last = retry;
+      }
+    } else {
+      last = attempt;
+    }
+
+    // Credential/permission problems won't improve by switching models.
+    if (last.status === 401 || last.status === 403) break;
   }
 
-  return last;
+  return { ...last, models_tried: tried };
 }
 
 async function tryOpenAI(imageDataUrl: string, prompt: string) {
@@ -299,7 +370,7 @@ async function tryOpenAI(imageDataUrl: string, prompt: string) {
       ok: true,
       provider: "openai",
       model,
-      result: cleanResult(JSON.parse(text)),
+      result: cleanResult(parseStructuredJson(text)),
     };
   } catch {
     return { ok: false, code: "OPENAI_INVALID_JSON", retryable: false };
@@ -387,5 +458,6 @@ Deno.serve(async (req: Request) => {
       gemini: gemini.code,
       openai: openai.code,
     },
+    gemini_models_tried: gemini.models_tried || gemini.fallback_models_tried || [],
   }, noGeminiKey ? 503 : 502);
 });
