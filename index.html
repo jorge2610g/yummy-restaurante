@@ -116,7 +116,7 @@ const SB_URL="https://gulctljitzlwokqydigx.supabase.co";
 const SB_KEY="sb_publishable__moppTxObowifx6rJbW_tw_3GiCkqhG";
 const sb=supabase.createClient(SB_URL,SB_KEY);
 const signupModal=document.getElementById("signupModal"),loginModal=document.getElementById("loginModal");
-let selectedPlanId=null,landingSessionUser=null,landingHasRestaurant=false;
+let selectedPlanId=null,landingSessionUser=null,landingHasRestaurant=false,landingSessionBusinessType=null;
 let landingCountries=[],landingPlans=[],landingCountryCode="CL",landingFx={};
 const LANDING_VERTICALS={
  restaurant:{
@@ -152,10 +152,36 @@ function landingPanelBase(){return activeLandingVertical().domain}
 function landingDemoSlug(){const v=activeLandingVertical();return v.demo[landingBusinessType]||v.demo[v.defaultType]||Object.values(v.demo)[0]}
 function syncLandingDemoLink(){const a=document.getElementById("landingDemoLink"),slug=landingDemoSlug();if(a&&slug)a.href="https://menu.yummypro.online/?r="+encodeURIComponent(slug)}
 function openSelectedPanelInstall(){location.href=landingPanelBase()+"/panel/?install=pwa"}
-async function landingMembershipBusinessType(userId){
- const {data:membership,error}=await sb.from("restaurant_staff").select("restaurant_id").eq("user_id",userId).eq("active",true).limit(10);if(error)throw error;if(!membership?.length)return null;
- const ids=membership.map(x=>Number(x.restaurant_id)).filter(Number.isFinite);const {data:businesses,error:businessError}=await sb.from("restaurants").select("id,business_type").in("id",ids);if(businessError)throw businessError;
- const match=(businesses||[]).find(x=>landingTypeAllowed(x.business_type));return match?String(match.business_type||"restaurant").toLowerCase():String((businesses||[])[0]?.business_type||"").toLowerCase()||null;
+function universalPanelDomainForBusinessType(type){
+ const t=String(type||"").toLowerCase();
+ if(t==="professional")return "https://pro.yummypro.online";
+ if(t==="supermarket"||t==="minimarket")return "https://retail.yummypro.online";
+ if(t==="restaurant")return "https://web.yummypro.online";
+ return null;
+}
+async function landingMembershipBusinesses(userId){
+ const {data:membership,error}=await sb.from("restaurant_staff").select("restaurant_id").eq("user_id",userId).eq("active",true).limit(20);if(error)throw error;if(!membership?.length)return [];
+ const ids=membership.map(x=>Number(x.restaurant_id)).filter(Number.isFinite);if(!ids.length)return [];
+ const {data:businesses,error:businessError}=await sb.from("restaurants").select("id,business_type,active").in("id",ids);if(businessError)throw businessError;
+ return (businesses||[]).filter(x=>x.active!==false&&universalPanelDomainForBusinessType(x.business_type));
+}
+async function resolveUniversalBusinessType(user){
+ if(!user?.id)return null;
+ const businesses=await landingMembershipBusinesses(user.id);
+ if(businesses.length){
+   const selectedMatch=businesses.find(x=>landingTypeAllowed(x.business_type));
+   return String((selectedMatch||businesses[0]).business_type||"").toLowerCase()||null;
+ }
+ const pending=String(user.user_metadata?.trial_business_type||"").toLowerCase();
+ return universalPanelDomainForBusinessType(pending)?pending:null;
+}
+async function goToUniversalPanel(user=landingSessionUser){
+ const type=await resolveUniversalBusinessType(user);
+ const domain=universalPanelDomainForBusinessType(type);
+ if(!domain)return false;
+ landingSessionBusinessType=type;landingHasRestaurant=true;
+ location.assign(domain+"/panel/");
+ return true;
 }
 function setPreviewItem(index,item){const icon=document.getElementById("previewIcon"+index),name=document.getElementById("previewName"+index),desc=document.getElementById("previewDesc"+index),price=document.getElementById("previewPrice"+index);if(icon)icon.dataset.icon=item[0];if(name)name.textContent=item[1];if(desc)desc.textContent=item[2];if(price)price.textContent=item[3]}
 function syncBusinessTypeControls(){
@@ -174,7 +200,7 @@ function applyLandingVertical(pushHash=false){
  const p=v.preview;document.getElementById("previewEyebrow").textContent=p[0];document.getElementById("previewTitle").textContent=p[1];document.getElementById("previewLogo").textContent=p[2];document.getElementById("previewSubtitle").textContent=p[3];setPreviewItem(1,p[4]);setPreviewItem(2,p[5]);setPreviewItem(3,p[6]);
  document.getElementById("featuresTitle").textContent=v.featuresTitle;document.getElementById("featuresLead").textContent=v.featuresLead;document.getElementById("featuresGrid").innerHTML=v.features.map(x=>'<div class="card"><div class="ico">'+x[0]+'</div><h3>'+x[1]+'</h3><p>'+x[2]+'</p></div>').join("");
  document.getElementById("pricingLead").textContent="Planes exclusivos para "+v.label+". Todos comienzan con 30 días gratis.";document.getElementById("pricingNote").textContent="La prueba gratuita se asigna automáticamente al tipo seleccionado y abre su panel independiente.";
- document.querySelector("#loginModal .boxTop p").textContent="Entra al panel de "+v.label.toLowerCase()+".";
+ document.querySelector("#loginModal .boxTop p").textContent="Acceso universal: detectaremos automáticamente qué panel corresponde a tu cuenta.";
  syncBusinessTypeControls();syncLandingDemoLink();selectedPlanId=null;renderPublicPlans();syncLandingSession();
  document.title="YummyPro · "+v.label;
  const desc=document.querySelector('meta[name="description"]');if(desc)desc.content=v.lead;
@@ -282,22 +308,23 @@ async function choosePlan(id){
   const selectedPlan=landingPlans.find(p=>Number(p.id)===Number(selectedPlanId));
   if(selectedPlan?.business_type&&landingPlanBusinessTypes().includes(String(selectedPlan.business_type))){landingBusinessType=String(selectedPlan.business_type);const signupType=document.getElementById("sBusinessType");if(signupType)signupType.value=landingBusinessType;const businessSelect=document.getElementById("landingBusinessTypeSelect");if(businessSelect)businessSelect.value=landingBusinessType}
  await trackLandingEvent("plan_interest_selected","pricing",{country_code:selectedLandingCountry().code},selectedPlanId);
- if(landingHasRestaurant){location.assign(landingPanelBase()+"/panel/");return}
+ if(landingHasRestaurant){if(await goToUniversalPanel())return}
  openSignup();
  const btn=document.getElementById("signupBtn");if(btn)btn.textContent="Prueba 30 días gratis";
 }
-function openSignup(){if(landingHasRestaurant){location.assign(landingPanelBase()+"/panel/");return}closeModals();const signupType=document.getElementById("sBusinessType");if(signupType){if(landingPlanBusinessTypes().includes(landingBusinessType))signupType.value=landingBusinessType;signupType.onchange=()=>{if(landingPlanBusinessTypes().includes(signupType.value)){landingBusinessType=signupType.value;selectedPlanId=null;const businessSelect=document.getElementById("landingBusinessTypeSelect");if(businessSelect)businessSelect.value=landingBusinessType;renderPublicPlans()}}}signupModal.classList.add("show");const btn=document.getElementById("signupBtn");if(btn)btn.textContent="Prueba 30 días gratis"}
-function openLogin(){if(landingHasRestaurant){location.assign(landingPanelBase()+"/panel/");return}closeModals();loginModal.classList.add("show")}
+async function openSignup(){if(landingHasRestaurant){if(await goToUniversalPanel())return}closeModals();const signupType=document.getElementById("sBusinessType");if(signupType){if(landingPlanBusinessTypes().includes(landingBusinessType))signupType.value=landingBusinessType;signupType.onchange=()=>{if(landingPlanBusinessTypes().includes(signupType.value)){landingBusinessType=signupType.value;selectedPlanId=null;const businessSelect=document.getElementById("landingBusinessTypeSelect");if(businessSelect)businessSelect.value=landingBusinessType;renderPublicPlans()}}}signupModal.classList.add("show");const btn=document.getElementById("signupBtn");if(btn)btn.textContent="Prueba 30 días gratis"}
+async function openLogin(){if(landingHasRestaurant){if(await goToUniversalPanel())return}closeModals();loginModal.classList.add("show")}
 function closeModals(){signupModal.classList.remove("show");loginModal.classList.remove("show")}
 async function syncLandingSession(){
  try{
   const {data:{session}}=await sb.auth.getSession();
-  landingSessionUser=session?.user||null;landingHasRestaurant=false;
+  landingSessionUser=session?.user||null;landingHasRestaurant=false;landingSessionBusinessType=null;
   if(landingSessionUser){
    const {data:role}=await sb.rpc("current_account_role");
    if(role==="restaurant"){
-    const type=await landingMembershipBusinessType(landingSessionUser.id);
-    landingHasRestaurant=!!type&&landingTypeAllowed(type);
+    const type=await resolveUniversalBusinessType(landingSessionUser);
+    landingSessionBusinessType=type;
+    landingHasRestaurant=!!universalPanelDomainForBusinessType(type);
    }
   }
   const loginBtn=document.getElementById("landingLoginBtn"),trialBtn=document.getElementById("landingTrialBtn");
@@ -307,7 +334,7 @@ async function syncLandingSession(){
  }catch(e){console.warn("No se pudo reconocer la sesión",e)}
 }
 document.querySelectorAll(".modal").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)closeModals()}));
-document.getElementById("loginForm").addEventListener("submit",async e=>{e.preventDefault();const msg=document.getElementById("loginMsg");msg.textContent="Ingresando…";try{const {data,error}=await sb.auth.signInWithPassword({email:document.getElementById("lEmail").value.trim(),password:document.getElementById("lPass").value});if(error)throw error;if(!data?.session)throw new Error("No se pudo crear la sesión");const {data:role,error:roleError}=await sb.rpc("current_account_role");if(roleError)throw roleError;if(role!=="restaurant"){await sb.auth.signOut();msg.textContent=role==="customer"?"Esta cuenta pertenece a un cliente. Ingresa desde el menú del negocio.":role==="admin"?"Esta cuenta es de administrador. Ingresa desde el panel de administración.":"Esta cuenta no pertenece a un negocio.";return}const accountBusinessType=await landingMembershipBusinessType(data.user.id);if(!landingTypeAllowed(accountBusinessType)){await sb.auth.signOut();msg.textContent="Esta cuenta pertenece a "+landingTypeLabel(accountBusinessType)+". Selecciona esa solución arriba para entrar a su panel.";return}await trackLandingEvent("login_success","auth");window.location.assign(landingPanelBase()+"/panel/")}catch(err){const raw=String(err?.message||"revisa tu correo y contraseña"),userError=/invalid login credentials|invalid credentials|email not confirmed|wrong password/i.test(raw);await trackLandingError("auth",userError?"invalid_credentials":"login_failure",raw,userError);msg.textContent="No se pudo iniciar sesión: "+raw}});
+document.getElementById("loginForm").addEventListener("submit",async e=>{e.preventDefault();const msg=document.getElementById("loginMsg");msg.textContent="Ingresando…";try{const {data,error}=await sb.auth.signInWithPassword({email:document.getElementById("lEmail").value.trim(),password:document.getElementById("lPass").value});if(error)throw error;if(!data?.session)throw new Error("No se pudo crear la sesión");const {data:role,error:roleError}=await sb.rpc("current_account_role");if(roleError)throw roleError;if(role!=="restaurant"){await sb.auth.signOut();msg.textContent=role==="customer"?"Esta cuenta pertenece a un cliente. Ingresa desde el menú del negocio.":role==="admin"?"Esta cuenta es de administrador. Ingresa desde el panel de administración.":"Esta cuenta no pertenece a un negocio.";return}const accountBusinessType=await resolveUniversalBusinessType(data.user);const targetDomain=universalPanelDomainForBusinessType(accountBusinessType);if(!targetDomain){await sb.auth.signOut();msg.textContent="Esta cuenta de negocio no tiene un panel asociado.";return}await trackLandingEvent("login_success","auth",{business_type:accountBusinessType,target_domain:targetDomain});window.location.assign(targetDomain+"/panel/")}catch(err){const raw=String(err?.message||"revisa tu correo y contraseña"),userError=/invalid login credentials|invalid credentials|email not confirmed|wrong password/i.test(raw);await trackLandingError("auth",userError?"invalid_credentials":"login_failure",raw,userError);msg.textContent="No se pudo iniciar sesión: "+raw}});
 document.getElementById("signupForm").addEventListener("submit",async e=>{e.preventDefault();const btn=document.getElementById("signupBtn"),msg=document.getElementById("signupMsg");btn.disabled=true;msg.textContent="Creando tu acceso…";try{const email=sEmail.value.trim(),password=sPass.value,country=selectedLandingCountry(),businessType=document.getElementById("sBusinessType")?.value||landingBusinessType||activeLandingVertical().defaultType;await trackLandingEvent("signup_started","signup",{country_code:country.code,business_type:businessType},selectedPlanId);const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:landingPanelBase()+"/panel/",data:{account_type:"restaurant",trial_restaurant_name:sName.value.trim(),trial_whatsapp:sPhone.value.trim(),trial_address:sAddress.value.trim(),trial_country_code:country.code,trial_intended_plan_id:selectedPlanId||null,trial_business_type:businessType}}});if(error)throw error;let session=data.session;if(!session){await trackLandingEvent("signup_confirmation_required","signup",{country_code:country.code,business_type:businessType},selectedPlanId);msg.innerHTML='Cuenta creada. Revisa tu correo para confirmar tu cuenta. Al iniciar sesión se activarán automáticamente tus 30 días gratis.';msg.className="msg success";return}const {error:rpcError}=await sb.rpc("create_my_trial_restaurant_v3",{p_name:sName.value.trim(),p_whatsapp:sPhone.value.trim(),p_address:sAddress.value.trim(),p_country_code:country.code,p_intended_plan_id:selectedPlanId||null,p_business_type:businessType});if(rpcError)throw rpcError;await trackLandingEvent("signup_completed","signup",{country_code:country.code,business_type:businessType},selectedPlanId);msg.textContent="¡Listo! Tus 30 días gratis están activos.";msg.className="msg success";setTimeout(()=>location.href=landingPanelBase()+"/panel/",700)}catch(err){const raw=String(err?.message||"No pudimos crear tu acceso.");await trackLandingError("signup","signup_failure",raw,false,{selected_plan_id:selectedPlanId,business_type:document.getElementById("sBusinessType")?.value||landingBusinessType||activeLandingVertical().defaultType});msg.textContent=raw;msg.className="msg"}finally{btn.disabled=false}});
 window.addEventListener("error",e=>trackLandingError("javascript","window_error",e.message||"Error JavaScript",false,{file:e.filename||null,line:e.lineno||null}));
 window.addEventListener("unhandledrejection",e=>trackLandingError("javascript","unhandled_rejection",String(e.reason?.message||e.reason||"Promesa rechazada"),false));
@@ -316,5 +343,5 @@ window.addEventListener("hashchange",initLandingVerticalFromHash);
 Promise.allSettled([loadPublicPlans(),syncLandingSession()]).then(()=>{applyLandingVertical(false);trackLandingEvent("landing_view","landing",{country_code:landingCountryCode,vertical:landingVertical})});
 </script>
 
-<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.0</div>
+<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.1</div>
 </body></html>
