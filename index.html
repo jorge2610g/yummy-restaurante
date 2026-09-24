@@ -210,8 +210,16 @@ async function goToUniversalPanel(user=landingSessionUser,knownSession=null){
    try{
     const refreshed=await sb.auth.refreshSession();
     if(refreshed.data?.session)session=refreshed.data.session;
-    else if(refreshed.error)console.warn("No se pudo renovar la sesión antes del cambio de panel",refreshed.error);
-   }catch(e){console.warn("No se pudo renovar la sesión antes del cambio de panel",e)}
+    else{
+     console.warn("La sesión ya no puede renovarse; se considera cerrada.",refreshed.error||"Sin sesión");
+     try{await sb.auth.signOut({scope:"local"})}catch(_){}
+     session=null;
+    }
+   }catch(e){
+    console.warn("No se pudo renovar la sesión antes del cambio de panel",e);
+    try{await sb.auth.signOut({scope:"local"})}catch(_){}
+    session=null;
+   }
   }
  }
  if(!session?.access_token||!session?.refresh_token){
@@ -371,8 +379,18 @@ async function syncLandingSession({force=false}={}){
  if(landingAuthPromise&&!force)return landingAuthPromise;
  landingAuthPromise=(async()=>{
   try{
-   const {data:{session},error:sessionError}=await sb.auth.getSession();
+   const {data:{session:storedSession},error:sessionError}=await sb.auth.getSession();
    if(sessionError)throw sessionError;
+   let session=storedSession||null;
+   // Un access token puede seguir vivo unos minutos después de cerrar sesión en otro subdominio.
+   // Solo mostramos "Ir a mi panel" si el refresh token también sigue siendo válido ahora.
+   if(session){
+    const refreshed=await sb.auth.refreshSession();
+    if(refreshed.error||!refreshed.data?.session){
+     try{await sb.auth.signOut({scope:"local"})}catch(_){}
+     session=null;
+    }else session=refreshed.data.session;
+   }
    landingSessionUser=session?.user||null;landingHasRestaurant=false;landingSessionBusinessType=null;
    if(landingSessionUser){
     const {data:role,error:roleError}=await sb.rpc("current_account_role");
@@ -390,6 +408,7 @@ async function syncLandingSession({force=false}={}){
    renderPublicPlans();
   }catch(e){
    console.warn("No se pudo reconocer la sesión",e);
+   try{await sb.auth.signOut({scope:"local"})}catch(_){}
    landingSessionUser=null;landingHasRestaurant=false;landingSessionBusinessType=null;landingAuthResolved=true;
    const loginBtn=document.getElementById("landingLoginBtn"),trialBtn=document.getElementById("landingTrialBtn");
    if(loginBtn)loginBtn.style.display="";
@@ -417,5 +436,5 @@ window.addEventListener("hashchange",initLandingVerticalFromHash);
 })();
 </script>
 
-<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.4</div>
+<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.5</div>
 </body></html>
