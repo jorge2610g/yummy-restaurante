@@ -2489,10 +2489,10 @@ body.retail-scanner-open{overflow:hidden!important}
   <div class="row bulk-catalog-actions" style="gap:8px;flex-wrap:wrap;margin-top:12px">
    <button class="ghost" type="button" onclick="downloadBulkImportTemplate()">⬇ Plantilla Excel</button>
    <label class="ghost" style="margin:0;display:inline-flex;align-items:center;cursor:pointer">📄 Excel / CSV / JSON / XML<input id="bulkCatalogFile" type="file" accept=".xlsx,.xls,.csv,.tsv,.json,.xml,text/csv,text/tab-separated-values,application/json,application/xml,text/xml" hidden onchange="handleBulkCatalogFile(this)"></label>
-   <label class="ghost" style="margin:0;display:inline-flex;align-items:center;cursor:pointer">🖼️ Analizar foto<input id="bulkCatalogPhoto" type="file" accept="image/*" hidden onchange="handleBulkCatalogPhoto(this)"></label>
-   <label class="ghost" style="margin:0;display:inline-flex;align-items:center;cursor:pointer">📷 Tomar foto<input id="bulkCatalogCamera" type="file" accept="image/*" capture="environment" hidden onchange="handleBulkCatalogPhoto(this)"></label>
+   <label class="ghost" style="margin:0;display:inline-flex;align-items:center;cursor:pointer">✨ Analizar foto con IA<input id="bulkCatalogPhoto" type="file" accept="image/*" hidden onchange="handleBulkCatalogPhoto(this)"></label>
+   <label class="ghost" style="margin:0;display:inline-flex;align-items:center;cursor:pointer">📷 Tomar foto con IA<input id="bulkCatalogCamera" type="file" accept="image/*" capture="environment" hidden onchange="handleBulkCatalogPhoto(this)"></label>
   </div>
-  <div class="item" style="margin-top:12px"><b id="bulkCatalogHintTitle">Archivos compatibles</b><div id="bulkCatalogHint" class="mut" style="margin-top:5px">Excel y CSV permiten cargar productos en masa. Las fotos se procesan con reconocimiento de texto y agrupación inteligente para crear borradores editables antes de importar.</div></div>
+  <div class="item" style="margin-top:12px"><b id="bulkCatalogHintTitle">Archivos compatibles</b><div id="bulkCatalogHint" class="mut" style="margin-top:5px">Excel y CSV permiten cargar productos en masa. Las fotos se analizan primero con IA visual para separar productos, descripciones, precios y modificadores. Si la IA no está disponible, se usa reconocimiento local como respaldo.</div></div>
   <div class="two" style="margin-top:12px"><div><label>Duplicados</label><select id="bulkCatalogDuplicateMode"><option value="update">Actualizar existentes</option><option value="skip">Omitir existentes</option></select></div><div><label>Estado al importar</label><select id="bulkCatalogActiveMode"><option value="active">Activos / disponibles</option><option value="draft">Borradores para revisar</option></select></div></div>
   <div id="bulkCatalogProgress" class="item" style="margin-top:12px">Selecciona un archivo o toma una foto.</div>
   <div id="bulkCatalogPreviewWrap">
@@ -4544,34 +4544,114 @@ async function bulkBuildOcrVariants(file){
  }
  return variants
 }
+async function bulkBlobToDataUrl(blob){return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||""));reader.onerror=()=>reject(reader.error||new Error("No se pudo leer la imagen"));reader.readAsDataURL(blob)})}
+async function bulkPrepareAiImage(file){
+ if(!window.createImageBitmap)return await bulkBlobToDataUrl(file);
+ try{
+  const bmp=await createImageBitmap(file),maxSide=3000,scale=Math.min(1,maxSide/Math.max(bmp.width,bmp.height));
+  if(scale>=.999){bmp.close?.();return await bulkBlobToDataUrl(file)}
+  const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bmp.width*scale));canvas.height=Math.max(1,Math.round(bmp.height*scale));
+  const ctx=canvas.getContext("2d",{alpha:false});ctx.fillStyle="#fff";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bmp,0,0,canvas.width,canvas.height);bmp.close?.();
+  const blob=await bulkCanvasToBlob(canvas,.94);return await bulkBlobToDataUrl(blob||file)
+ }catch(_){return await bulkBlobToDataUrl(file)}
+}
+async function bulkReadFunctionError(error){
+ try{if(error?.context?.clone){const res=error.context.clone();return await res.json()}}catch(_){}
+ try{if(error?.context?.json)return await error.context.json()}catch(_){}
+ return null
+}
+function bulkMapAiProducts(result){
+ const products=Array.isArray(result?.products)?result.products:[],rows=[];
+ if(result?.document_type==="menu"){
+  if(bulkCatalogTarget!=="restaurant_menu")bulkSwitchPhotoToMenuMode();
+  for(let i=0;i<products.length;i++){
+   const p=products[i];
+   const row=bulkMapRow({nombre:p.name,descripcion:p.description,precio:p.price,categoria:p.category||"General"},i,"OpenAI Vision");
+   if(row)rows.push(row)
+  }
+  return rows
+ }
+ if(bulkCatalogTarget==="restaurant_inventory"){
+  for(let i=0;i<products.length;i++){
+   const p=products[i];
+   const row=bulkMapRow({nombre:p.name,unidad:p.unit||"unidad",stock:p.stock,stock_minimo:p.minimum_stock,costo_unitario:p.cost,proveedor:""},i,"OpenAI Vision");
+   if(row)rows.push(row)
+  }
+  return rows
+ }
+ if(bulkCatalogTarget==="retail"){
+  for(let i=0;i<products.length;i++){
+   const p=products[i];
+   const row=bulkMapRow({nombre:p.name,descripcion:p.description,precio:p.price,costo:p.cost,stock:p.stock,stock_minimo:p.minimum_stock,unidad:p.unit||"unidad",categoria:p.category||"General",codigo_barra:p.barcode,sku:p.sku,marca:p.brand},i,"OpenAI Vision");
+   if(row)rows.push(row)
+  }
+  return rows
+ }
+ for(let i=0;i<products.length;i++){
+  const p=products[i],row=bulkMapRow({nombre:p.name,descripcion:p.description,precio:p.price,categoria:p.category||"General"},i,"OpenAI Vision");
+  if(row)rows.push(row)
+ }
+ return rows
+}
+async function bulkAnalyzePhotoWithOpenAI(file,progress){
+ if(!currentRestaurant)throw new Error("No se encontró el negocio actual.");
+ progress.textContent="Preparando foto para IA visual…";
+ const imageDataUrl=await bulkPrepareAiImage(file);
+ progress.textContent="Analizando con IA visual · identificando productos, precios y estructura…";
+ const {data,error}=await sb.functions.invoke("analyze-restaurant-photo",{body:{restaurant_id:Number(currentRestaurant),image_data_url:imageDataUrl,target_hint:bulkCatalogTarget}});
+ if(error){
+  const detail=await bulkReadFunctionError(error),e=new Error(detail?.message||error.message||"No se pudo usar la IA visual");
+  e.code=detail?.error||"AI_FUNCTION_ERROR";throw e
+ }
+ if(!data?.ok)throw Object.assign(new Error(data?.message||"La IA no devolvió un resultado válido"),{code:data?.error||"AI_INVALID"});
+ return data
+}
+async function bulkAnalyzePhotoWithLocalOcr(file,progress){
+ const worker=await bulkEnsureOcr(),variants=await bulkBuildOcrVariants(file),recognized=[];
+ for(let i=0;i<variants.length;i++){
+  const variant=variants[i];
+  window.__bulkOcrProgressHandler=m=>{if(m.status==="recognizing text")progress.textContent="Respaldo local · "+variant.label+" · "+Math.round((m.progress||0)*100)+"%"};
+  const result=await worker.recognize(variant.image,{rotateAuto:true},{text:true,blocks:true});
+  const structured=bulkOcrStructuredText(result?.data||{}),raw=String(result?.data?.text||"").trim();
+  recognized.push({label:variant.label,structured,raw})
+ }
+ window.__bulkOcrProgressHandler=null;
+ const combined=recognized.map(x=>x.structured+"\n"+x.raw).join("\n");
+ let menuAutoDetected=false;
+ if(bulkCatalogTarget==="restaurant_inventory"&&bulkOcrLikelyMenuText(combined)){bulkSwitchPhotoToMenuMode();menuAutoDetected=true}
+ const candidates=[];
+ for(const item of recognized){
+  candidates.push(...bulkParseOcrText(item.structured));
+  if(item.raw&&bulkNorm(item.raw)!==bulkNorm(item.structured))candidates.push(...bulkParseOcrText(item.raw))
+ }
+ const rows=bulkMergeDetectedRows(candidates).filter(r=>bulkCatalogTarget!=="restaurant_menu"||(!bulkOcrIsMenuNoise(r.name)&&Number(r.price||0)>0)).slice(0,500);
+ return {rows,menuAutoDetected}
+}
 async function handleBulkCatalogPhoto(input){
  const file=input.files?.[0];if(!file)return;
  bulkCatalogSource="photo";
  const progress=document.getElementById("bulkCatalogProgress"),btn=document.getElementById("bulkCatalogImportBtn");
- btn.disabled=true;document.getElementById("bulkCatalogActiveMode").value="draft";progress.textContent="Preparando imagen en alta resolución…";
+ btn.disabled=true;document.getElementById("bulkCatalogActiveMode").value="draft";
+ let aiResult=null,aiError=null;
  try{
-  const worker=await bulkEnsureOcr(),variants=await bulkBuildOcrVariants(file),recognized=[];
-  for(let i=0;i<variants.length;i++){
-   const variant=variants[i];
-   window.__bulkOcrProgressHandler=m=>{if(m.status==="recognizing text")progress.textContent="Analizando "+variant.label+" · pasada "+(i+1)+"/"+variants.length+" · "+Math.round((m.progress||0)*100)+"%"};
-   const result=await worker.recognize(variant.image,{rotateAuto:true},{text:true,blocks:true});
-   const structured=bulkOcrStructuredText(result?.data||{}),raw=String(result?.data?.text||"").trim();
-   recognized.push({label:variant.label,structured,raw})
-  }
-  window.__bulkOcrProgressHandler=null;
-  const combined=recognized.map(x=>x.structured+"\n"+x.raw).join("\n");
-  let menuAutoDetected=false;
-  if(bulkCatalogTarget==="restaurant_inventory"&&bulkOcrLikelyMenuText(combined)){bulkSwitchPhotoToMenuMode();menuAutoDetected=true}
-  const candidates=[];
-  for(const item of recognized){
-   candidates.push(...bulkParseOcrText(item.structured));
-   if(item.raw&&bulkNorm(item.raw)!==bulkNorm(item.structured))candidates.push(...bulkParseOcrText(item.raw))
-  }
-  bulkCatalogRows=bulkMergeDetectedRows(candidates).filter(r=>bulkCatalogTarget!=="restaurant_menu"||(!bulkOcrIsMenuNoise(r.name)&&Number(r.price||0)>0)).slice(0,500);
-  if(!bulkCatalogRows.length)throw new Error("No pudimos reconocer productos claros. Toma la foto de frente, con buena luz, sin reflejos y procurando que nombres y precios ocupen la mayor parte de la imagen.");
+  aiResult=await bulkAnalyzePhotoWithOpenAI(file,progress);
+  bulkCatalogRows=bulkMergeDetectedRows(bulkMapAiProducts(aiResult)).slice(0,500);
+  if(!bulkCatalogRows.length)throw Object.assign(new Error("La IA no encontró productos principales con suficiente confianza."),{code:"AI_EMPTY"});
   renderBulkCatalogPreview();
-  const modeText=menuAutoDetected?"Detectamos que la foto es un menú y cambiamos automáticamente desde Inventario de insumos a Productos del menú. ":"";
-  progress.innerHTML="<b>"+bulkCatalogRows.length+" productos principales detectados para revisar.</b><div class=\"mut\">"+modeText+"Títulos, categorías, promociones y extras no se cuentan como productos. Las distintas pasadas se usan para confirmar y completar detecciones, no para multiplicarlas.</div>"
+  const modifierCount=Array.isArray(aiResult.modifiers)?aiResult.modifiers.length:0,currency=String(aiResult.currency||"").trim(),model=String(aiResult.model||"OpenAI");
+  progress.innerHTML="<b>"+bulkCatalogRows.length+" productos principales detectados con IA.</b><div class=\"mut\">"+(modifierCount?modifierCount+" modificadores/extras fueron separados y no se contaron como productos. ":"")+"Modelo: "+esc(model)+(currency?" · Moneda: "+esc(currency):"")+". Revisa los borradores antes de importar.</div>";
+  return
+ }catch(e){
+  aiError=e;console.warn("IA visual no disponible, se usa OCR local",e);
+  progress.textContent=(e?.code==="OPENAI_NOT_CONFIGURED"?"IA avanzada pendiente de configurar. ":"No se pudo completar la IA avanzada. ")+"Usando reconocimiento local como respaldo…"
+ }
+ try{
+  const fallback=await bulkAnalyzePhotoWithLocalOcr(file,progress);
+  bulkCatalogRows=fallback.rows;
+  if(!bulkCatalogRows.length)throw new Error("No pudimos reconocer productos claros. Toma la foto de frente, con buena luz y sin reflejos.");
+  renderBulkCatalogPreview();
+  const reason=aiError?.code==="OPENAI_NOT_CONFIGURED"?"La clave de OpenAI todavía no está configurada; ":"La IA avanzada no respondió; ";
+  progress.innerHTML="<b>"+bulkCatalogRows.length+" productos detectados con respaldo local.</b><div class=\"mut\">"+reason+"se usó OCR local. Cuando OPENAI_API_KEY esté configurada, esta foto se analizará con visión multimodal.</div>"
  }catch(e){
   window.__bulkOcrProgressHandler=null;bulkCatalogRows=[];progress.textContent="⚠ "+(e.message||"No se pudo analizar la foto.");toast(e.message||"No se pudo analizar la foto")
  }
