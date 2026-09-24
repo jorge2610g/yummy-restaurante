@@ -66,3 +66,16 @@ Solución:
 - “Ir a mi panel” y el registro con sesión inmediata usan el mismo handoff.
 
 Respaldo previo: backup/pre-universal-session-handoff-2026-09-24.
+
+## Estabilización visual de autenticación — v2.1.3
+Se eliminó el parpadeo observado al recargar la landing con una sesión existente.
+
+Cambios:
+- La landing inicia con estado `landing-auth-pending`.
+- Los controles dependientes de sesión conservan su espacio pero permanecen ocultos hasta resolver Supabase Auth.
+- `syncLandingSession()` usa una promesa single-flight para evitar resoluciones concurrentes.
+- Cambiar entre Restaurante / Retail / Profesionales ya no vuelve a consultar la sesión ni provoca parpadeos.
+- Cuando el estado queda resuelto se muestran directamente los controles correctos: visitante o “Ir a mi panel”.
+- El handoff universal hacia el panel se mantiene intacto.
+
+Respaldo previo: `backup/pre-auth-flicker-fix-2026-09-24`.
