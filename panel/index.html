@@ -4650,8 +4650,15 @@ async function handleBulkCatalogPhoto(input){
   bulkCatalogRows=fallback.rows;
   if(!bulkCatalogRows.length)throw new Error("No pudimos reconocer productos claros. Toma la foto de frente, con buena luz y sin reflejos.");
   renderBulkCatalogPreview();
-  const reason=aiError?.code==="OPENAI_NOT_CONFIGURED"?"La clave de OpenAI todavía no está configurada; ":"La IA avanzada no respondió; ";
-  progress.innerHTML="<b>"+bulkCatalogRows.length+" productos detectados con respaldo local.</b><div class=\"mut\">"+reason+"se usó OCR local. Cuando OPENAI_API_KEY esté configurada, esta foto se analizará con visión multimodal.</div>"
+  const reason=aiError?.code==="OPENAI_NOT_CONFIGURED"
+    ?"La clave de OpenAI todavía no está configurada; "
+    :aiError?.code==="OPENAI_NO_CREDITS"
+      ?"OpenAI API está sin saldo; "
+      :"La IA avanzada no respondió; ";
+  const suffix=aiError?.code==="OPENAI_NO_CREDITS"
+    ?"agrega créditos en OpenAI Platform para volver a usar visión multimodal."
+    :"se usó OCR local. Cuando la IA esté disponible, esta foto se analizará con visión multimodal.";
+  progress.innerHTML="<b>"+bulkCatalogRows.length+" productos detectados con respaldo local.</b><div class=\"mut\">"+reason+suffix+"</div>"
  }catch(e){
   window.__bulkOcrProgressHandler=null;bulkCatalogRows=[];progress.textContent="⚠ "+(e.message||"No se pudo analizar la foto.");toast(e.message||"No se pudo analizar la foto")
  }
