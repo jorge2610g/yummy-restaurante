@@ -4560,13 +4560,19 @@ async function bulkReadFunctionError(error){
  try{if(error?.context?.json)return await error.context.json()}catch(_){}
  return null
 }
+function bulkAiSourceLabel(result){
+ const provider=String(result?.provider||"").toLowerCase();
+ if(provider==="gemini")return "Gemini Vision";
+ if(provider==="openai")return bulkAiSourceLabel(result);
+ return "IA visual"
+}
 function bulkMapAiProducts(result){
  const products=Array.isArray(result?.products)?result.products:[],rows=[];
  if(result?.document_type==="menu"){
   if(bulkCatalogTarget!=="restaurant_menu")bulkSwitchPhotoToMenuMode();
   for(let i=0;i<products.length;i++){
    const p=products[i];
-   const row=bulkMapRow({nombre:p.name,descripcion:p.description,precio:p.price,categoria:p.category||"General"},i,"OpenAI Vision");
+   const row=bulkMapRow({nombre:p.name,descripcion:p.description,precio:p.price,categoria:p.category||"General"},i,bulkAiSourceLabel(result));
    if(row)rows.push(row)
   }
   return rows
@@ -4574,7 +4580,7 @@ function bulkMapAiProducts(result){
  if(bulkCatalogTarget==="restaurant_inventory"){
   for(let i=0;i<products.length;i++){
    const p=products[i];
-   const row=bulkMapRow({nombre:p.name,unidad:p.unit||"unidad",stock:p.stock,stock_minimo:p.minimum_stock,costo_unitario:p.cost,proveedor:""},i,"OpenAI Vision");
+   const row=bulkMapRow({nombre:p.name,unidad:p.unit||"unidad",stock:p.stock,stock_minimo:p.minimum_stock,costo_unitario:p.cost,proveedor:""},i,bulkAiSourceLabel(result));
    if(row)rows.push(row)
   }
   return rows
@@ -4582,18 +4588,18 @@ function bulkMapAiProducts(result){
  if(bulkCatalogTarget==="retail"){
   for(let i=0;i<products.length;i++){
    const p=products[i];
-   const row=bulkMapRow({nombre:p.name,descripcion:p.description,precio:p.price,costo:p.cost,stock:p.stock,stock_minimo:p.minimum_stock,unidad:p.unit||"unidad",categoria:p.category||"General",codigo_barra:p.barcode,sku:p.sku,marca:p.brand},i,"OpenAI Vision");
+   const row=bulkMapRow({nombre:p.name,descripcion:p.description,precio:p.price,costo:p.cost,stock:p.stock,stock_minimo:p.minimum_stock,unidad:p.unit||"unidad",categoria:p.category||"General",codigo_barra:p.barcode,sku:p.sku,marca:p.brand},i,bulkAiSourceLabel(result));
    if(row)rows.push(row)
   }
   return rows
  }
  for(let i=0;i<products.length;i++){
-  const p=products[i],row=bulkMapRow({nombre:p.name,descripcion:p.description,precio:p.price,categoria:p.category||"General"},i,"OpenAI Vision");
+  const p=products[i],row=bulkMapRow({nombre:p.name,descripcion:p.description,precio:p.price,categoria:p.category||"General"},i,bulkAiSourceLabel(result));
   if(row)rows.push(row)
  }
  return rows
 }
-async function bulkAnalyzePhotoWithOpenAI(file,progress){
+async function bulkAnalyzePhotoWithAI(file,progress){
  if(!currentRestaurant)throw new Error("No se encontró el negocio actual.");
  progress.textContent="Preparando foto para IA visual…";
  const imageDataUrl=await bulkPrepareAiImage(file);
@@ -4634,30 +4640,28 @@ async function handleBulkCatalogPhoto(input){
  btn.disabled=true;document.getElementById("bulkCatalogActiveMode").value="draft";
  let aiResult=null,aiError=null;
  try{
-  aiResult=await bulkAnalyzePhotoWithOpenAI(file,progress);
+  aiResult=await bulkAnalyzePhotoWithAI(file,progress);
   bulkCatalogRows=bulkMergeDetectedRows(bulkMapAiProducts(aiResult)).slice(0,500);
   if(!bulkCatalogRows.length)throw Object.assign(new Error("La IA no encontró productos principales con suficiente confianza."),{code:"AI_EMPTY"});
   renderBulkCatalogPreview();
-  const modifierCount=Array.isArray(aiResult.modifiers)?aiResult.modifiers.length:0,currency=String(aiResult.currency||"").trim(),model=String(aiResult.model||"OpenAI");
-  progress.innerHTML="<b>"+bulkCatalogRows.length+" productos principales detectados con IA.</b><div class=\"mut\">"+(modifierCount?modifierCount+" modificadores/extras fueron separados y no se contaron como productos. ":"")+"Modelo: "+esc(model)+(currency?" · Moneda: "+esc(currency):"")+". Revisa los borradores antes de importar.</div>";
+  const modifierCount=Array.isArray(aiResult.modifiers)?aiResult.modifiers.length:0,currency=String(aiResult.currency||"").trim(),model=String(aiResult.model||"IA visual"),provider=bulkAiSourceLabel(aiResult);
+  progress.innerHTML="<b>"+bulkCatalogRows.length+" productos principales detectados con IA.</b><div class=\"mut\">"+(modifierCount?modifierCount+" modificadores/extras fueron separados y no se contaron como productos. ":"")+"Proveedor: "+esc(provider)+" · Modelo: "+esc(model)+(currency?" · Moneda: "+esc(currency):"")+". Revisa los borradores antes de importar.</div>";
   return
  }catch(e){
   aiError=e;console.warn("IA visual no disponible, se usa OCR local",e);
-  progress.textContent=(e?.code==="OPENAI_NOT_CONFIGURED"?"IA avanzada pendiente de configurar. ":"No se pudo completar la IA avanzada. ")+"Usando reconocimiento local como respaldo…"
+  progress.textContent=(e?.code==="GEMINI_NOT_CONFIGURED"?"Gemini todavía no está configurado. ":"No se pudo completar la IA visual. ")+"Usando reconocimiento local como respaldo…"
  }
  try{
   const fallback=await bulkAnalyzePhotoWithLocalOcr(file,progress);
   bulkCatalogRows=fallback.rows;
   if(!bulkCatalogRows.length)throw new Error("No pudimos reconocer productos claros. Toma la foto de frente, con buena luz y sin reflejos.");
   renderBulkCatalogPreview();
-  const reason=aiError?.code==="OPENAI_NOT_CONFIGURED"
-    ?"La clave de OpenAI todavía no está configurada; "
-    :aiError?.code==="OPENAI_NO_CREDITS"
-      ?"OpenAI API está sin saldo; "
-      :"La IA avanzada no respondió; ";
-  const suffix=aiError?.code==="OPENAI_NO_CREDITS"
-    ?"agrega créditos en OpenAI Platform para volver a usar visión multimodal."
-    :"se usó OCR local. Cuando la IA esté disponible, esta foto se analizará con visión multimodal.";
+  const reason=aiError?.code==="GEMINI_NOT_CONFIGURED"
+    ?"Gemini todavía no tiene GEMINI_API_KEY configurada; "
+    :aiError?.code==="AI_PROVIDERS_UNAVAILABLE"
+      ?"Gemini y OpenAI no estuvieron disponibles; "
+      :"La IA visual no respondió; ";
+  const suffix="se usó OCR local como último respaldo.";
   progress.innerHTML="<b>"+bulkCatalogRows.length+" productos detectados con respaldo local.</b><div class=\"mut\">"+reason+suffix+"</div>"
  }catch(e){
   window.__bulkOcrProgressHandler=null;bulkCatalogRows=[];progress.textContent="⚠ "+(e.message||"No se pudo analizar la foto.");toast(e.message||"No se pudo analizar la foto")
