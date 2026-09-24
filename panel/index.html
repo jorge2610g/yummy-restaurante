@@ -1960,6 +1960,7 @@ body.retail-scanner-open{overflow:hidden!important}
 <body class="auth-loading">
 <style>
 #app{display:none!important}.auth-ready #app:not(.hidden){display:block!important}.auth-loading #login,.auth-loading #app{display:none!important}
+#adminPreviewBackBtn.admin-preview-only{display:none!important}body.admin-preview #adminPreviewBackBtn.admin-preview-only{display:flex!important}
 #appBootLoader{position:fixed;inset:0;z-index:10000;display:none;place-items:center;padding:24px;background:linear-gradient(135deg,var(--bg),var(--bg2));color:var(--txt)}
 .auth-loading #appBootLoader{display:grid}
 .app-boot-card{width:min(360px,92vw);text-align:center;padding:28px 24px;border:1px solid var(--line);border-radius:20px;background:var(--card);box-shadow:0 18px 50px var(--shadow)}
@@ -2139,7 +2140,7 @@ body.retail-scanner-open{overflow:hidden!important}
 
 <div id="app" class="wrap hidden">
 <div id="subscriptionBanner" class="card" style="margin-bottom:14px;display:none"></div>
-<div class="top"><div><h1 id="panelMainTitle">YummyPro Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><button class="ghost header-action hidden" id="pwaInstallBtn" type="button" onclick="installYummyProPwa()" aria-label="Instalar YummyPro" title="Instalar YummyPro"><span class="header-action-icon" aria-hidden="true">⬇️</span><span class="action-label">Instalar</span></button><button class="ghost header-action hidden" id="pwaNotificationBtn" type="button" onclick="activateYummyProNotifications()" aria-label="Activar notificaciones" title="Activar notificaciones"><span class="header-action-icon" aria-hidden="true">🔔</span><span class="action-label">Notificaciones</span></button><button id="adminPreviewBackBtn" class="ghost header-action" type="button" onclick="returnFromAdminPreview()" aria-label="Volver al administrador" title="Volver al administrador" style="display:none"><span class="header-action-icon" aria-hidden="true">←</span><span class="action-label">Volver al admin</span></button><a id="viewMenuLink" href="#" target="_blank" style="display:none"><button class="ghost header-action" type="button" aria-label="Ver menú" title="Ver menú"><span class="header-action-icon" aria-hidden="true">👁️</span><span class="action-label">Ver menú</span></button></a><button class="ghost header-action" id="themeBtn" type="button" onclick="toggleAdminTheme()" aria-label="Cambiar modo de color" title="Cambiar tema"><span class="header-action-icon" aria-hidden="true">☀️</span><span class="action-label">Modo claro</span></button><button id="panelLogoutBtn" class="ghost header-action" type="button" onclick="logout()" aria-label="Salir" title="Salir"><span class="header-action-icon" aria-hidden="true">↪</span><span class="action-label">Salir</span></button><button id="sideMenuToggle" class="ghost side-menu-toggle header-action" type="button" onclick="toggleSideMenu()" aria-label="Abrir menú del panel" title="Menú del panel"><span class="header-action-icon" aria-hidden="true">☰</span><span class="action-label">Menú</span></button></div></div>
+<div class="top"><div><h1 id="panelMainTitle">YummyPro Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><button class="ghost header-action hidden" id="pwaInstallBtn" type="button" onclick="installYummyProPwa()" aria-label="Instalar YummyPro" title="Instalar YummyPro"><span class="header-action-icon" aria-hidden="true">⬇️</span><span class="action-label">Instalar</span></button><button class="ghost header-action hidden" id="pwaNotificationBtn" type="button" onclick="activateYummyProNotifications()" aria-label="Activar notificaciones" title="Activar notificaciones"><span class="header-action-icon" aria-hidden="true">🔔</span><span class="action-label">Notificaciones</span></button><button id="adminPreviewBackBtn" class="ghost header-action admin-preview-only" type="button" onclick="returnFromAdminPreview()" aria-label="Volver al administrador" title="Volver al administrador" style="display:none"><span class="header-action-icon" aria-hidden="true">←</span><span class="action-label">Volver al admin</span></button><a id="viewMenuLink" href="#" target="_blank" style="display:none"><button class="ghost header-action" type="button" aria-label="Ver menú" title="Ver menú"><span class="header-action-icon" aria-hidden="true">👁️</span><span class="action-label">Ver menú</span></button></a><button class="ghost header-action" id="themeBtn" type="button" onclick="toggleAdminTheme()" aria-label="Cambiar modo de color" title="Cambiar tema"><span class="header-action-icon" aria-hidden="true">☀️</span><span class="action-label">Modo claro</span></button><button id="panelLogoutBtn" class="ghost header-action" type="button" onclick="logout()" aria-label="Salir" title="Salir"><span class="header-action-icon" aria-hidden="true">↪</span><span class="action-label">Salir</span></button><button id="sideMenuToggle" class="ghost side-menu-toggle header-action" type="button" onclick="toggleSideMenu()" aria-label="Abrir menú del panel" title="Menú del panel"><span class="header-action-icon" aria-hidden="true">☰</span><span class="action-label">Menú</span></button></div></div>
 <div id="sideMenuBackdrop" class="side-menu-backdrop" onclick="closeSideMenu()"></div><div id="panelLayout" class="panel-layout"><aside id="sideMenu" class="side-menu">
 <div class="sidebar-brand">
   <span class="sidebar-brand-mark">Y</span>
@@ -2941,7 +2942,7 @@ async function verifyRestaurantVeripagosCredentials(){
 async function logout(){
  const previewRequested=adminPreviewMode||document.body.classList.contains("admin-preview")||new URLSearchParams(location.search).has("admin_preview");
  if(previewRequested){return returnFromAdminPreview()}
- await sb.auth.signOut();
+ try{await sb.auth.signOut()}catch(e){console.warn("No se pudo cerrar la sesión remota",e)}
  window.location.replace("https://web.yummypro.online/")
 }
 async function enter(user){
@@ -3046,6 +3047,12 @@ async function enter(user){
     console.error("Restaurant panel load error",e);
     trackRestaurantError("panel","panel_load_failure",e.message||"No se pudo cargar la información del restaurante.",false,{role:currentRole||null});
     msg.textContent=e.message||"No se pudo cargar la información del restaurante.";
+    document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
+    if(adminPreviewMode||new URLSearchParams(location.search).has("admin_preview")){
+      showAdminPreviewFailure(e.message||"No se pudo cargar la información del negocio.");
+    }else{
+      window.location.replace("https://web.yummypro.online/");
+    }
   }
 }
 const roleTabsByBusiness={
@@ -3341,11 +3348,16 @@ async function restoreSession(){
   const {data,error}=await sb.auth.getSession();
   if(error)throw error;
   if(data.session)await enter(data.session.user);
-  else document.getElementById("login").classList.remove("hidden")
+  else {window.location.replace("https://web.yummypro.online/");return}
  }catch(e){
   document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
-  document.getElementById("login").classList.remove("hidden");
-  document.getElementById("loginMsg").textContent=e.message||"No se pudo validar la sesión."
+  console.error("No se pudo restaurar la sesión del panel",e);
+  if(preview){
+   showAdminPreviewFailure(e.message||"No se pudo validar la sesión administrativa.");
+  }else{
+   window.location.replace("https://web.yummypro.online/");
+   return
+  }
  }finally{
   if(!preview)document.body.classList.remove("auth-loading")
  }
@@ -6109,7 +6121,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Restaurante · Versión v2.5.55</footer></main></div><script>
+<footer class="admin-version">Restaurante · Versión v2.5.56</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
