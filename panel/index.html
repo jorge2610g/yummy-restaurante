@@ -2975,8 +2975,8 @@ async function enter(user){
     }
     msg.textContent="Cargando restaurante...";
     const {data:accountRole,error:roleError}=await sb.rpc("current_account_role");
-    if(roleError){await sb.auth.signOut();msg.textContent="No se pudo verificar el tipo de cuenta.";return}
-    if(accountRole!=="restaurant"){await sb.auth.signOut();msg.textContent=accountRole==="admin"?"Esta cuenta es de administrador. Ingresa desde el panel de administración.":accountRole==="customer"?"Esta cuenta es de cliente y no tiene acceso al panel de restaurante.":"Esta cuenta no está clasificada como negocio.";return}
+    if(roleError){await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent="No se pudo verificar el tipo de cuenta.";window.location.replace("https://web.yummypro.online/");return}
+    if(accountRole!=="restaurant"){await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent=accountRole==="admin"?"Esta cuenta es de administrador. Ingresa desde el panel de administración.":accountRole==="customer"?"Esta cuenta es de cliente y no tiene acceso al panel de negocio.":"Esta cuenta no está clasificada como negocio.";window.location.replace("https://web.yummypro.online/");return}
     let {data:membership,error:membershipError}=await sb.from("restaurant_staff")
       .select("restaurant_id,role,permissions")
       .eq("user_id",user.id).eq("active",true);
@@ -2984,7 +2984,7 @@ async function enter(user){
     membership=membership||[];
     if(!membership.length && user.user_metadata?.trial_restaurant_name){
       const requestedTrialType=String(user.user_metadata.trial_business_type||PANEL_DEFAULT_BUSINESS_TYPE).toLowerCase();
-      if(!panelBusinessTypeAllowed(requestedTrialType)){await sb.auth.signOut();msg.textContent="Esta solicitud de prueba corresponde a "+panelBusinessTypeLabel(requestedTrialType)+". Ábrela desde su dominio correspondiente.";return}
+      if(!panelBusinessTypeAllowed(requestedTrialType)){await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent="Esta solicitud de prueba corresponde a "+panelBusinessTypeLabel(requestedTrialType)+". Ábrela desde su dominio correspondiente.";window.location.replace("https://web.yummypro.online/");return}
       const cr=await sb.rpc("create_my_trial_restaurant_v3",{
         p_name:user.user_metadata.trial_restaurant_name,
         p_whatsapp:user.user_metadata.trial_whatsapp||"",
@@ -2999,13 +2999,13 @@ async function enter(user){
         membership=retry.data||[];
       }
     }
-    if(!membership.length){await sb.auth.signOut();msg.textContent="Esta cuenta no tiene un negocio asignado.";return}
+    if(!membership.length){await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent="Esta cuenta no tiene un negocio asignado.";window.location.replace("https://web.yummypro.online/");return}
     const membershipIds=membership.map(x=>Number(x.restaurant_id)).filter(Number.isFinite);
     const {data:membershipBusinesses,error:membershipBusinessError}=await sb.from("restaurants").select("id,business_type").in("id",membershipIds);
     if(membershipBusinessError)throw membershipBusinessError;
     const allowedBusinessIds=new Set((membershipBusinesses||[]).filter(x=>panelBusinessTypeAllowed(x.business_type)).map(x=>Number(x.id)));
     const verticalMembership=membership.find(x=>allowedBusinessIds.has(Number(x.restaurant_id)));
-    if(!verticalMembership){const actual=(membershipBusinesses||[])[0]?.business_type||"";await sb.auth.signOut();msg.textContent="Esta cuenta pertenece a "+panelBusinessTypeLabel(actual)+", no al panel "+PANEL_VERTICAL_LABEL+".";return}
+    if(!verticalMembership){const actual=(membershipBusinesses||[])[0]?.business_type||"";await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent="Esta cuenta pertenece a "+panelBusinessTypeLabel(actual)+", no al panel "+PANEL_VERTICAL_LABEL+".";window.location.replace("https://web.yummypro.online/");return}
     currentRestaurant=Number(verticalMembership.restaurant_id);
     currentRole=verticalMembership.role||"restaurant";
     trackRestaurantEvent("session_started","dashboard",{role:currentRole});
@@ -3019,13 +3019,14 @@ async function enter(user){
     const menuLink=document.getElementById("viewMenuLink");
     if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(menuRestaurant?.slug||currentRestaurant);menuLink.style.display=currentRole==="restaurant"?"":"none"}
     syncRestaurantPushIfGranted();restoreAutoPrintOrders();setTimeout(startRestaurantOrderRealtime,0);setTimeout(startWaiterReadyReminderLoop,0);setTimeout(startWaiterPosRefreshLoop,0);setTimeout(startKitchenNewOrderReminderLoop,0);setTimeout(startSubscriptionAccessRealtime,0);
-    await loadRestaurants();
-    await Promise.allSettled([loadSubscriptionPlans(),loadSubscriptionModuleAccess()]);
+    const restaurantLoadGuard=new Promise((_,reject)=>setTimeout(()=>reject(new Error("La carga inicial del negocio tardó demasiado.")),15000));
+    await Promise.race([loadRestaurants(),restaurantLoadGuard]);
+    document.getElementById("app").classList.remove("hidden");
+    document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
+    setTimeout(async()=>{await Promise.allSettled([loadSubscriptionPlans(),loadSubscriptionModuleAccess()]);applyRoleAccess()},0);
     applyRoleAccess();
     // La sesión y los accesos ya están validados: liberar la interfaz antes de cargas secundarias.
     // Así una consulta lenta de pedidos/productos/configuración nunca deja el panel atrapado en el loader.
-    document.getElementById("app").classList.remove("hidden");
-    document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
     setTimeout(()=>refreshAll().then(()=>applyRoleAccess()).catch(e=>console.error("Carga secundaria del panel",e)),0);
     const urlParams=new URLSearchParams(location.search),requestedTab=urlParams.get("tab"),allowedTabs=effectiveTabs();
     // En un inicio de sesión normal, Dashboard es la portada de toda suscripción utilizable.
@@ -6121,7 +6122,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Restaurante · Versión v2.5.56</footer></main></div><script>
+<footer class="admin-version">Restaurante · Versión v2.5.57</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
