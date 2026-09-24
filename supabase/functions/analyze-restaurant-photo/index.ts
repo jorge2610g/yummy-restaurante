@@ -60,6 +60,7 @@ function cleanResult(parsed: any) {
 
 const schema = {
   type: "object",
+  additionalProperties: false,
   required: ["document_type", "currency", "products", "modifiers", "notes"],
   properties: {
     document_type: { type: "string", enum: ["menu", "inventory", "retail_catalog", "unknown"] },
@@ -68,6 +69,7 @@ const schema = {
       type: "array",
       items: {
         type: "object",
+        additionalProperties: false,
         required: [
           "name","description","price","cost","stock","minimum_stock","unit",
           "category","barcode","sku","brand","confidence"
@@ -92,6 +94,7 @@ const schema = {
       type: "array",
       items: {
         type: "object",
+        additionalProperties: false,
         required: ["name","description","price_delta","applies_to","confidence"],
         properties: {
           name: { type: "string" },
@@ -146,13 +149,13 @@ REGLAS GENERALES:
 `;
 }
 
-async function tryGemini(image: { mimeType: string; base64: string }, prompt: string) {
-  const key = Deno.env.get("GEMINI_API_KEY");
-  if (!key) return { ok: false, code: "GEMINI_NOT_CONFIGURED", retryable: true };
-
-  const model = Deno.env.get("GEMINI_VISION_MODEL") || "gemini-3.8-flash";
+async function callGeminiModel(
+  key: string,
+  model: string,
+  image: { mimeType: string; base64: string },
+  prompt: string,
+) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -180,6 +183,7 @@ async function tryGemini(image: { mimeType: string; base64: string }, prompt: st
   if (!res.ok) {
     const msg = String(payload?.error?.message || "Gemini no pudo analizar la imagen.");
     console.error("Gemini response error", {
+      model,
       status: res.status,
       code: payload?.error?.code,
       statusText: payload?.error?.status,
@@ -187,15 +191,18 @@ async function tryGemini(image: { mimeType: string; base64: string }, prompt: st
     });
     return {
       ok: false,
-      code: res.status === 429 ? "GEMINI_RATE_LIMIT" : "GEMINI_ERROR",
-      retryable: true,
+      code: res.status === 429 ? "GEMINI_RATE_LIMIT"
+        : res.status === 503 ? "GEMINI_UNAVAILABLE"
+        : "GEMINI_ERROR",
+      retryable: res.status === 429 || res.status === 503 || res.status >= 500,
       message: msg,
       status: res.status,
+      model,
     };
   }
 
   const text = geminiOutputText(payload);
-  if (!text) return { ok: false, code: "GEMINI_EMPTY", retryable: true };
+  if (!text) return { ok: false, code: "GEMINI_EMPTY", retryable: true, model };
   try {
     return {
       ok: true,
@@ -204,9 +211,30 @@ async function tryGemini(image: { mimeType: string; base64: string }, prompt: st
       result: cleanResult(JSON.parse(text)),
     };
   } catch {
-    console.error("Gemini returned invalid structured JSON");
-    return { ok: false, code: "GEMINI_INVALID_JSON", retryable: true };
+    console.error("Gemini returned invalid structured JSON", { model });
+    return { ok: false, code: "GEMINI_INVALID_JSON", retryable: true, model };
   }
+}
+
+async function tryGemini(image: { mimeType: string; base64: string }, prompt: string) {
+  const key = Deno.env.get("GEMINI_API_KEY");
+  if (!key) return { ok: false, code: "GEMINI_NOT_CONFIGURED", retryable: true };
+
+  const preferred = Deno.env.get("GEMINI_VISION_MODEL") || "gemini-3.8-flash";
+  const models = [...new Set([preferred, "gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash"])];
+  let last: any = { ok: false, code: "GEMINI_ERROR", retryable: true };
+
+  for (const model of models) {
+    const attempt = await callGeminiModel(key, model, image, prompt);
+    if (attempt.ok) {
+      return { ...attempt, fallback_models_tried: models.slice(0, models.indexOf(model)) };
+    }
+    last = attempt;
+    // Invalid credentials/request will not improve by changing model.
+    if (!attempt.retryable) break;
+  }
+
+  return last;
 }
 
 async function tryOpenAI(imageDataUrl: string, prompt: string) {
