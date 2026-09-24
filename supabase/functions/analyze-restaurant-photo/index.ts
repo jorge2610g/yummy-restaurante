@@ -187,10 +187,15 @@ REGLAS GENERALES:
       code: payload?.error?.code,
       message: payload?.error?.message,
     });
+    const providerCode=String(payload?.error?.code||"");
+    const quotaExhausted=ai.status===429&&(providerCode==="credit_balance_exhausted"||String(payload?.error?.type||"")==="insufficient_quota");
     return response({
-      error: "OPENAI_ERROR",
-      message: payload?.error?.message || "No se pudo analizar la imagen.",
-    }, ai.status >= 500 ? 502 : 400);
+      error: quotaExhausted ? "OPENAI_NO_CREDITS" : "OPENAI_ERROR",
+      provider_code: providerCode,
+      message: quotaExhausted
+        ? "La cuenta de OpenAI API no tiene créditos disponibles."
+        : (payload?.error?.message || "No se pudo analizar la imagen."),
+    }, quotaExhausted ? 402 : (ai.status >= 500 ? 502 : 400));
   }
 
   const text = outputText(payload);
