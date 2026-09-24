@@ -2807,6 +2807,11 @@ body.retail-scanner-open{overflow:hidden!important}
 const SB_URL="https://gulctljitzlwokqydigx.supabase.co";
 const SB_KEY="sb_publishable__moppTxObowifx6rJbW_tw_3GiCkqhG";
 const sb=supabase.createClient(SB_URL,SB_KEY);
+const PANEL_ALLOWED_BUSINESS_TYPES=["restaurant"];
+const PANEL_DEFAULT_BUSINESS_TYPE="restaurant";
+const PANEL_VERTICAL_LABEL="Restaurante";
+function panelBusinessTypeLabel(type){return type==="restaurant"?"Restaurante":type==="supermarket"?"Supermercado":type==="minimarket"?"Minimarket / Tienda":type==="professional"?"Profesional / Servicios":"Negocio"}
+function panelBusinessTypeAllowed(type){return PANEL_ALLOWED_BUSINESS_TYPES.includes(String(type||"").toLowerCase())}
 function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b){const next=theme==="dark"?"claro":"oscuro",icon=theme==="dark"?"☀️":"🌙";b.innerHTML='<span class="header-action-icon" aria-hidden="true">'+icon+'</span><span class="action-label">Modo '+next+'</span>';b.setAttribute("aria-label","Activar modo "+next);b.title="Activar modo "+next}}
 function toggleAdminTheme(){applyAdminTheme(document.documentElement.dataset.theme==="light"?"dark":"light")}
 applyAdminTheme(localStorage.getItem("admin_theme")||"dark");setTimeout(bindRestaurantMpButtons,0);
@@ -2976,13 +2981,15 @@ async function enter(user){
     if(membershipError)throw membershipError;
     membership=membership||[];
     if(!membership.length && user.user_metadata?.trial_restaurant_name){
+      const requestedTrialType=String(user.user_metadata.trial_business_type||PANEL_DEFAULT_BUSINESS_TYPE).toLowerCase();
+      if(!panelBusinessTypeAllowed(requestedTrialType)){await sb.auth.signOut();msg.textContent="Esta solicitud de prueba corresponde a "+panelBusinessTypeLabel(requestedTrialType)+". Ábrela desde su dominio correspondiente.";return}
       const cr=await sb.rpc("create_my_trial_restaurant_v3",{
         p_name:user.user_metadata.trial_restaurant_name,
         p_whatsapp:user.user_metadata.trial_whatsapp||"",
         p_address:user.user_metadata.trial_address||"",
         p_country_code:user.user_metadata.trial_country_code||"CL",
         p_intended_plan_id:Number(user.user_metadata.trial_intended_plan_id)||null,
-        p_business_type:user.user_metadata.trial_business_type||"restaurant"
+        p_business_type:requestedTrialType
       });
       if(cr.error)await trackRestaurantError("signup","trial_creation_failure",cr.error.message||"No se pudo activar la prueba",false);
       if(!cr.error){
@@ -2990,9 +2997,15 @@ async function enter(user){
         membership=retry.data||[];
       }
     }
-    if(!membership.length){await sb.auth.signOut();msg.textContent="Esta cuenta no tiene un restaurante asignado.";return}
-    currentRestaurant=Number(membership[0].restaurant_id);
-    currentRole=membership[0].role||"restaurant";
+    if(!membership.length){await sb.auth.signOut();msg.textContent="Esta cuenta no tiene un negocio asignado.";return}
+    const membershipIds=membership.map(x=>Number(x.restaurant_id)).filter(Number.isFinite);
+    const {data:membershipBusinesses,error:membershipBusinessError}=await sb.from("restaurants").select("id,business_type").in("id",membershipIds);
+    if(membershipBusinessError)throw membershipBusinessError;
+    const allowedBusinessIds=new Set((membershipBusinesses||[]).filter(x=>panelBusinessTypeAllowed(x.business_type)).map(x=>Number(x.id)));
+    const verticalMembership=membership.find(x=>allowedBusinessIds.has(Number(x.restaurant_id)));
+    if(!verticalMembership){const actual=(membershipBusinesses||[])[0]?.business_type||"";await sb.auth.signOut();msg.textContent="Esta cuenta pertenece a "+panelBusinessTypeLabel(actual)+", no al panel "+PANEL_VERTICAL_LABEL+".";return}
+    currentRestaurant=Number(verticalMembership.restaurant_id);
+    currentRole=verticalMembership.role||"restaurant";
     trackRestaurantEvent("session_started","dashboard",{role:currentRole});
     document.body.classList.toggle("waiter-mobile-shell",currentRole==="waiter");
     if(currentRole==="waiter")setTimeout(setupWaiterPullToRefresh,0);
@@ -6060,7 +6073,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Restaurante · Versión v2.5.52</footer></main></div><script>
+<footer class="admin-version">Restaurante · Versión v2.5.53</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
