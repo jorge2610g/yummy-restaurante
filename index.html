@@ -9,8 +9,62 @@
 <meta name="apple-mobile-web-app-title" content="YummyPro">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" sizes="192x192" href="/icon-192.png" type="image/png">
-<title>YummyPro · Plataforma para restaurantes, retail y profesionales</title>
-<meta name="description" content="Crea tu menú digital, recibe pedidos y administra tu restaurante. Prueba gratis por 30 días.">
+<title>YummyPro | Software de gestión para restaurantes, retail y profesionales</title>
+<meta name="description" content="YummyPro es una plataforma de gestión para restaurantes, tiendas y profesionales: pedidos, POS, inventario, agenda, clientes y administración en un solo sistema.">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<link rel="canonical" href="https://web.yummypro.online/">
+<link rel="alternate" hreflang="es" href="https://web.yummypro.online/">
+<meta property="og:site_name" content="YummyPro">
+<meta property="og:type" content="website">
+<meta property="og:title" content="YummyPro | Gestión para restaurantes, retail y profesionales">
+<meta property="og:description" content="Gestiona pedidos, POS, inventario, agenda, clientes y más desde una plataforma web adaptada a tu negocio.">
+<meta property="og:url" content="https://web.yummypro.online/">
+<meta property="og:image" content="https://web.yummypro.online/icon-512.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="YummyPro | Gestión para restaurantes, retail y profesionales">
+<meta name="twitter:description" content="Una plataforma para restaurantes, retail y profesionales de servicios.">
+<meta name="twitter:image" content="https://web.yummypro.online/icon-512.png">
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@graph":[
+    {
+      "@type":"Organization",
+      "@id":"https://web.yummypro.online/#organization",
+      "name":"YummyPro",
+      "url":"https://web.yummypro.online/",
+      "logo":"https://web.yummypro.online/icon-512.png",
+      "description":"Plataforma de gestión para restaurantes, comercios retail y profesionales de servicios."
+    },
+    {
+      "@type":"WebSite",
+      "@id":"https://web.yummypro.online/#website",
+      "url":"https://web.yummypro.online/",
+      "name":"YummyPro",
+      "publisher":{"@id":"https://web.yummypro.online/#organization"},
+      "inLanguage":"es"
+    },
+    {
+      "@type":"SoftwareApplication",
+      "@id":"https://web.yummypro.online/#software",
+      "name":"YummyPro",
+      "url":"https://web.yummypro.online/",
+      "applicationCategory":"BusinessApplication",
+      "operatingSystem":"Web",
+      "publisher":{"@id":"https://web.yummypro.online/#organization"},
+      "description":"Software web para gestionar restaurantes, tiendas, minimarkets y negocios profesionales desde un solo sistema.",
+      "featureList":[
+        "Pedidos y ventas",
+        "Punto de venta y caja",
+        "Inventario",
+        "Gestión de clientes",
+        "Agenda y servicios",
+        "Reportes y administración"
+      ]
+    }
+  ]
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#090909;--card:#141414;--soft:#1d1d1d;--line:#2b2b2b;--txt:#fff;--mut:#b9b9b9;--y:#ffb000;--y2:#ffcb45;--ok:#35d07f}
@@ -119,7 +173,8 @@ body[data-vertical="restaurant"] .food:after{content:attr(data-icon)!important}
 <section id="funciones"><div class="wrap"><div class="sectionHead"><h2 id="featuresTitle">Todo lo que tu negocio necesita</h2><p id="featuresLead">YummyPro adapta su panel a tu operación.</p></div><div class="grid" id="featuresGrid"></div></div></section>
 <section id="precios"><div class="wrap"><div class="sectionHead"><span class="tag">PLANES Y PRECIOS</span><h2 style="margin-top:16px" id="pricingTitle">Elige el plan que más te interesa</h2><p id="pricingLead">Todos comienzan con 30 días gratis. Los planes mostrados corresponden al tipo de negocio seleccionado.</p></div><div class="countryPricingBar"><div class="countryText"><b id="pricingCountryTitle">🌎 Precios para tu país</b><small id="pricingCountryNote">Detectando ubicación…</small></div><select id="landingBusinessTypeSelect" aria-label="Seleccionar tipo de negocio" hidden></select><select id="landingCountrySelect" aria-label="Seleccionar país"></select><button class="btn ghost" type="button" id="detectCountryBtn">Detectar automáticamente</button></div><div id="pricingGrid" class="pricingGrid"><div class="card">Cargando planes disponibles…</div></div><p class="pricingNote" id="pricingNote">La prueba gratuita se activa automáticamente al crear tu negocio.</p></div></section>
 <section><div class="wrap"><div class="sectionHead"><h2>Empieza en minutos</h2><p>Elige tu tipo de negocio, crea tu cuenta y YummyPro te llevará al panel correcto.</p></div><div class="grid"><div class="card step"><h3>Elige tu solución</h3><p>Restaurante, Retail o Profesionales desde una sola landing.</p></div><div class="card step"><h3>Crea tu cuenta</h3><p>Tu prueba se asigna automáticamente al tipo de negocio seleccionado.</p></div><div class="card step"><h3>Entra a tu panel</h3><p>Cada vertical conserva su propio dominio, módulos, accesos y datos.</p></div></div></div></section>
-<footer><div class="wrap"><b style="color:#fff">Yummy<span style="color:var(--y)">Pro</span></b> · Una plataforma para cada forma de trabajar</div></footer>
+<section id="sobre-yummypro"><div class="wrap"><div class="sectionHead"><span class="tag">SOBRE YUMMYPRO</span><h2 style="margin-top:16px">¿Qué es YummyPro?</h2><p>YummyPro es una plataforma web de gestión para restaurantes, comercios retail y profesionales de servicios. Centraliza ventas, pedidos, POS, inventario, agenda, clientes y administración en un sistema adaptado al tipo de negocio.</p></div><div class="grid"><article class="card"><h3>YummyPro para Restaurantes</h3><p>Menú digital, pedidos, cocina, caja, mesas, inventario y operación del restaurante.</p><a class="btn ghost" href="/restaurantes/" style="display:inline-block;margin-top:16px">Conocer Restaurantes</a></article><article class="card"><h3>YummyPro Retail</h3><p>POS, ventas, inventario, productos y gestión para tiendas, minimarkets y supermercados.</p><a class="btn ghost" href="/retail/" style="display:inline-block;margin-top:16px">Conocer Retail</a></article><article class="card"><h3>YummyPro Profesionales</h3><p>Agenda, servicios, clientes, caja y gestión para profesionales y negocios de servicios.</p><a class="btn ghost" href="/profesionales/" style="display:inline-block;margin-top:16px">Conocer Profesionales</a></article></div></div></section>
+<footer><div class="wrap"><b style="color:#fff">Yummy<span style="color:var(--y)">Pro</span></b> · Una plataforma para cada forma de trabajar<br><span style="display:inline-flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:12px"><a href="/restaurantes/">Restaurantes</a><a href="/retail/">Retail</a><a href="/profesionales/">Profesionales</a></span></div></footer>
 
 <div class="modal" id="signupModal"><div class="box"><div class="boxTop"><div><h2 style="margin:0">Crea tu acceso</h2><p style="color:#aaa;margin:6px 0">Activa tus 30 días gratis.</p></div><button class="close" onclick="closeModals()">✕</button></div><form id="signupForm"><label id="signupBusinessTypeLabel">Tipo de negocio</label><select id="sBusinessType" required></select><label>Nombre del negocio</label><input id="sName" required placeholder="Ej. Mi negocio"><label>Correo electrónico</label><input id="sEmail" type="email" required placeholder="tu@negocio.com"><label>Contraseña</label><input id="sPass" type="password" minlength="6" required placeholder="Mínimo 6 caracteres"><label>WhatsApp</label><input id="sPhone" placeholder="+56..."><label>Dirección</label><input id="sAddress" placeholder="Dirección de tu local"><button class="btn primary" style="width:100%;margin-top:18px" id="signupBtn">Prueba 30 días gratis</button><div class="msg" id="signupMsg"></div></form></div></div>
 <div class="modal" id="loginModal"><div class="box"><div class="boxTop"><div><h2 style="margin:0">Iniciar sesión</h2><p style="color:#aaa;margin:6px 0">Entra al panel de tu negocio.</p></div><button class="close" onclick="closeModals()">✕</button></div><form id="loginForm"><label>Correo electrónico</label><input id="lEmail" type="email" required><label>Contraseña</label><input id="lPass" type="password" required><button class="btn primary" style="width:100%;margin-top:18px">Entrar a mi panel</button><div class="msg" id="loginMsg"></div></form></div></div>
@@ -436,5 +491,5 @@ window.addEventListener("hashchange",initLandingVerticalFromHash);
 })();
 </script>
 
-<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.6</div>
+<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.7</div>
 </body></html>
