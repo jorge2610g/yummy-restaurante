@@ -3237,10 +3237,15 @@ function consumeLandingSessionHash(){
  const raw=String(location.hash||"").replace(/^#/,"");if(!raw)return null;
  const params=new URLSearchParams(raw),access_token=params.get("yummy_access"),refresh_token=params.get("yummy_refresh");
  if(!access_token||!refresh_token)return null;
+ // No limpiar el fragmento todavía. Primero confirmamos que Supabase aceptó la sesión.
+ return {access_token,refresh_token}
+}
+function clearLandingSessionHash(){
+ const raw=String(location.hash||"").replace(/^#/,"");if(!raw)return;
+ const params=new URLSearchParams(raw);
  params.delete("yummy_access");params.delete("yummy_refresh");
  const clean=location.pathname+location.search+(params.toString()?"#"+params.toString():"");
- history.replaceState(null,"",clean);
- return {access_token,refresh_token}
+ history.replaceState(null,"",clean)
 }
 function showAdminPreviewFailure(message){
  document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
@@ -3320,11 +3325,16 @@ async function restoreSession(){
   if(landingHandoff){
    document.getElementById("login").classList.add("hidden");
    const msg=document.getElementById("loginMsg");if(msg)msg.textContent="Abriendo tu panel…";
-   const {error:setSessionError}=await sb.auth.setSession({access_token:landingHandoff.access_token,refresh_token:landingHandoff.refresh_token});
-   if(setSessionError)throw setSessionError;
-   const {data:{session:receivedSession},error:receivedError}=await sb.auth.getSession();
-   if(receivedError)throw receivedError;
-   if(!receivedSession)throw new Error("No se pudo recibir la sesión de la landing.");
+   let setResult=await sb.auth.setSession({access_token:landingHandoff.access_token,refresh_token:landingHandoff.refresh_token});
+   if(setResult.error){
+    // Reintento corto por si el cliente Auth todavía estaba terminando su inicialización.
+    await new Promise(resolve=>setTimeout(resolve,120));
+    setResult=await sb.auth.setSession({access_token:landingHandoff.access_token,refresh_token:landingHandoff.refresh_token});
+   }
+   if(setResult.error)throw setResult.error;
+   const receivedSession=setResult.data?.session||(await sb.auth.getSession()).data?.session||null;
+   if(!receivedSession?.user)throw new Error("No se pudo recibir la sesión de la landing.");
+   clearLandingSessionHash();
    await enter(receivedSession.user);
    return
   }
