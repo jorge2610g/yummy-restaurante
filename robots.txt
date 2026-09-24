@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /panel/
+
+Sitemap: https://web.yummypro.online/sitemap.xml
