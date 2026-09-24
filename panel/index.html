@@ -4467,7 +4467,7 @@ function bulkParseOcrText(text){
 }
 function bulkOcrNameDigits(value){return (String(value||"").match(/\d+(?:[\.,]\d+)?/g)||[]).map(x=>x.replace(",",".")).join("|")}
 function bulkOcrNameSimilarity(a,b){
- const x=bulkNorm(a),y=bulkNorm(b);
+ const clean=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim(),x=clean(a),y=clean(b);
  if(!x||!y)return 0;
  if(x===y)return 1;
  if(bulkOcrNameDigits(x)&&bulkOcrNameDigits(y)&&bulkOcrNameDigits(x)!==bulkOcrNameDigits(y))return 0;
