@@ -4644,8 +4644,8 @@ async function handleBulkCatalogPhoto(input){
   bulkCatalogRows=bulkMergeDetectedRows(bulkMapAiProducts(aiResult)).slice(0,500);
   if(!bulkCatalogRows.length)throw Object.assign(new Error("La IA no encontró productos principales con suficiente confianza."),{code:"AI_EMPTY"});
   renderBulkCatalogPreview();
-  const modifierCount=Array.isArray(aiResult.modifiers)?aiResult.modifiers.length:0,currency=String(aiResult.currency||"").trim(),model=String(aiResult.model||"IA visual"),provider=bulkAiSourceLabel(aiResult);
-  progress.innerHTML="<b>"+bulkCatalogRows.length+" productos principales detectados con IA.</b><div class=\"mut\">"+(modifierCount?modifierCount+" modificadores/extras fueron separados y no se contaron como productos. ":"")+"Proveedor: "+esc(provider)+" · Modelo: "+esc(model)+(currency?" · Moneda: "+esc(currency):"")+". Revisa los borradores antes de importar.</div>";
+  const modifierCount=Array.isArray(aiResult.modifiers)?aiResult.modifiers.length:0,filteredCount=Number(aiResult.filtered_menu_extras||0),currency=String(aiResult.currency||"").trim(),model=String(aiResult.model||"IA visual"),provider=bulkAiSourceLabel(aiResult);
+  progress.innerHTML="<b>"+bulkCatalogRows.length+" productos principales detectados con IA.</b><div class=\"mut\">"+(modifierCount?modifierCount+" modificadores/extras fueron separados y no se contaron como productos. ":"")+(filteredCount?filteredCount+" falso(s) positivo(s) adicional(es) fueron descartados automáticamente. ":"")+"Proveedor: "+esc(provider)+" · Modelo: "+esc(model)+(currency?" · Moneda: "+esc(currency):"")+". Revisa los borradores antes de importar.</div>";
   return
  }catch(e){
   aiError=e;console.warn("IA visual no disponible, se usa OCR local",e);
@@ -6458,7 +6458,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Restaurante · Versión v2.5.61</footer></main></div><script>
+<footer class="admin-version">Restaurante · Versión v2.5.62</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
