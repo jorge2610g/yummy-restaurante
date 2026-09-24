@@ -3229,6 +3229,15 @@ function consumeAdminPreviewSessionHash(){
  history.replaceState(null,"",clean);
  return {access_token,refresh_token}
 }
+function consumeLandingSessionHash(){
+ const raw=String(location.hash||"").replace(/^#/,"");if(!raw)return null;
+ const params=new URLSearchParams(raw),access_token=params.get("yummy_access"),refresh_token=params.get("yummy_refresh");
+ if(!access_token||!refresh_token)return null;
+ params.delete("yummy_access");params.delete("yummy_refresh");
+ const clean=location.pathname+location.search+(params.toString()?"#"+params.toString():"");
+ history.replaceState(null,"",clean);
+ return {access_token,refresh_token}
+}
 function showAdminPreviewFailure(message){
  document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
  const login=document.getElementById("login");if(!login)return;
@@ -3303,6 +3312,18 @@ async function restoreSession(){
    return
   }
 
+  const landingHandoff=consumeLandingSessionHash();
+  if(landingHandoff){
+   document.getElementById("login").classList.add("hidden");
+   const msg=document.getElementById("loginMsg");if(msg)msg.textContent="Abriendo tu panel…";
+   const {error:setSessionError}=await sb.auth.setSession({access_token:landingHandoff.access_token,refresh_token:landingHandoff.refresh_token});
+   if(setSessionError)throw setSessionError;
+   const {data:{session:receivedSession},error:receivedError}=await sb.auth.getSession();
+   if(receivedError)throw receivedError;
+   if(!receivedSession)throw new Error("No se pudo recibir la sesión de la landing.");
+   await enter(receivedSession.user);
+   return
+  }
   const {data,error}=await sb.auth.getSession();
   if(error)throw error;
   if(data.session)await enter(data.session.user);
@@ -6073,7 +6094,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Restaurante · Versión v2.5.53</footer></main></div><script>
+<footer class="admin-version">Restaurante · Versión v2.5.54</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
