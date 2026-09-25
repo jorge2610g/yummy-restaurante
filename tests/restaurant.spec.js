@@ -60,3 +60,13 @@ test('demo Streaming abre la tienda comercial',async({page})=>{
   await expect(page.locator('#verticalStreaming')).toHaveClass(/active/);
   await expect(page.locator('#landingDemoLink')).toHaveAttribute('href','https://streaming.yummypro.online/demo/');
 });
+
+
+test('panel abre menú demo con sesión administrativa temporal', async ({ request }) => {
+  const response=await request.get('/panel/');
+  expect(response.ok()).toBeTruthy();
+  const body=await response.text();
+  expect(body).toContain('openMenuFromPanel');
+  expect(body).toContain('admin_client_token_hash');
+  expect(body).toContain('create-admin-preview-login');
+});
