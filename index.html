@@ -155,7 +155,7 @@ body[data-vertical="professional"] .food{background:linear-gradient(135deg,#1732
 body[data-vertical="streaming"] .food{background:linear-gradient(135deg,#251548,#8b5cf6)}
 body[data-vertical="retail"] .food:after,body[data-vertical="professional"] .food:after,body[data-vertical="streaming"] .food:after{content:attr(data-icon)!important}
 body[data-vertical="restaurant"] .food:after{content:attr(data-icon)!important}
-@media(max-width:800px){.vertical-switch-wrap{top:0;position:relative}.vertical-switch{grid-template-columns:1fr;gap:6px;padding:8px 0}.vertical-choice{min-height:46px}.vertical-choice .vertical-kicker{display:inline;margin-left:5px}}
+@media(max-width:800px){.vertical-switch-wrap{top:0;position:relative}.vertical-switch{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:8px 0}.vertical-choice{min-height:68px;padding:9px 8px;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.15}.vertical-choice .vertical-kicker{display:block;margin:4px 0 0;font-size:9px;line-height:1.2;letter-spacing:0}}
 </style>
 </head>
 <body class="landing-auth-pending">
@@ -500,5 +500,5 @@ window.addEventListener("hashchange",initLandingVerticalFromHash);
 })();
 </script>
 
-<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.7</div>
+<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.8</div>
 </body></html>
