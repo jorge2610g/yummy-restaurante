@@ -78,3 +78,5 @@ for(const marker of ['id="qr"','Código QR de tu negocio','businessPublicPageInf
 
 
 for(const marker of ['eq("business_type",businessType)','retail_orders:"retail_orders"','retail_pos:"retail_pos"','retail_products:"retail_products"','retail_suppliers:"retail_suppliers"','retail_purchases:"retail_purchases"'])if(!panel.includes(marker))throw new Error('panel/index.html: falta filtrado de planes retail '+marker);
+
+for(const marker of ['openMenuFromPanel','create-admin-preview-login','admin_client_token_hash','admin_client_restaurant'])if(!panel.includes(marker))throw new Error('panel/index.html: falta acceso automático del administrador al menú demo '+marker);
