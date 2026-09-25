@@ -9,4 +9,5 @@ test('Restaurante Pruebas carga desde GitHub Pages', async ({ page }) => {\n  te
   expect(errors).toEqual([]);
   const html=await page.content();
   expect(html).toContain('wodqqheeesrelsbacmgx');
+  expect(page.url()).toContain('/yummy-restaurante-pruebas/');
 });
