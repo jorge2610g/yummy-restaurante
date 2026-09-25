@@ -2835,7 +2835,8 @@ body.retail-scanner-open{overflow:hidden!important}
 <script>
 const SB_URL="https://gulctljitzlwokqydigx.supabase.co";
 const SB_KEY="sb_publishable__moppTxObowifx6rJbW_tw_3GiCkqhG";
-const sb=supabase.createClient(SB_URL,SB_KEY);
+const ADMIN_PREVIEW_REQUESTED=new URLSearchParams(location.search).has("admin_preview");
+const sb=supabase.createClient(SB_URL,SB_KEY,ADMIN_PREVIEW_REQUESTED?{auth:{storage:window.sessionStorage,autoRefreshToken:true,persistSession:true,detectSessionInUrl:false}}:undefined);
 const PANEL_ALLOWED_BUSINESS_TYPES=["restaurant"];
 const PANEL_DEFAULT_BUSINESS_TYPE="restaurant";
 const PANEL_VERTICAL_LABEL="Restaurante";
@@ -3201,8 +3202,7 @@ function effectiveTabs(){
  // Vista administrativa: mismo menú que el propietario del tipo de negocio seleccionado,
  // incluyendo Planes y Configuración, sin restricciones de suscripción.
  if(adminPreviewMode)return [...raw];
- // Los negocios demo sirven como muestra completa de su vertical y no se recortan por plan.
- if(currentBusinessIsDemo())return [...raw];
+ // Solo la vista autenticada del superadministrador ignora restricciones de plan/rol.
  if(currentRole!=="restaurant"&&currentRole!=="manager")return raw;
  if(subscriptionModuleAccess===null)return raw;
  const set=new Set(subscriptionModuleAccess);
@@ -3271,10 +3271,7 @@ function consumeAdminPreviewSessionHash(){
  const raw=String(location.hash||"").replace(/^#/,"");if(!raw)return null;
  const params=new URLSearchParams(raw);
  const token_hash=params.get("admin_token_hash");
- if(token_hash)return {token_hash};
- const access_token=params.get("admin_access"),refresh_token=params.get("admin_refresh");
- if(!access_token||!refresh_token)return null;
- return {access_token,refresh_token}
+ return token_hash?{token_hash}:null
 }
 function consumeLandingSessionHash(){
  const raw=String(location.hash||"").replace(/^#/,"");if(!raw)return null;
@@ -3301,18 +3298,11 @@ async function bootAdminPreview(payload){
  if(adminPreviewBootPromise)return adminPreviewBootPromise;
  adminPreviewBootPromise=(async()=>{try{
   if(payload?.token_hash){
+   // La vista administrativa vive en sessionStorage: nunca reutiliza ni pisa la sesión normal del negocio.
+   try{await sb.auth.signOut({scope:"local"})}catch(_){}
    const verified=await sb.auth.verifyOtp({token_hash:payload.token_hash,type:"email"});
    if(verified.error)throw verified.error;
    if(!verified.data?.session)throw new Error("No se pudo crear la sesión temporal del administrador.");
-   clearAdminPreviewSessionHash();
-  }else if(payload?.access_token&&payload?.refresh_token){
-   // Compatibilidad temporal con enlaces antiguos.
-   let setResult=await sb.auth.setSession({access_token:payload.access_token,refresh_token:payload.refresh_token});
-   if(setResult.error){
-    await new Promise(resolve=>setTimeout(resolve,150));
-    setResult=await sb.auth.setSession({access_token:payload.access_token,refresh_token:payload.refresh_token});
-   }
-   if(setResult.error)throw setResult.error;
    clearAdminPreviewSessionHash();
   }
   if(payload?.restaurant_id){
@@ -3343,9 +3333,11 @@ const ADMIN_PREVIEW_ORIGINS=new Set(["https://admin.yummypro.online","https://ww
 function isTrustedAdminPreviewOrigin(origin){return ADMIN_PREVIEW_ORIGINS.has(String(origin||""))}
 window.addEventListener("message",e=>{if(!isTrustedAdminPreviewOrigin(e.origin)||e.data?.type!=="YUMMY_ADMIN_PREVIEW")return;bootAdminPreview(e.data)});
 function notifyAdminPreviewReady(){try{ADMIN_PREVIEW_ORIGINS.forEach(origin=>window.opener?.postMessage({type:"YUMMY_ADMIN_PREVIEW_READY"},origin))}catch(e){}}
-function returnFromAdminPreview(){
+async function returnFromAdminPreview(){
  if(!adminPreviewMode&&!new URLSearchParams(location.search).has("admin_preview"))return;
- // No cerrar la sesión Supabase aquí: esta vista usa la sesión del administrador.
+ // Revocar solo la sesión temporal de esta pestaña. La sesión principal del administrador vive en otro origen.
+ try{await sb.auth.signOut({scope:"local"})}catch(e){console.warn("No se pudo revocar la sesión temporal de vista administrativa",e)}
+ clearAdminPreviewSessionHash();
  try{if(window.opener&&!window.opener.closed){window.opener.focus();window.close();return}}catch(e){}
  window.location.href="https://admin.yummypro.online/"
 }
@@ -3360,9 +3352,7 @@ async function restoreSession(){
     await bootAdminPreview({
       restaurant_id:Number(new URLSearchParams(location.search).get("admin_preview")||0),
       tab:new URLSearchParams(location.search).get("tab")||"dashboard",
-      token_hash:handoff.token_hash||null,
-      access_token:handoff.access_token||null,
-      refresh_token:handoff.refresh_token||null
+      token_hash:handoff.token_hash||null
     });
     return
    }
@@ -6622,7 +6612,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Restaurante · Versión v2.5.67</footer></main></div><script>
+<footer class="admin-version">Restaurante · Versión v2.5.68</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
