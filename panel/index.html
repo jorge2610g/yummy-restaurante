@@ -2119,7 +2119,7 @@ body.retail-scanner-open{overflow:hidden!important}
 <div id="appBootLoader" role="status" aria-live="polite"><div class="app-boot-card"><div class="app-boot-mark">Y</div><h2 id="bootLoaderTitle">Cargando tu restaurante…</h2><p id="bootLoaderText">Estamos verificando tu sesión y tus accesos.</p><div id="bootConnectionChip" class="boot-connection-chip">Comprobando conexión…</div><div class="app-boot-spinner" aria-hidden="true"></div><div id="bootDiagnostic" class="boot-diagnostic"><b id="bootDiagnosticTitle">Diagnóstico de carga</b><span id="bootDiagnosticText">Estamos comprobando si el problema es la conexión o una carga bloqueada.</span><div class="boot-diagnostic-actions"><button class="ghost" type="button" onclick="window.yummyCheckConnection?.(true)">Probar conexión</button><button class="primary" type="button" onclick="window.yummyRetryBoot?.()">Reintentar</button></div></div></div></div>
 <script id="boot-connectivity-diagnostic-v2525">
 (function(){
- const BACKEND_HEALTH="https://gulctljitzlwokqydigx.supabase.co/auth/v1/health";
+ const BACKEND_HEALTH="https://wodqqheeesrelsbacmgx.supabase.co/auth/v1/health";
  const startedAt=Date.now();
  let lastProbe={online:navigator.onLine,backend:null,checkedAt:0};
  function el(id){return document.getElementById(id)}
@@ -2822,7 +2822,7 @@ body.retail-scanner-open{overflow:hidden!important}
       <label class="item" style="display:flex;align-items:center;gap:10px;margin-top:10px"><input id="restaurantVeripagosEnabled" type="checkbox" style="width:auto" checked> Habilitar QR Bolivia en el menú y pedidos QR</label>
       <div class="actions" style="margin-top:12px"><button type="button" class="primary" onclick="saveRestaurantVeripagosSettings()">Guardar QR Bolivia</button><button type="button" class="ghost" onclick="verifyRestaurantVeripagosCredentials()">✓ Verificar credenciales</button><button type="button" class="ghost" onclick="loadRestaurantVeripagosSettings()">Cargar estado</button></div>
       <div id="restaurantVeripagosStatus" class="mp-status-card">Estado: sin configurar.</div>
-      <div class="item" style="margin-top:12px"><b>Webhook de VeriPagos</b><div class="mut" style="word-break:break-all;margin-top:5px">https://gulctljitzlwokqydigx.supabase.co/functions/v1/veripagos-restaurant-webhook</div><div class="mut" style="margin-top:5px">Configura esta URL como callback/webhook en VeriPagos usando las mismas credenciales Basic Auth del restaurante.</div></div>
+      <div class="item" style="margin-top:12px"><b>Webhook de VeriPagos</b><div class="mut" style="word-break:break-all;margin-top:5px">https://wodqqheeesrelsbacmgx.supabase.co/functions/v1/veripagos-restaurant-webhook</div><div class="mut" style="margin-top:5px">Configura esta URL como callback/webhook en VeriPagos usando las mismas credenciales Basic Auth del restaurante.</div></div>
     </div>
   </div>
 
@@ -2833,8 +2833,8 @@ body.retail-scanner-open{overflow:hidden!important}
 
 <script src="/panel/professional.js?v=2532"></script>
 <script>
-const SB_URL="https://gulctljitzlwokqydigx.supabase.co";
-const SB_KEY="sb_publishable__moppTxObowifx6rJbW_tw_3GiCkqhG";
+const SB_URL="https://wodqqheeesrelsbacmgx.supabase.co";
+const SB_KEY="sb_publishable_yiuYVYAAwVLtzlTdEM1kUg_s1Z7BiyE";
 const ADMIN_PREVIEW_REQUESTED=new URLSearchParams(location.search).has("admin_preview");
 const sb=supabase.createClient(SB_URL,SB_KEY,ADMIN_PREVIEW_REQUESTED?{auth:{storage:window.sessionStorage,autoRefreshToken:true,persistSession:true,detectSessionInUrl:false}}:undefined);
 const PANEL_ALLOWED_BUSINESS_TYPES=["restaurant"];
