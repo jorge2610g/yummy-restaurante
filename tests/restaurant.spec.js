@@ -37,7 +37,7 @@ test('usa la misma escala visual del menú admin',async({page})=>{await page.got
 
 test('panel restaurante cerrado copia referencia admin sin barra visible',async({page})=>{await page.goto('/panel/?install=pwa');const html=await page.content();expect(html).toContain('restaurant-collapsed-admin-reference-v2465');expect(html).toContain('scrollbar-width:none');expect(html).toContain('width:62px!important')});
 
-test('restringe POS y Cocina por rol y exige caja abierta',async({page})=>{await page.goto('/panel/?install=pwa');const html=await page.content();expect(html).toContain('operationalTabLockReason');expect(html).toContain('restaurant_has_open_cash');expect(html).toContain('posCashGate');expect(html).toContain('usuario con rol Mesero');expect(html).toContain('usuario con rol Cocina')});
+test('restringe POS y Cocina por rol y exige caja abierta',async({page})=>{await page.goto('/panel/?install=pwa');const html=await page.content();expect(html).toContain('operationalTabLockReason');expect(html).toContain('restaurant_has_open_cash');expect(html).toContain('posCashGate');expect(html).toContain('Mesero / POS requiere rol Mesero');expect(html).toContain('Cocina requiere rol Cocina')});
 
 test('permite elegir mensual o anual en la compra del plan',async({page})=>{await page.goto('/panel/?install=pwa');const html=await page.content();expect(html).toContain('planCheckoutCycleAnnual');expect(html).toContain('setPlanPurchaseCycle');expect(html).toContain('billing_cycle:billingCycle');expect(html).toContain('12 meses de acceso')});
 
