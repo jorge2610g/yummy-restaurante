@@ -53,3 +53,10 @@ test('mantiene Streaming al ver todo lo que incluye',async({page})=>{
   await expect(page.locator('#featuresGrid')).toContainText('Renovaciones');
   expect(await page.evaluate(()=>location.hash)).toBe('#streaming');
 });
+
+
+test('demo Streaming abre la tienda comercial',async({page})=>{
+  await page.goto('/#streaming',{waitUntil:'domcontentloaded'});
+  await expect(page.locator('#verticalStreaming')).toHaveClass(/active/);
+  await expect(page.locator('#landingDemoLink')).toHaveAttribute('href','https://streaming.yummypro.online/demo/');
+});
