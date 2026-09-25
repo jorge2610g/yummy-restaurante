@@ -2167,7 +2167,7 @@ body.retail-scanner-open{overflow:hidden!important}
 
 <div id="app" class="wrap hidden">
 <div id="subscriptionBanner" class="card" style="margin-bottom:14px;display:none"></div>
-<div class="top"><div><h1 id="panelMainTitle">YummyPro Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><button class="ghost header-action hidden" id="pwaInstallBtn" type="button" onclick="installYummyProPwa()" aria-label="Instalar YummyPro" title="Instalar YummyPro"><span class="header-action-icon" aria-hidden="true">⬇️</span><span class="action-label">Instalar</span></button><button class="ghost header-action hidden" id="pwaNotificationBtn" type="button" onclick="activateYummyProNotifications()" aria-label="Activar notificaciones" title="Activar notificaciones"><span class="header-action-icon" aria-hidden="true">🔔</span><span class="action-label">Notificaciones</span></button><button id="adminPreviewBackBtn" class="ghost header-action admin-preview-only" type="button" onclick="returnFromAdminPreview()" aria-label="Volver al administrador" title="Volver al administrador" style="display:none"><span class="header-action-icon" aria-hidden="true">←</span><span class="action-label">Volver al admin</span></button><a id="viewMenuLink" href="#" target="_blank" style="display:none"><button class="ghost header-action" type="button" aria-label="Ver menú" title="Ver menú"><span class="header-action-icon" aria-hidden="true">👁️</span><span class="action-label">Ver menú</span></button></a><button class="ghost header-action" id="themeBtn" type="button" onclick="toggleAdminTheme()" aria-label="Cambiar modo de color" title="Cambiar tema"><span class="header-action-icon" aria-hidden="true">☀️</span><span class="action-label">Modo claro</span></button><button id="panelLogoutBtn" class="ghost header-action" type="button" onclick="logout()" aria-label="Salir" title="Salir"><span class="header-action-icon" aria-hidden="true">↪</span><span class="action-label">Salir</span></button><button id="sideMenuToggle" class="ghost side-menu-toggle header-action" type="button" onclick="toggleSideMenu()" aria-label="Abrir menú del panel" title="Menú del panel"><span class="header-action-icon" aria-hidden="true">☰</span><span class="action-label">Menú</span></button></div></div>
+<div class="top"><div><h1 id="panelMainTitle">YummyPro Restaurante</h1><div id="who" class="mut"></div></div><div class="row"><button class="ghost header-action hidden" id="pwaInstallBtn" type="button" onclick="installYummyProPwa()" aria-label="Instalar YummyPro" title="Instalar YummyPro"><span class="header-action-icon" aria-hidden="true">⬇️</span><span class="action-label">Instalar</span></button><button class="ghost header-action hidden" id="pwaNotificationBtn" type="button" onclick="activateYummyProNotifications()" aria-label="Activar notificaciones" title="Activar notificaciones"><span class="header-action-icon" aria-hidden="true">🔔</span><span class="action-label">Notificaciones</span></button><button id="adminPreviewBackBtn" class="ghost header-action admin-preview-only" type="button" onclick="returnFromAdminPreview()" aria-label="Volver al administrador" title="Volver al administrador" style="display:none"><span class="header-action-icon" aria-hidden="true">←</span><span class="action-label">Volver al admin</span></button><a id="viewMenuLink" href="#" target="_blank" style="display:none" onclick="return openMenuFromPanel(event)"><button class="ghost header-action" type="button" aria-label="Ver menú" title="Ver menú"><span class="header-action-icon" aria-hidden="true">👁️</span><span class="action-label">Ver menú</span></button></a><button class="ghost header-action" id="themeBtn" type="button" onclick="toggleAdminTheme()" aria-label="Cambiar modo de color" title="Cambiar tema"><span class="header-action-icon" aria-hidden="true">☀️</span><span class="action-label">Modo claro</span></button><button id="panelLogoutBtn" class="ghost header-action" type="button" onclick="logout()" aria-label="Salir" title="Salir"><span class="header-action-icon" aria-hidden="true">↪</span><span class="action-label">Salir</span></button><button id="sideMenuToggle" class="ghost side-menu-toggle header-action" type="button" onclick="toggleSideMenu()" aria-label="Abrir menú del panel" title="Menú del panel"><span class="header-action-icon" aria-hidden="true">☰</span><span class="action-label">Menú</span></button></div></div>
 <div id="sideMenuBackdrop" class="side-menu-backdrop" onclick="closeSideMenu()"></div><div id="panelLayout" class="panel-layout"><aside id="sideMenu" class="side-menu">
 <div class="sidebar-brand">
   <span class="sidebar-brand-mark">Y</span>
@@ -3694,10 +3694,47 @@ function renderSubscriptionBanner(r){
   updateCountdown();subscriptionCountdownTimer=setInterval(updateCountdown,1000);
  }
 }
+async function openMenuFromPanel(event){
+ const link=event.currentTarget;
+ if(!adminPreviewMode||link?.dataset?.isDemo!=="1")return true;
+ event.preventDefault();
+ const restaurantId=Number(link.dataset.restaurantId||currentRestaurant||0);
+ if(!restaurantId)return false;
+ const popup=window.open("about:blank","_blank");
+ if(!popup){toast("Permite ventanas emergentes para abrir el menú.");return false}
+ try{
+  let sessionResult=await sb.auth.getSession(),session=sessionResult.data?.session||null;
+  if(!session?.access_token){
+   const refreshed=await sb.auth.refreshSession();
+   if(refreshed.error)throw refreshed.error;
+   session=refreshed.data?.session||null;
+  }
+  if(!session?.access_token)throw new Error("La sesión administrativa venció.");
+  const res=await fetch(SB_URL+"/functions/v1/create-admin-preview-login",{
+   method:"POST",
+   headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},
+   body:JSON.stringify({restaurant_id:restaurantId})
+  });
+  const data=await res.json();
+  if(!res.ok||!data?.token_hash)throw new Error(data?.error||"No se pudo generar el acceso temporal al menú.");
+  const url=new URL(link.href,location.href);
+  url.hash=new URLSearchParams({
+   admin_client_token_hash:String(data.token_hash),
+   admin_client_restaurant:String(restaurantId)
+  }).toString();
+  popup.location.replace(url.toString());
+ }catch(e){
+  console.error("No se pudo abrir el menú como administrador",e);
+  try{popup.close()}catch(_){}
+  toast(e?.message||"No se pudo abrir el menú para pruebas.");
+ }
+ return false
+}
 function syncRestaurantHeader(r){
  if(!r)return;
  const name=String(r.name||("Negocio #"+currentRestaurant)).trim(),type=String(r.business_type||"restaurant"),retail=["supermarket","minimarket"].includes(type);
  const slug=String(r.slug||currentRestaurant),menuLink=document.getElementById("viewMenuLink");
+ if(menuLink){menuLink.dataset.restaurantId=String(currentRestaurant||r.id||"");menuLink.dataset.isDemo=r.is_demo?"1":"0"}
  if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(slug);menuLink.title=retail?"Ver tienda online":"Ver menú";menuLink.style.removeProperty("display")}
  const who=document.getElementById("who"),sessionEmail=String(who?.dataset.email||who?.textContent||"").trim();if(who&&!who.dataset.email)who.dataset.email=sessionEmail;
  const panelTitle=document.getElementById("panelMainTitle");if(panelTitle)panelTitle.textContent=PANEL_BRAND_NAME;
@@ -6573,7 +6610,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Restaurante · Versión v2.5.65</footer></main></div><script>
+<footer class="admin-version">Restaurante · Versión v2.5.66</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
