@@ -41,7 +41,7 @@ for(const marker of ['restaurant-admin-sidebar-scale-v2464','#sideMenu .nav-labe
 
 for(const marker of ['restaurant-collapsed-admin-reference-v2465','scrollbar-width:none','::-webkit-scrollbar','width:62px!important','height:42px!important'])if(!panel.includes(marker))throw new Error('panel/index.html: falta estilo cerrado igual al admin '+marker);
 
-for(const marker of ['role-and-cash-gates-v2466','operationalTabLockReason','Mesero / POS solo puede utilizarse con un usuario con rol Mesero','Cocina solo puede utilizarse con un usuario con rol Cocina','restaurant_has_open_cash','posCashGate','Caja cerrada: primero el usuario de Caja debe abrir una caja'])if(!panel.includes(marker))throw new Error('panel/index.html: falta restricción de rol/caja '+marker);
+for(const marker of ['role-and-cash-gates-v2466','operationalTabLockReason','Mesero / POS requiere rol Mesero, Manager o Administrador del negocio.','Cocina requiere rol Cocina, Manager o Administrador del negocio.','restaurant_has_open_cash','posCashGate','Caja cerrada: primero el usuario de Caja debe abrir una caja'])if(!panel.includes(marker))throw new Error('panel/index.html: falta restricción de rol/caja '+marker);
 
 for(const marker of ['planCheckoutCycleAnnual','setPlanPurchaseCycle','planChargedMonths','annual_bonus_months','billing_cycle:billingCycle','Plan anual','12 meses de acceso'])if(!panel.includes(marker))throw new Error('panel/index.html: falta compra anual '+marker);
 
