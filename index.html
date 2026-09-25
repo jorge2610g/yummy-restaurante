@@ -166,7 +166,7 @@ body[data-vertical="restaurant"] .food:after{content:attr(data-icon)!important}
 <button class="vertical-choice" id="verticalProfessional" type="button" onclick="setLandingVertical('professional',true)">✂️ Profesionales<span class="vertical-kicker">Agenda · servicios · clientes</span></button>
 <button class="vertical-choice" id="verticalStreaming" type="button" onclick="setLandingVertical('streaming',true)">🎬 Streaming<span class="vertical-kicker">Suscripciones · clientes · renovaciones</span></button>
 </div></div>
-<header class="hero"><div class="wrap heroGrid"><div><span class="tag" id="heroTag">30 DÍAS GRATIS · SIN COMPLICACIONES</span><h1 id="heroTitle">Tu restaurante, <span class="accent">más digital.</span><br>Más fácil de vender.</h1><p class="lead" id="heroLead">Crea un menú digital profesional, recibe pedidos y administra tu restaurante desde un solo lugar.</p><div class="heroBtns"><button class="btn primary" onclick="openSignup()">Prueba 30 días gratis</button><a class="btn ghost" id="landingDemoLink" href="https://menu.yummypro.online/?r=hamburgueseria-demo-yummypro">Ver demostración</a><a class="btn ghost" href="#funciones">Ver todo lo que incluye</a></div></div>
+<header class="hero"><div class="wrap heroGrid"><div><span class="tag" id="heroTag">30 DÍAS GRATIS · SIN COMPLICACIONES</span><h1 id="heroTitle">Tu restaurante, <span class="accent">más digital.</span><br>Más fácil de vender.</h1><p class="lead" id="heroLead">Crea un menú digital profesional, recibe pedidos y administra tu restaurante desde un solo lugar.</p><div class="heroBtns"><button class="btn primary" onclick="openSignup()">Prueba 30 días gratis</button><a class="btn ghost" id="landingDemoLink" href="https://menu.yummypro.online/?r=hamburgueseria-demo-yummypro">Ver demostración</a><a class="btn ghost" href="#funciones" onclick="event.preventDefault();document.getElementById('funciones').scrollIntoView({behavior:'smooth',block:'start'})">Ver todo lo que incluye</a></div></div>
 <div class="phone" data-label="Vista del menú"><div class="phoneTop"><div><small id="previewEyebrow" style="color:#aaa">TU MENÚ DIGITAL</small><h2 id="previewTitle" style="margin:5px 0">Mi Restaurante</h2></div><div class="miniLogo" id="previewLogo">🍔</div></div><p id="previewSubtitle" style="color:#aaa">Elige tus favoritos</p>
 <div class="menuItem"><div class="food" id="previewIcon1" data-icon="🍔"></div><div><b id="previewName1">Hamburguesa Yummy</b><small id="previewDesc1" style="display:block;color:#888;margin-top:5px">Carne, queso y salsa especial</small></div><span class="price" id="previewPrice1">$8.990</span></div>
 <div class="menuItem"><div class="food" id="previewIcon2" data-icon="🍟"></div><div><b id="previewName2">Combo Especial</b><small id="previewDesc2" style="display:block;color:#888;margin-top:5px">Papas + bebida</small></div><span class="price" id="previewPrice2">$11.990</span></div>
@@ -319,7 +319,7 @@ function applyLandingVertical(pushHash=false){
  if(pushHash)history.replaceState(null,"","#"+v.hash);
 }
 function setLandingVertical(vertical,pushHash=false){if(!LANDING_VERTICALS[vertical])vertical="restaurant";landingVertical=vertical;landingBusinessType=activeLandingVertical().defaultType;applyLandingVertical(pushHash)}
-function initLandingVerticalFromHash(){const raw=location.hash.replace(/^#/,"").toLowerCase();setLandingVertical(LANDING_HASH_TO_VERTICAL[raw]||"restaurant",false)}
+function initLandingVerticalFromHash(){const raw=location.hash.replace(/^#/,"").toLowerCase(),mapped=LANDING_HASH_TO_VERTICAL[raw];if(mapped)return setLandingVertical(mapped,false);if(!raw)return setLandingVertical("restaurant",false)}
 const LANDING_COUNTRY_KEY="yummy_landing_country_manual";
 const LANDING_TELEMETRY_KEY="yummy_landing_telemetry_session_v1";
 function landingTelemetrySession(){try{let v=localStorage.getItem(LANDING_TELEMETRY_KEY);if(!v){v=(crypto.randomUUID?.()||Date.now()+"-"+Math.random().toString(16).slice(2));localStorage.setItem(LANDING_TELEMETRY_KEY,v)}return v}catch(_){return "landing-"+Date.now()}}
@@ -517,5 +517,5 @@ window.addEventListener("hashchange",initLandingVerticalFromHash);
 })();
 </script>
 
-<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.9</div>
+<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.10</div>
 </body></html>
