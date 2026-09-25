@@ -365,6 +365,13 @@ async function renderPublicPlans(){
   syncLandingDemoLink();
   const country=selectedLandingCountry();
   const publicPlans=landingPlans.filter(p=>!p.is_default_trial&&String(p.business_type||"restaurant")===landingBusinessType);
+  if(!publicPlans.length){
+    const isStreaming=landingBusinessType==="streaming";
+    el.innerHTML=isStreaming
+      ? '<div class="card"><span class="tag">30 DÍAS GRATIS</span><h3 style="margin-top:16px">Empieza con Streaming</h3><p style="color:#aaa">Todavía no hay planes de pago publicados para Streaming. Puedes crear tu cuenta y usar la prueba gratuita de 30 días.</p><button class="btn primary" style="margin-top:16px" onclick="openSignup()">Crear cuenta gratis</button></div>'
+      : '<div class="card">No hay planes de pago disponibles para '+escPlan(landingBusinessLabel(landingBusinessType))+' en este momento. <button class="btn primary" style="margin-top:14px" onclick="openSignup()">Prueba 30 días gratis</button></div>';
+    return;
+  }
   const priced=await Promise.all(publicPlans.map(async p=>({p,price:await planLocalAmount(p,country)})));
   const cta=landingHasRestaurant?"Ir a mi panel":"Prueba 30 días gratis";
   el.innerHTML=priced.map(({p,price},i)=>{const mods=Array.isArray(p.modules)?p.modules:[],priceText=moneyLocal(price.amount,country,price.currency),note=price.fallback?"Precio base · conversión temporalmente no disponible":(price.converted?"Conversión referencial a "+country.currency_code:"Precio para "+country.name);return '<article class="card priceCard '+(i===priced.length-1?'featured':'')+'"><div><span class="tag">'+Number(p.days||0)+' DÍAS</span><h3 style="font-size:25px;margin:18px 0 0">'+escPlan(p.name||"Plan")+'</h3><div class="planPrice">'+escPlan(priceText)+'</div><div class="planDays">por '+Number(p.days||0)+' días · '+escPlan(note)+'</div></div><div class="planModules">'+mods.map(m=>'<div>'+escPlan(PLAN_LABELS[m]||m)+'</div>').join("")+'</div><button class="btn primary planCta" onclick="choosePlan('+Number(p.id)+')">'+cta+'</button></article>'}).join("")||'<div class="card">No hay planes disponibles para '+escPlan(landingBusinessLabel(landingBusinessType))+' en este momento.</div>';
@@ -399,14 +406,24 @@ async function detectLandingCountry(){
 }
 async function loadPublicPlans(){
   const el=document.getElementById("pricingGrid");if(!el)return;
-  const [countriesRes,plansRes]=await Promise.all([
-    sb.from("platform_countries").select("code,name,currency_code,locale,timezone").eq("active",true).order("name"),
-    sb.from("subscription_plans").select("id,name,amount,days,modules,currency_code,country_prices,is_default_trial,business_type").eq("active",true).in("business_type",["restaurant","supermarket","minimarket","professional"]).order("amount",{ascending:true})
-  ]);
+  let countriesRes,plansRes;
+  try{
+    [countriesRes,plansRes]=await Promise.race([
+      Promise.all([
+        sb.from("platform_countries").select("code,name,currency_code,locale,timezone").eq("active",true).order("name"),
+        sb.from("subscription_plans").select("id,name,amount,days,modules,currency_code,country_prices,is_default_trial,business_type").eq("active",true).in("business_type",["restaurant","supermarket","minimarket","professional","streaming"]).order("amount",{ascending:true})
+      ]),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error("Tiempo de espera agotado al cargar planes")),8000))
+    ]);
+  }catch(e){
+    console.warn("No pudimos cargar los planes",e);
+    el.innerHTML='<div class="card"><b>Los planes están tardando más de lo normal.</b><p style="color:#aaa">Puedes reintentar o crear tu cuenta con 30 días gratis.</p><div class="heroBtns" style="margin-top:14px"><button class="btn ghost" onclick="loadPublicPlans()">Reintentar</button><button class="btn primary" onclick="openSignup()">30 días gratis</button></div></div>';
+    return;
+  }
   if(countriesRes.error||plansRes.error){el.innerHTML='<div class="card"><b>No pudimos cargar los planes.</b><p style="color:#aaa">Puedes crear tu cuenta gratis y elegir el plan desde tu panel.</p><button class="btn primary" onclick="openSignup()">Prueba 30 días gratis</button></div>';return}
   landingCountries=countriesRes.data||[];landingPlans=plansRes.data||[];
   const availablePaidTypes=new Set(landingPlans.filter(p=>!p.is_default_trial).map(p=>String(p.business_type||"restaurant")));
-  if(!availablePaidTypes.has(landingBusinessType)){const first=landingPlanBusinessTypes().find(t=>availablePaidTypes.has(t));if(first)landingBusinessType=first}
+  if(!availablePaidTypes.has(landingBusinessType)&&landingPlanBusinessTypes().length>1){const first=landingPlanBusinessTypes().find(t=>availablePaidTypes.has(t));if(first)landingBusinessType=first}
   const businessSelect=document.getElementById("landingBusinessTypeSelect");
   if(businessSelect){businessSelect.value=landingBusinessType;businessSelect.onchange=()=>{landingBusinessType=businessSelect.value;selectedPlanId=null;const signupType=document.getElementById("sBusinessType");if(signupType)signupType.value=landingBusinessType;renderPublicPlans()}}
   const select=document.getElementById("landingCountrySelect");
@@ -500,5 +517,5 @@ window.addEventListener("hashchange",initLandingVerticalFromHash);
 })();
 </script>
 
-<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.8</div>
+<div style="position:fixed;right:12px;bottom:8px;z-index:20;font:600 11px/1.2 Arial,sans-serif;color:rgba(255,255,255,.42);pointer-events:none">v2.1.9</div>
 </body></html>
