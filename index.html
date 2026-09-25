@@ -187,30 +187,41 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 const signupModal=document.getElementById("signupModal"),loginModal=document.getElementById("loginModal");
 let selectedPlanId=null,landingSessionUser=null,landingHasRestaurant=false,landingSessionBusinessType=null,landingAuthResolved=false,landingAuthPromise=null;
 let landingCountries=[],landingPlans=[],landingCountryCode="CL",landingFx={};
+const LANDING_IS_PRUEBAS=location.hostname==="jorge2610g.github.io"&&location.pathname.startsWith("/yummy-restaurante-pruebas");
+const LANDING_PRUEBAS_BASES={
+ restaurant:"https://jorge2610g.github.io/yummy-restaurante-pruebas",
+ retail:"https://jorge2610g.github.io/yummy-retail-pruebas",
+ professional:"https://jorge2610g.github.io/yummy-profesionales-pruebas",
+ streaming:"https://jorge2610g.github.io/yummy-streaming-pruebas",
+ client:"https://jorge2610g.github.io/yummy-cliente-pruebas"
+};
+function landingEnvironmentDomain(type,productionUrl){
+ return LANDING_IS_PRUEBAS?(LANDING_PRUEBAS_BASES[type]||productionUrl):productionUrl;
+}
 const LANDING_VERTICALS={
  restaurant:{
-  hash:"restaurante",label:"Restaurantes",types:["restaurant"],defaultType:"restaurant",domain:"https://web.yummypro.online",accent:"#ffb000",accent2:"#ffcb45",glow:"#ffb00026",demo:{restaurant:"hamburgueseria-demo-yummypro"},previewLabel:"Vista del menú",
+  hash:"restaurante",label:"Restaurantes",types:["restaurant"],defaultType:"restaurant",domain:landingEnvironmentDomain("restaurant","https://web.yummypro.online"),accent:"#ffb000",accent2:"#ffcb45",glow:"#ffb00026",demo:{restaurant:"hamburgueseria-demo-yummypro"},previewLabel:"Vista del menú",
   title:'Tu restaurante, <span class="accent">más digital.</span><br>Más fácil de vender.',lead:"Menú digital, pedidos, cocina, caja, mesas, inventario y gestión de tu restaurante desde un solo lugar.",tag:"RESTAURANTES · 30 DÍAS GRATIS",
   preview:["TU MENÚ DIGITAL","Mi Restaurante","🍔","Elige tus favoritos",["🍔","Hamburguesa Yummy","Carne, queso y salsa especial","$8.990"],["🍟","Combo Especial","Papas + bebida","$11.990"],["🥤","Promo del día","Disponible hoy","$6.990"]],
   featuresTitle:"Todo lo que tu restaurante necesita",featuresLead:"Digitaliza el menú, recibe pedidos y controla la operación completa.",
   features:[["📱","Menú digital","Productos, categorías, variantes, extras, fotos y disponibilidad."],["🛒","Pedidos","Recibe y gestiona pedidos, retiro y delivery en tiempo real."],["🍳","Cocina","Comandas y estados de preparación para mantener el flujo ordenado."],["💵","Caja y POS","Ventas, apertura/cierre de caja y atención de mesas."],["📦","Inventario","Controla existencias y productos agotados."],["🔗","QR y presencia digital","Comparte tu menú con enlace o código QR."]]
  },
  retail:{
-  hash:"retail",label:"Tiendas / Market",types:["minimarket","supermarket"],defaultType:"minimarket",domain:"https://retail.yummypro.online",accent:"#27d18b",accent2:"#71eab8",glow:"#27d18b24",demo:{minimarket:"minimarket-demo-yummypro",supermarket:"supermercado-demo"},previewLabel:"Vista de la tienda",
+  hash:"retail",label:"Tiendas / Market",types:["minimarket","supermarket"],defaultType:"minimarket",domain:landingEnvironmentDomain("retail","https://retail.yummypro.online"),accent:"#27d18b",accent2:"#71eab8",glow:"#27d18b24",demo:{minimarket:"minimarket-demo-yummypro",supermarket:"supermercado-demo"},previewLabel:"Vista de la tienda",
   title:'Tu tienda, <span class="accent">más rápida.</span><br>Más fácil de controlar.',lead:"POS, código de barras, inventario, proveedores, compras y ventas para minimarkets, tiendas y supermercados.",tag:"RETAIL / MARKET · 30 DÍAS GRATIS",
   preview:["TU TIENDA DIGITAL","Mi Market","🛒","Escanea, vende y controla",["🥫","Producto escaneado","Código 780… · Stock 24","$2.490"],["📦","Inventario","Entradas, salidas y mínimos","24 un."],["🧾","Venta rápida","Caja y comprobante","LISTO"]],
   featuresTitle:"Todo lo que tu tienda necesita",featuresLead:"Una operación Retail pensada para vender rápido y saber exactamente qué tienes.",
   features:[["📷","Escáner de códigos","Abre la cámara, detecta el código y encuentra el producto."],["🧾","POS Retail","Carrito, descuentos, pagos y ventas desde caja."],["📦","Inventario","Stock actual, mínimo, movimientos y alertas."],["🚚","Proveedores y compras","Registra proveedores, recepciones y costos."],["🛍️","Pedidos online","Recibe pedidos para retiro o entrega."],["📊","Control del negocio","Ventas, caja, personal y reportes en un solo panel."]]
  },
  professional:{
-  hash:"profesionales",label:"Profesionales",types:["professional"],defaultType:"professional",domain:"https://pro.yummypro.online",accent:"#45a7f0",accent2:"#8dcbff",glow:"#45a7f024",demo:{professional:"barberia-demo-yummypro"},previewLabel:"Vista de reservas",
+  hash:"profesionales",label:"Profesionales",types:["professional"],defaultType:"professional",domain:landingEnvironmentDomain("professional","https://pro.yummypro.online"),accent:"#45a7f0",accent2:"#8dcbff",glow:"#45a7f024",demo:{professional:"barberia-demo-yummypro"},previewLabel:"Vista de reservas",
   title:'Tus servicios, <span class="accent">más organizados.</span><br>Más fáciles de reservar.',lead:"Agenda, servicios, profesionales, clientes, pagos y reservas para barberías, salones y negocios de servicios.",tag:"PROFESIONALES · 30 DÍAS GRATIS",
   preview:["TU AGENDA DIGITAL","Mi Barbería","✂️","Reserva tu próximo servicio",["✂️","Corte Premium","45 min · Profesional disponible","$12.990"],["🧔","Barba","30 min · Agenda online","$7.990"],["📅","Próxima hora","Hoy · 16:30","RESERVAR"]],
   featuresTitle:"Todo lo que tu negocio de servicios necesita",featuresLead:"Organiza agenda, profesionales y clientes sin mezclarlo con una operación de restaurante o tienda.",
   features:[["📅","Agenda y reservas","Horarios, disponibilidad y citas organizadas."],["✂️","Servicios","Duración, precio y catálogo de servicios."],["👥","Profesionales","Asigna servicios y horarios a cada integrante."],["🧑‍🤝‍🧑","Clientes","Historial y datos para una atención más rápida."],["💳","Caja y pagos","Controla cobros y movimientos del negocio."],["📊","Reportes","Revisa actividad, servicios y desempeño."]]
  },
  streaming:{
-  hash:"streaming",label:"Streaming",types:["streaming"],defaultType:"streaming",domain:"https://streaming.yummypro.online",accent:"#8b5cf6",accent2:"#c084fc",glow:"#8b5cf626",demoUrl:"https://streaming.yummypro.online/demo/",demo:{streaming:"streaming-demo"},previewLabel:"Vista del panel",
+  hash:"streaming",label:"Streaming",types:["streaming"],defaultType:"streaming",domain:landingEnvironmentDomain("streaming","https://streaming.yummypro.online"),accent:"#8b5cf6",accent2:"#c084fc",glow:"#8b5cf626",demoUrl:landingEnvironmentDomain("streaming","https://streaming.yummypro.online")+"/demo/",demo:{streaming:"streaming-demo"},previewLabel:"Vista del panel",
   title:'Tus suscripciones, <span class="accent">más ordenadas.</span><br>Más fáciles de renovar.',lead:"Gestiona catálogo, clientes, disponibilidad, vencimientos y renovaciones de tus servicios de streaming desde un solo panel.",tag:"STREAMING · 30 DÍAS GRATIS",
   preview:["TU NEGOCIO STREAMING","Mi Streaming","🎬","Clientes y renovaciones al día",["📺","Netflix","Plan mensual · cliente activo","ACTIVO"],["▶️","Prime Video","Vence en 5 días","RENOVAR"],["✨","Disney+","Disponibilidad actual","6 cupos"]],
   featuresTitle:"Todo lo que tu negocio de streaming necesita",featuresLead:"Controla clientes, suscripciones y vencimientos sin perder renovaciones ni disponibilidad.",
@@ -226,13 +237,13 @@ function landingTypeAllowed(type){return landingPlanBusinessTypes().includes(Str
 function landingTypeLabel(type){return type==="restaurant"?"Restaurante":type==="supermarket"?"Supermercado":type==="minimarket"?"Minimarket / Tienda":type==="professional"?"Profesional / Servicios":type==="streaming"?"Streaming":"Negocio"}
 function landingPanelBase(){return activeLandingVertical().domain}
 function landingDemoSlug(){const v=activeLandingVertical();return v.demo[landingBusinessType]||v.demo[v.defaultType]||Object.values(v.demo)[0]}
-function syncLandingDemoLink(){const a=document.getElementById("landingDemoLink"),v=activeLandingVertical(),slug=landingDemoSlug();if(!a)return;if(v.demoUrl){a.href=v.demoUrl;return}if(slug)a.href="https://menu.yummypro.online/?r="+encodeURIComponent(slug)}
+function syncLandingDemoLink(){const a=document.getElementById("landingDemoLink"),v=activeLandingVertical(),slug=landingDemoSlug();if(!a)return;if(v.demoUrl){a.href=v.demoUrl;return}if(slug){const base=LANDING_IS_PRUEBAS?LANDING_PRUEBAS_BASES.client:"https://menu.yummypro.online";a.href=base+"/?r="+encodeURIComponent(slug)}}
 function universalPanelDomainForBusinessType(type){
  const t=String(type||"").toLowerCase();
- if(t==="professional")return "https://pro.yummypro.online";
- if(t==="streaming")return "https://streaming.yummypro.online";
- if(t==="supermarket"||t==="minimarket")return "https://retail.yummypro.online";
- if(t==="restaurant")return "https://web.yummypro.online";
+ if(t==="professional")return landingEnvironmentDomain("professional","https://pro.yummypro.online");
+ if(t==="streaming")return landingEnvironmentDomain("streaming","https://streaming.yummypro.online");
+ if(t==="supermarket"||t==="minimarket")return landingEnvironmentDomain("retail","https://retail.yummypro.online");
+ if(t==="restaurant")return landingEnvironmentDomain("restaurant","https://web.yummypro.online");
  return null;
 }
 async function landingMembershipBusinesses(userId){

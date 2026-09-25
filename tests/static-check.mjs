@@ -86,3 +86,5 @@ for(const marker of ['ADMIN_PREVIEW_REQUESTED','storage:window.sessionStorage','
 for(const forbidden of ['else if(payload?.access_token&&payload?.refresh_token)','if(currentBusinessIsDemo())return [...raw]'])if(panel.includes(forbidden))throw new Error('panel/index.html: conserva bypass o handoff administrativo inseguro '+forbidden);
 
 if(landing.includes('landingBusinessLabel('))throw new Error('index.html: referencia obsoleta landingBusinessLabel');
+
+for(const marker of ['LANDING_IS_PRUEBAS','yummy-restaurante-pruebas','yummy-retail-pruebas','yummy-profesionales-pruebas','yummy-streaming-pruebas','yummy-cliente-pruebas','landingEnvironmentDomain'])if(!landing.includes(marker))throw new Error('index.html: falta enrutamiento seguro de Pruebas '+marker);
