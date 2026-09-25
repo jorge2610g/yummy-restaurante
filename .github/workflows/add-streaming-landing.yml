@@ -1,0 +1,61 @@
+name: Integrar Streaming en landing
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/add-streaming-landing.yml
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Agregar vertical Streaming
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          def rep(old,new,label):
+              global s
+              if old not in s:
+                  raise SystemExit(f'No se encontró ancla: {label}')
+              s=s.replace(old,new,1)
+
+          rep('grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 0}', 'grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px 0}', 'grid vertical')
+          rep('body[data-vertical="professional"] .food{background:linear-gradient(135deg,#17324a,#45a7f0)}', 'body[data-vertical="professional"] .food{background:linear-gradient(135deg,#17324a,#45a7f0)}\nbody[data-vertical="streaming"] .food{background:linear-gradient(135deg,#251548,#8b5cf6)}', 'fondo streaming')
+          rep('body[data-vertical="retail"] .food:after,body[data-vertical="professional"] .food:after{content:attr(data-icon)!important}', 'body[data-vertical="retail"] .food:after,body[data-vertical="professional"] .food:after,body[data-vertical="streaming"] .food:after{content:attr(data-icon)!important}', 'iconos streaming')
+
+          professional_button='<button class="vertical-choice" id="verticalProfessional" type="button" onclick="setLandingVertical(\'professional\',true)">✂️ Profesionales<span class="vertical-kicker">Agenda · servicios · clientes</span></button>'
+          rep(professional_button, professional_button+'\n<button class="vertical-choice" id="verticalStreaming" type="button" onclick="setLandingVertical(\'streaming\',true)">🎬 Streaming<span class="vertical-kicker">Suscripciones · clientes · renovaciones</span></button>', 'botón streaming')
+
+          professional_end='  features:[["📅","Agenda y reservas","Horarios, disponibilidad y citas organizadas."],["✂️","Servicios","Duración, precio y catálogo de servicios."],["👥","Profesionales","Asigna servicios y horarios a cada integrante."],["🧑‍🤝‍🧑","Clientes","Historial y datos para una atención más rápida."],["💳","Caja y pagos","Controla cobros y movimientos del negocio."],["📊","Reportes","Revisa actividad, servicios y desempeño."]]\n }\n};'
+          streaming_block='  features:[["📅","Agenda y reservas","Horarios, disponibilidad y citas organizadas."],["✂️","Servicios","Duración, precio y catálogo de servicios."],["👥","Profesionales","Asigna servicios y horarios a cada integrante."],["🧑‍🤝‍🧑","Clientes","Historial y datos para una atención más rápida."],["💳","Caja y pagos","Controla cobros y movimientos del negocio."],["📊","Reportes","Revisa actividad, servicios y desempeño."]]\n },\n streaming:{\n  hash:"streaming",label:"Streaming",types:["streaming"],defaultType:"streaming",domain:"https://streaming.yummypro.online",accent:"#8b5cf6",accent2:"#c084fc",glow:"#8b5cf626",demoUrl:"https://streaming.yummypro.online/panel/demo.html",demo:{streaming:"streaming-demo"},previewLabel:"Vista del panel",\n  title:\'Tus suscripciones, <span class="accent">más ordenadas.</span><br>Más fáciles de renovar.\',lead:"Gestiona catálogo, clientes, disponibilidad, vencimientos y renovaciones de tus servicios de streaming desde un solo panel.",tag:"STREAMING · 30 DÍAS GRATIS",\n  preview:["TU NEGOCIO STREAMING","Mi Streaming","🎬","Clientes y renovaciones al día",["📺","Netflix","Plan mensual · cliente activo","ACTIVO"],["▶️","Prime Video","Vence en 5 días","RENOVAR"],["✨","Disney+","Disponibilidad actual","6 cupos"]],\n  featuresTitle:"Todo lo que tu negocio de streaming necesita",featuresLead:"Controla clientes, suscripciones y vencimientos sin perder renovaciones ni disponibilidad.",\n  features:[["🎬","Catálogo de plataformas","Organiza servicios, planes, duración y disponibilidad."],["👥","Clientes","Centraliza datos, WhatsApp e historial de cada cliente."],["⏳","Vencimientos","Visualiza qué suscripciones están próximas a vencer."],["↻","Renovaciones","Registra renovaciones y mantén continuidad del servicio."],["📦","Disponibilidad","Controla planes o cupos disponibles para entregar."],["🔔","Alertas y WhatsApp","Recibe avisos y contacta al cliente cuando toque renovar."]]\n }\n};'
+          rep(professional_end,streaming_block,'configuración vertical streaming')
+
+          rep('const LANDING_HASH_TO_VERTICAL={restaurante:"restaurant",restaurant:"restaurant",retail:"retail",tienda:"retail",market:"retail",profesionales:"professional",professional:"professional"};', 'const LANDING_HASH_TO_VERTICAL={restaurante:"restaurant",restaurant:"restaurant",retail:"retail",tienda:"retail",market:"retail",profesionales:"professional",professional:"professional",streaming:"streaming"};', 'hash streaming')
+          rep('function landingTypeLabel(type){return type==="restaurant"?"Restaurante":type==="supermarket"?"Supermercado":type==="minimarket"?"Minimarket / Tienda":type==="professional"?"Profesional / Servicios":"Negocio"}', 'function landingTypeLabel(type){return type==="restaurant"?"Restaurante":type==="supermarket"?"Supermercado":type==="minimarket"?"Minimarket / Tienda":type==="professional"?"Profesional / Servicios":type==="streaming"?"Streaming":"Negocio"}', 'etiqueta streaming')
+          rep('function syncLandingDemoLink(){const a=document.getElementById("landingDemoLink"),slug=landingDemoSlug();if(a&&slug)a.href="https://menu.yummypro.online/?r="+encodeURIComponent(slug)}', 'function syncLandingDemoLink(){const a=document.getElementById("landingDemoLink"),v=activeLandingVertical(),slug=landingDemoSlug();if(!a)return;if(v.demoUrl){a.href=v.demoUrl;return}if(slug)a.href="https://menu.yummypro.online/?r="+encodeURIComponent(slug)}', 'demo streaming')
+          rep(' if(t==="professional")return "https://pro.yummypro.online";', ' if(t==="professional")return "https://pro.yummypro.online";\n if(t==="streaming")return "https://streaming.yummypro.online";', 'dominio streaming')
+          rep('document.getElementById(landingVertical==="restaurant"?"verticalRestaurant":landingVertical==="retail"?"verticalRetail":"verticalProfessional")?.classList.add("active");', 'document.getElementById(landingVertical==="restaurant"?"verticalRestaurant":landingVertical==="retail"?"verticalRetail":landingVertical==="professional"?"verticalProfessional":"verticalStreaming")?.classList.add("active");', 'selector activo streaming')
+
+          s=s.replace('Restaurante, Retail o Profesionales desde una sola landing.','Restaurante, Retail, Profesionales o Streaming desde una sola landing.')
+          s=s.replace('YummyPro es una plataforma web de gestión para restaurantes, comercios retail y profesionales de servicios.','YummyPro es una plataforma web de gestión para restaurantes, comercios retail, profesionales de servicios y negocios de streaming.')
+          prof_card='<article class="card"><h3>YummyPro Profesionales</h3><p>Agenda, servicios, clientes, caja y gestión para profesionales y negocios de servicios.</p><a class="btn ghost" href="/profesionales/" style="display:inline-block;margin-top:16px">Conocer Profesionales</a></article>'
+          if prof_card in s and 'YummyPro Streaming</h3>' not in s:
+              s=s.replace(prof_card,prof_card+'<article class="card"><h3>YummyPro Streaming</h3><p>Clientes, suscripciones, disponibilidad, vencimientos y renovaciones desde un panel especializado.</p><a class="btn ghost" href="#streaming" onclick="setLandingVertical(\'streaming\',true)" style="display:inline-block;margin-top:16px">Conocer Streaming</a></article>',1)
+          s=s.replace('<a href="/profesionales/">Profesionales</a></span>', '<a href="/profesionales/">Profesionales</a><a href="#streaming" onclick="setLandingVertical(\'streaming\',true)">Streaming</a></span>')
+          s=s.replace('Software de gestión para restaurantes, retail y profesionales','Software de gestión para restaurantes, retail, profesionales y streaming')
+          s=s.replace('Gestión para restaurantes, retail y profesionales','Gestión para restaurantes, retail, profesionales y streaming')
+          s=s.replace('Una plataforma para restaurantes, retail y profesionales de servicios.','Una plataforma para restaurantes, retail, profesionales de servicios y streaming.')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Guardar cambio
+        run: |
+          git config user.name "YummyPro Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "feat(landing): agregar vertical Streaming"
+          git push
