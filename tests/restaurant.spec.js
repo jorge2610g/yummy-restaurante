@@ -40,3 +40,16 @@ test('panel restaurante cerrado copia referencia admin sin barra visible',async(
 test('restringe POS y Cocina por rol y exige caja abierta',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('operationalTabLockReason');expect(html).toContain('restaurant_has_open_cash');expect(html).toContain('posCashGate');expect(html).toContain('usuario con rol Mesero');expect(html).toContain('usuario con rol Cocina')});
 
 test('permite elegir mensual o anual en la compra del plan',async({page})=>{await page.goto('/panel/');const html=await page.content();expect(html).toContain('planCheckoutCycleAnnual');expect(html).toContain('setPlanPurchaseCycle');expect(html).toContain('billing_cycle:billingCycle');expect(html).toContain('12 meses de acceso')});
+
+
+test('mantiene Streaming al ver todo lo que incluye',async({page})=>{
+  await page.goto('/#streaming',{waitUntil:'domcontentloaded'});
+  await expect(page.locator('#verticalStreaming')).toHaveClass(/active/);
+  await expect(page.locator('#featuresTitle')).toHaveText('Todo lo que tu negocio de streaming necesita');
+  await page.getByRole('link',{name:'Ver todo lo que incluye'}).click();
+  await expect(page.locator('#verticalStreaming')).toHaveClass(/active/);
+  await expect(page.locator('#featuresTitle')).toHaveText('Todo lo que tu negocio de streaming necesita');
+  await expect(page.locator('#featuresGrid')).toContainText('Catálogo de plataformas');
+  await expect(page.locator('#featuresGrid')).toContainText('Renovaciones');
+  expect(await page.evaluate(()=>location.hash)).toBe('#streaming');
+});
