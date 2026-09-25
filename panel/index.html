@@ -3260,13 +3260,20 @@ function applyRoleAccess(){
  syncSubscriptionBannerForActiveTab();
  document.getElementById("viewMenuLink")?.style.setProperty("display",currentRole==="restaurant"?"":"none",currentRole==="restaurant"?"":"important");
 }
+function clearAdminPreviewSessionHash(){
+ const raw=String(location.hash||"").replace(/^#/,"");if(!raw)return;
+ const params=new URLSearchParams(raw);
+ params.delete("admin_token_hash");params.delete("admin_access");params.delete("admin_refresh");
+ const clean=location.pathname+location.search+(params.toString()?"#"+params.toString():"");
+ history.replaceState(null,"",clean)
+}
 function consumeAdminPreviewSessionHash(){
  const raw=String(location.hash||"").replace(/^#/,"");if(!raw)return null;
- const params=new URLSearchParams(raw),access_token=params.get("admin_access"),refresh_token=params.get("admin_refresh");
+ const params=new URLSearchParams(raw);
+ const token_hash=params.get("admin_token_hash");
+ if(token_hash)return {token_hash};
+ const access_token=params.get("admin_access"),refresh_token=params.get("admin_refresh");
  if(!access_token||!refresh_token)return null;
- params.delete("admin_access");params.delete("admin_refresh");
- const clean=location.pathname+location.search+(params.toString()?"#"+params.toString():"");
- history.replaceState(null,"",clean);
  return {access_token,refresh_token}
 }
 function consumeLandingSessionHash(){
@@ -3293,13 +3300,35 @@ async function bootAdminPreview(payload){
  if(adminPreviewInitialized)return;
  if(adminPreviewBootPromise)return adminPreviewBootPromise;
  adminPreviewBootPromise=(async()=>{try{
-  if(payload?.access_token&&payload?.refresh_token){const {error:setSessionError}=await sb.auth.setSession({access_token:payload.access_token,refresh_token:payload.refresh_token});if(setSessionError)throw setSessionError;}
-  if(payload?.restaurant_id){const url=new URL(location.href);url.searchParams.set("admin_preview",payload.restaurant_id);url.searchParams.set("tab",payload.tab||"dashboard");history.replaceState(null,"",url)}
+  if(payload?.token_hash){
+   const verified=await sb.auth.verifyOtp({token_hash:payload.token_hash,type:"email"});
+   if(verified.error)throw verified.error;
+   if(!verified.data?.session)throw new Error("No se pudo crear la sesión temporal del administrador.");
+   clearAdminPreviewSessionHash();
+  }else if(payload?.access_token&&payload?.refresh_token){
+   // Compatibilidad temporal con enlaces antiguos.
+   let setResult=await sb.auth.setSession({access_token:payload.access_token,refresh_token:payload.refresh_token});
+   if(setResult.error){
+    await new Promise(resolve=>setTimeout(resolve,150));
+    setResult=await sb.auth.setSession({access_token:payload.access_token,refresh_token:payload.refresh_token});
+   }
+   if(setResult.error)throw setResult.error;
+   clearAdminPreviewSessionHash();
+  }
+  if(payload?.restaurant_id){
+   const url=new URL(location.href);
+   url.searchParams.set("admin_preview",payload.restaurant_id);
+   url.searchParams.set("tab",payload.tab||"dashboard");
+   history.replaceState(null,"",url)
+  }
   const previewId=Number(new URLSearchParams(location.search).get("admin_preview")||payload?.restaurant_id||0);
   if(!previewId)throw new Error("No se recibió el negocio que debe abrirse.");
-  const {data:{user}}=await sb.auth.getUser();if(!user)throw new Error("No se recibió una sesión administrativa válida.");
-  const {data:role,error:roleError}=await sb.rpc("current_account_role");if(roleError||role!=="admin")throw new Error("La sesión recibida no corresponde al administrador.");
-  await enter(user);adminPreviewInitialized=adminPreviewMode;
+  const {data:{user},error:userError}=await sb.auth.getUser();
+  if(userError||!user)throw new Error("No se recibió una sesión administrativa válida.");
+  const {data:role,error:roleError}=await sb.rpc("current_account_role");
+  if(roleError||role!=="admin")throw new Error("La sesión recibida no corresponde al administrador.");
+  await enter(user);
+  adminPreviewInitialized=adminPreviewMode||true;
  }catch(err){
   console.error("No se pudo iniciar la vista administrativa",err);
   showAdminPreviewFailure((err.message||"No se pudo abrir la vista administrativa.")+" Vuelve al administrador e inténtalo nuevamente.");
@@ -3327,8 +3356,9 @@ async function restoreSession(){
     await bootAdminPreview({
       restaurant_id:Number(new URLSearchParams(location.search).get("admin_preview")||0),
       tab:new URLSearchParams(location.search).get("tab")||"dashboard",
-      access_token:handoff.access_token,
-      refresh_token:handoff.refresh_token
+      token_hash:handoff.token_hash||null,
+      access_token:handoff.access_token||null,
+      refresh_token:handoff.refresh_token||null
     });
     return
    }
@@ -6539,7 +6569,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Restaurante · Versión v2.5.64</footer></main></div><script>
+<footer class="admin-version">Restaurante · Versión v2.5.65</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
