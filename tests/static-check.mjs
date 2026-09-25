@@ -84,3 +84,5 @@ for(const marker of ['openMenuFromPanel','create-admin-preview-login','admin_cli
 // Seguridad de vista administrativa: sesión aislada por pestaña y ticket de un solo uso.
 for(const marker of ['ADMIN_PREVIEW_REQUESTED','storage:window.sessionStorage','signOut({scope:"local"})'])if(!panel.includes(marker))throw new Error('panel/index.html: falta aislamiento de sesión administrativa '+marker);
 for(const forbidden of ['else if(payload?.access_token&&payload?.refresh_token)','if(currentBusinessIsDemo())return [...raw]'])if(panel.includes(forbidden))throw new Error('panel/index.html: conserva bypass o handoff administrativo inseguro '+forbidden);
+
+if(index.includes('landingBusinessLabel('))throw new Error('index.html: referencia obsoleta landingBusinessLabel');
