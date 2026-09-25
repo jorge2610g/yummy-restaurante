@@ -3377,7 +3377,19 @@ async function restoreSession(){
   const {data,error}=await sb.auth.getSession();
   if(error)throw error;
   if(data.session)await enter(data.session.user);
-  else {window.location.replace("https://web.yummypro.online/");return}
+  else {
+   const installRequested=new URLSearchParams(location.search).get("install")==="pwa";
+   if(installRequested){
+    document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
+    const login=document.getElementById("login");
+    if(login){
+     login.classList.remove("hidden");
+     login.innerHTML='<div class="card"><h1>📲 Instalar YummyPro Restaurante</h1><p class="mut">Puedes instalar este panel como una aplicación en tu celular sin iniciar sesión primero.</p><button class="primary full" type="button" onclick="installYummyProPwa()">Instalar aplicación</button><button class="ghost full" type="button" onclick="window.location.replace(\'https://web.yummypro.online/\')">Volver a YummyPro</button></div>';
+    }
+    return
+   }
+   window.location.replace("https://web.yummypro.online/");return
+  }
  }catch(e){
   document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
   console.error("No se pudo restaurar la sesión del panel",e);
