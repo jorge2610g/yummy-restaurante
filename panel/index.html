@@ -3329,7 +3329,7 @@ async function bootAdminPreview(payload){
  }finally{adminPreviewBootPromise=null}})();
  return adminPreviewBootPromise;
 }
-const ADMIN_PREVIEW_ORIGINS=new Set(["https://admin.yummypro.online","https://www.admin.yummypro.online","https://admin.yummy.online"]);
+const ADMIN_PREVIEW_ORIGINS=new Set(["https://yummy-admin-xi.vercel.app","https://admin.yummypro.online","https://www.admin.yummypro.online","https://admin.yummy.online"]);
 function isTrustedAdminPreviewOrigin(origin){return ADMIN_PREVIEW_ORIGINS.has(String(origin||""))}
 window.addEventListener("message",e=>{if(!isTrustedAdminPreviewOrigin(e.origin)||e.data?.type!=="YUMMY_ADMIN_PREVIEW")return;bootAdminPreview(e.data)});
 function notifyAdminPreviewReady(){try{ADMIN_PREVIEW_ORIGINS.forEach(origin=>window.opener?.postMessage({type:"YUMMY_ADMIN_PREVIEW_READY"},origin))}catch(e){}}
@@ -3339,7 +3339,7 @@ async function returnFromAdminPreview(){
  try{await sb.auth.signOut({scope:"local"})}catch(e){console.warn("No se pudo revocar la sesión temporal de vista administrativa",e)}
  clearAdminPreviewSessionHash();
  try{if(window.opener&&!window.opener.closed){window.opener.focus();window.close();return}}catch(e){}
- window.location.href="https://admin.yummypro.online/"
+ window.location.href=location.hostname.endsWith(".vercel.app")?"https://yummy-admin-xi.vercel.app/":"https://admin.yummypro.online/"
 }
 async function restoreSession(){
  const preview=new URLSearchParams(location.search).has("admin_preview");
@@ -6612,7 +6612,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Restaurante · Versión v2.5.68</footer></main></div><script>
+<footer class="admin-version">Restaurante · Versión v2.5.69</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
