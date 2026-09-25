@@ -9,20 +9,20 @@
 <meta name="apple-mobile-web-app-title" content="YummyPro">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" sizes="192x192" href="/icon-192.png" type="image/png">
-<title>YummyPro | Software de gestión para restaurantes, retail y profesionales</title>
+<title>YummyPro | Software de gestión para restaurantes, retail, profesionales y streaming</title>
 <meta name="description" content="YummyPro es una plataforma de gestión para restaurantes, tiendas y profesionales: pedidos, POS, inventario, agenda, clientes y administración en un solo sistema.">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <link rel="canonical" href="https://web.yummypro.online/">
 <link rel="alternate" hreflang="es" href="https://web.yummypro.online/">
 <meta property="og:site_name" content="YummyPro">
 <meta property="og:type" content="website">
-<meta property="og:title" content="YummyPro | Gestión para restaurantes, retail y profesionales">
+<meta property="og:title" content="YummyPro | Gestión para restaurantes, retail, profesionales y streaming">
 <meta property="og:description" content="Gestiona pedidos, POS, inventario, agenda, clientes y más desde una plataforma web adaptada a tu negocio.">
 <meta property="og:url" content="https://web.yummypro.online/">
 <meta property="og:image" content="https://web.yummypro.online/icon-512.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="YummyPro | Gestión para restaurantes, retail y profesionales">
-<meta name="twitter:description" content="Una plataforma para restaurantes, retail y profesionales de servicios.">
+<meta name="twitter:title" content="YummyPro | Gestión para restaurantes, retail, profesionales y streaming">
+<meta name="twitter:description" content="Una plataforma para restaurantes, retail, profesionales de servicios y streaming.">
 <meta name="twitter:image" content="https://web.yummypro.online/icon-512.png">
 <script type="application/ld+json">
 {
@@ -144,7 +144,7 @@ section{padding:90px 0}.sectionHead h2{letter-spacing:-2.4px}.grid{gap:18px}.car
 .ico{background:color-mix(in srgb,var(--y) 8%,transparent)!important;border-color:color-mix(in srgb,var(--y) 20%,transparent)!important}
 
 .vertical-switch-wrap{position:sticky;top:78px;z-index:19;background:#090909e8;backdrop-filter:blur(14px);border-bottom:1px solid #ffffff10}
-.vertical-switch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 0}
+.vertical-switch{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px 0}
 .vertical-choice{border:1px solid #ffffff20;background:#111;color:#d9d9d9;border-radius:13px;padding:11px 12px;font:800 13px/1.2 inherit;cursor:pointer;transition:.18s ease}
 .vertical-choice:hover{border-color:color-mix(in srgb,var(--y) 65%,#ffffff20);transform:translateY(-1px)}
 .vertical-choice.active{background:color-mix(in srgb,var(--y) 16%,#111);border-color:color-mix(in srgb,var(--y) 72%,#ffffff20);color:#fff;box-shadow:0 8px 30px color-mix(in srgb,var(--y) 15%,transparent)}
@@ -152,7 +152,8 @@ section{padding:90px 0}.sectionHead h2{letter-spacing:-2.4px}.grid{gap:18px}.car
 #landingBusinessTypeSelect[hidden]{display:none!important}
 body[data-vertical="retail"] .food{background:linear-gradient(135deg,#153a2d,#2dbb84)}
 body[data-vertical="professional"] .food{background:linear-gradient(135deg,#17324a,#45a7f0)}
-body[data-vertical="retail"] .food:after,body[data-vertical="professional"] .food:after{content:attr(data-icon)!important}
+body[data-vertical="streaming"] .food{background:linear-gradient(135deg,#251548,#8b5cf6)}
+body[data-vertical="retail"] .food:after,body[data-vertical="professional"] .food:after,body[data-vertical="streaming"] .food:after{content:attr(data-icon)!important}
 body[data-vertical="restaurant"] .food:after{content:attr(data-icon)!important}
 @media(max-width:800px){.vertical-switch-wrap{top:0;position:relative}.vertical-switch{grid-template-columns:1fr;gap:6px;padding:8px 0}.vertical-choice{min-height:46px}.vertical-choice .vertical-kicker{display:inline;margin-left:5px}}
 </style>
@@ -163,6 +164,7 @@ body[data-vertical="restaurant"] .food:after{content:attr(data-icon)!important}
 <button class="vertical-choice" id="verticalRestaurant" type="button" onclick="setLandingVertical('restaurant',true)">🍽️ Restaurantes<span class="vertical-kicker">Menú · pedidos · cocina</span></button>
 <button class="vertical-choice" id="verticalRetail" type="button" onclick="setLandingVertical('retail',true)">🛍️ Tiendas / Market<span class="vertical-kicker">POS · inventario · ventas</span></button>
 <button class="vertical-choice" id="verticalProfessional" type="button" onclick="setLandingVertical('professional',true)">✂️ Profesionales<span class="vertical-kicker">Agenda · servicios · clientes</span></button>
+<button class="vertical-choice" id="verticalStreaming" type="button" onclick="setLandingVertical('streaming',true)">🎬 Streaming<span class="vertical-kicker">Suscripciones · clientes · renovaciones</span></button>
 </div></div>
 <header class="hero"><div class="wrap heroGrid"><div><span class="tag" id="heroTag">30 DÍAS GRATIS · SIN COMPLICACIONES</span><h1 id="heroTitle">Tu restaurante, <span class="accent">más digital.</span><br>Más fácil de vender.</h1><p class="lead" id="heroLead">Crea un menú digital profesional, recibe pedidos y administra tu restaurante desde un solo lugar.</p><div class="heroBtns"><button class="btn primary" onclick="openSignup()">Prueba 30 días gratis</button><a class="btn ghost" id="landingDemoLink" href="https://menu.yummypro.online/?r=hamburgueseria-demo-yummypro">Ver demostración</a><a class="btn ghost" href="#funciones">Ver todo lo que incluye</a></div></div>
 <div class="phone" data-label="Vista del menú"><div class="phoneTop"><div><small id="previewEyebrow" style="color:#aaa">TU MENÚ DIGITAL</small><h2 id="previewTitle" style="margin:5px 0">Mi Restaurante</h2></div><div class="miniLogo" id="previewLogo">🍔</div></div><p id="previewSubtitle" style="color:#aaa">Elige tus favoritos</p>
@@ -172,9 +174,9 @@ body[data-vertical="restaurant"] .food:after{content:attr(data-icon)!important}
 </div></div></header>
 <section id="funciones"><div class="wrap"><div class="sectionHead"><h2 id="featuresTitle">Todo lo que tu negocio necesita</h2><p id="featuresLead">YummyPro adapta su panel a tu operación.</p></div><div class="grid" id="featuresGrid"></div></div></section>
 <section id="precios"><div class="wrap"><div class="sectionHead"><span class="tag">PLANES Y PRECIOS</span><h2 style="margin-top:16px" id="pricingTitle">Elige el plan que más te interesa</h2><p id="pricingLead">Todos comienzan con 30 días gratis. Los planes mostrados corresponden al tipo de negocio seleccionado.</p></div><div class="countryPricingBar"><div class="countryText"><b id="pricingCountryTitle">🌎 Precios para tu país</b><small id="pricingCountryNote">Detectando ubicación…</small></div><select id="landingBusinessTypeSelect" aria-label="Seleccionar tipo de negocio" hidden></select><select id="landingCountrySelect" aria-label="Seleccionar país"></select><button class="btn ghost" type="button" id="detectCountryBtn">Detectar automáticamente</button></div><div id="pricingGrid" class="pricingGrid"><div class="card">Cargando planes disponibles…</div></div><p class="pricingNote" id="pricingNote">La prueba gratuita se activa automáticamente al crear tu negocio.</p></div></section>
-<section><div class="wrap"><div class="sectionHead"><h2>Empieza en minutos</h2><p>Elige tu tipo de negocio, crea tu cuenta y YummyPro te llevará al panel correcto.</p></div><div class="grid"><div class="card step"><h3>Elige tu solución</h3><p>Restaurante, Retail o Profesionales desde una sola landing.</p></div><div class="card step"><h3>Crea tu cuenta</h3><p>Tu prueba se asigna automáticamente al tipo de negocio seleccionado.</p></div><div class="card step"><h3>Entra a tu panel</h3><p>Cada vertical conserva su propio dominio, módulos, accesos y datos.</p></div></div></div></section>
-<section id="sobre-yummypro"><div class="wrap"><div class="sectionHead"><span class="tag">SOBRE YUMMYPRO</span><h2 style="margin-top:16px">¿Qué es YummyPro?</h2><p>YummyPro es una plataforma web de gestión para restaurantes, comercios retail y profesionales de servicios. Centraliza ventas, pedidos, POS, inventario, agenda, clientes y administración en un sistema adaptado al tipo de negocio.</p></div><div class="grid"><article class="card"><h3>YummyPro para Restaurantes</h3><p>Menú digital, pedidos, cocina, caja, mesas, inventario y operación del restaurante.</p><a class="btn ghost" href="/restaurantes/" style="display:inline-block;margin-top:16px">Conocer Restaurantes</a></article><article class="card"><h3>YummyPro Retail</h3><p>POS, ventas, inventario, productos y gestión para tiendas, minimarkets y supermercados.</p><a class="btn ghost" href="/retail/" style="display:inline-block;margin-top:16px">Conocer Retail</a></article><article class="card"><h3>YummyPro Profesionales</h3><p>Agenda, servicios, clientes, caja y gestión para profesionales y negocios de servicios.</p><a class="btn ghost" href="/profesionales/" style="display:inline-block;margin-top:16px">Conocer Profesionales</a></article></div></div></section>
-<footer><div class="wrap"><b style="color:#fff">Yummy<span style="color:var(--y)">Pro</span></b> · Una plataforma para cada forma de trabajar<br><span style="display:inline-flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:12px"><a href="/restaurantes/">Restaurantes</a><a href="/retail/">Retail</a><a href="/profesionales/">Profesionales</a></span></div></footer>
+<section><div class="wrap"><div class="sectionHead"><h2>Empieza en minutos</h2><p>Elige tu tipo de negocio, crea tu cuenta y YummyPro te llevará al panel correcto.</p></div><div class="grid"><div class="card step"><h3>Elige tu solución</h3><p>Restaurante, Retail, Profesionales o Streaming desde una sola landing.</p></div><div class="card step"><h3>Crea tu cuenta</h3><p>Tu prueba se asigna automáticamente al tipo de negocio seleccionado.</p></div><div class="card step"><h3>Entra a tu panel</h3><p>Cada vertical conserva su propio dominio, módulos, accesos y datos.</p></div></div></div></section>
+<section id="sobre-yummypro"><div class="wrap"><div class="sectionHead"><span class="tag">SOBRE YUMMYPRO</span><h2 style="margin-top:16px">¿Qué es YummyPro?</h2><p>YummyPro es una plataforma web de gestión para restaurantes, comercios retail, profesionales de servicios y negocios de streaming. Centraliza ventas, pedidos, POS, inventario, agenda, clientes y administración en un sistema adaptado al tipo de negocio.</p></div><div class="grid"><article class="card"><h3>YummyPro para Restaurantes</h3><p>Menú digital, pedidos, cocina, caja, mesas, inventario y operación del restaurante.</p><a class="btn ghost" href="/restaurantes/" style="display:inline-block;margin-top:16px">Conocer Restaurantes</a></article><article class="card"><h3>YummyPro Retail</h3><p>POS, ventas, inventario, productos y gestión para tiendas, minimarkets y supermercados.</p><a class="btn ghost" href="/retail/" style="display:inline-block;margin-top:16px">Conocer Retail</a></article><article class="card"><h3>YummyPro Profesionales</h3><p>Agenda, servicios, clientes, caja y gestión para profesionales y negocios de servicios.</p><a class="btn ghost" href="/profesionales/" style="display:inline-block;margin-top:16px">Conocer Profesionales</a></article><article class="card"><h3>YummyPro Streaming</h3><p>Clientes, suscripciones, disponibilidad, vencimientos y renovaciones desde un panel especializado.</p><a class="btn ghost" href="#streaming" onclick="setLandingVertical('streaming',true)" style="display:inline-block;margin-top:16px">Conocer Streaming</a></article></div></div></section>
+<footer><div class="wrap"><b style="color:#fff">Yummy<span style="color:var(--y)">Pro</span></b> · Una plataforma para cada forma de trabajar<br><span style="display:inline-flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:12px"><a href="/restaurantes/">Restaurantes</a><a href="/retail/">Retail</a><a href="/profesionales/">Profesionales</a><a href="#streaming" onclick="setLandingVertical('streaming',true)">Streaming</a></span></div></footer>
 
 <div class="modal" id="signupModal"><div class="box"><div class="boxTop"><div><h2 style="margin:0">Crea tu acceso</h2><p style="color:#aaa;margin:6px 0">Activa tus 30 días gratis.</p></div><button class="close" onclick="closeModals()">✕</button></div><form id="signupForm"><label id="signupBusinessTypeLabel">Tipo de negocio</label><select id="sBusinessType" required></select><label>Nombre del negocio</label><input id="sName" required placeholder="Ej. Mi negocio"><label>Correo electrónico</label><input id="sEmail" type="email" required placeholder="tu@negocio.com"><label>Contraseña</label><input id="sPass" type="password" minlength="6" required placeholder="Mínimo 6 caracteres"><label>WhatsApp</label><input id="sPhone" placeholder="+56..."><label>Dirección</label><input id="sAddress" placeholder="Dirección de tu local"><button class="btn primary" style="width:100%;margin-top:18px" id="signupBtn">Prueba 30 días gratis</button><div class="msg" id="signupMsg"></div></form></div></div>
 <div class="modal" id="loginModal"><div class="box"><div class="boxTop"><div><h2 style="margin:0">Iniciar sesión</h2><p style="color:#aaa;margin:6px 0">Entra al panel de tu negocio.</p></div><button class="close" onclick="closeModals()">✕</button></div><form id="loginForm"><label>Correo electrónico</label><input id="lEmail" type="email" required><label>Contraseña</label><input id="lPass" type="password" required><button class="btn primary" style="width:100%;margin-top:18px">Entrar a mi panel</button><div class="msg" id="loginMsg"></div></form></div></div>
@@ -206,21 +208,29 @@ const LANDING_VERTICALS={
   preview:["TU AGENDA DIGITAL","Mi Barbería","✂️","Reserva tu próximo servicio",["✂️","Corte Premium","45 min · Profesional disponible","$12.990"],["🧔","Barba","30 min · Agenda online","$7.990"],["📅","Próxima hora","Hoy · 16:30","RESERVAR"]],
   featuresTitle:"Todo lo que tu negocio de servicios necesita",featuresLead:"Organiza agenda, profesionales y clientes sin mezclarlo con una operación de restaurante o tienda.",
   features:[["📅","Agenda y reservas","Horarios, disponibilidad y citas organizadas."],["✂️","Servicios","Duración, precio y catálogo de servicios."],["👥","Profesionales","Asigna servicios y horarios a cada integrante."],["🧑‍🤝‍🧑","Clientes","Historial y datos para una atención más rápida."],["💳","Caja y pagos","Controla cobros y movimientos del negocio."],["📊","Reportes","Revisa actividad, servicios y desempeño."]]
+ },
+ streaming:{
+  hash:"streaming",label:"Streaming",types:["streaming"],defaultType:"streaming",domain:"https://streaming.yummypro.online",accent:"#8b5cf6",accent2:"#c084fc",glow:"#8b5cf626",demoUrl:"https://streaming.yummypro.online/panel/demo.html",demo:{streaming:"streaming-demo"},previewLabel:"Vista del panel",
+  title:'Tus suscripciones, <span class="accent">más ordenadas.</span><br>Más fáciles de renovar.',lead:"Gestiona catálogo, clientes, disponibilidad, vencimientos y renovaciones de tus servicios de streaming desde un solo panel.",tag:"STREAMING · 30 DÍAS GRATIS",
+  preview:["TU NEGOCIO STREAMING","Mi Streaming","🎬","Clientes y renovaciones al día",["📺","Netflix","Plan mensual · cliente activo","ACTIVO"],["▶️","Prime Video","Vence en 5 días","RENOVAR"],["✨","Disney+","Disponibilidad actual","6 cupos"]],
+  featuresTitle:"Todo lo que tu negocio de streaming necesita",featuresLead:"Controla clientes, suscripciones y vencimientos sin perder renovaciones ni disponibilidad.",
+  features:[["🎬","Catálogo de plataformas","Organiza servicios, planes, duración y disponibilidad."],["👥","Clientes","Centraliza datos, WhatsApp e historial de cada cliente."],["⏳","Vencimientos","Visualiza qué suscripciones están próximas a vencer."],["↻","Renovaciones","Registra renovaciones y mantén continuidad del servicio."],["📦","Disponibilidad","Controla planes o cupos disponibles para entregar."],["🔔","Alertas y WhatsApp","Recibe avisos y contacta al cliente cuando toque renovar."]]
  }
 };
-const LANDING_HASH_TO_VERTICAL={restaurante:"restaurant",restaurant:"restaurant",retail:"retail",tienda:"retail",market:"retail",profesionales:"professional",professional:"professional"};
+const LANDING_HASH_TO_VERTICAL={restaurante:"restaurant",restaurant:"restaurant",retail:"retail",tienda:"retail",market:"retail",profesionales:"professional",professional:"professional",streaming:"streaming"};
 let landingVertical="restaurant";
 let landingBusinessType="restaurant";
 function activeLandingVertical(){return LANDING_VERTICALS[landingVertical]||LANDING_VERTICALS.restaurant}
 function landingPlanBusinessTypes(){return activeLandingVertical().types}
 function landingTypeAllowed(type){return landingPlanBusinessTypes().includes(String(type||"").toLowerCase())}
-function landingTypeLabel(type){return type==="restaurant"?"Restaurante":type==="supermarket"?"Supermercado":type==="minimarket"?"Minimarket / Tienda":type==="professional"?"Profesional / Servicios":"Negocio"}
+function landingTypeLabel(type){return type==="restaurant"?"Restaurante":type==="supermarket"?"Supermercado":type==="minimarket"?"Minimarket / Tienda":type==="professional"?"Profesional / Servicios":type==="streaming"?"Streaming":"Negocio"}
 function landingPanelBase(){return activeLandingVertical().domain}
 function landingDemoSlug(){const v=activeLandingVertical();return v.demo[landingBusinessType]||v.demo[v.defaultType]||Object.values(v.demo)[0]}
-function syncLandingDemoLink(){const a=document.getElementById("landingDemoLink"),slug=landingDemoSlug();if(a&&slug)a.href="https://menu.yummypro.online/?r="+encodeURIComponent(slug)}
+function syncLandingDemoLink(){const a=document.getElementById("landingDemoLink"),v=activeLandingVertical(),slug=landingDemoSlug();if(!a)return;if(v.demoUrl){a.href=v.demoUrl;return}if(slug)a.href="https://menu.yummypro.online/?r="+encodeURIComponent(slug)}
 function universalPanelDomainForBusinessType(type){
  const t=String(type||"").toLowerCase();
  if(t==="professional")return "https://pro.yummypro.online";
+ if(t==="streaming")return "https://streaming.yummypro.online";
  if(t==="supermarket"||t==="minimarket")return "https://retail.yummypro.online";
  if(t==="restaurant")return "https://web.yummypro.online";
  return null;
@@ -297,7 +307,7 @@ function syncBusinessTypeControls(){
 }
 function applyLandingVertical(pushHash=false){
  const v=activeLandingVertical();document.body.dataset.vertical=landingVertical;document.documentElement.style.setProperty("--y",v.accent);document.documentElement.style.setProperty("--y2",v.accent2);document.documentElement.style.setProperty("--glow",v.glow);
- document.querySelectorAll(".vertical-choice").forEach(x=>x.classList.remove("active"));document.getElementById(landingVertical==="restaurant"?"verticalRestaurant":landingVertical==="retail"?"verticalRetail":"verticalProfessional")?.classList.add("active");
+ document.querySelectorAll(".vertical-choice").forEach(x=>x.classList.remove("active"));document.getElementById(landingVertical==="restaurant"?"verticalRestaurant":landingVertical==="retail"?"verticalRetail":landingVertical==="professional"?"verticalProfessional":"verticalStreaming")?.classList.add("active");
  document.getElementById("heroTag").textContent=v.tag;const phone=document.querySelector(".phone");if(phone)phone.dataset.label=v.previewLabel||"Vista del negocio";document.getElementById("heroTitle").innerHTML=v.title;document.getElementById("heroLead").textContent=v.lead;
  const p=v.preview;document.getElementById("previewEyebrow").textContent=p[0];document.getElementById("previewTitle").textContent=p[1];document.getElementById("previewLogo").textContent=p[2];document.getElementById("previewSubtitle").textContent=p[3];setPreviewItem(1,p[4]);setPreviewItem(2,p[5]);setPreviewItem(3,p[6]);
  document.getElementById("featuresTitle").textContent=v.featuresTitle;document.getElementById("featuresLead").textContent=v.featuresLead;document.getElementById("featuresGrid").innerHTML=v.features.map(x=>'<div class="card"><div class="ico">'+x[0]+'</div><h3>'+x[1]+'</h3><p>'+x[2]+'</p></div>').join("");
