@@ -1,5 +1,13 @@
 # Changelog YummyPro — Restaurante
 
+## 2026-09-25/26 — 2.5.74 — Pruebas
+
+- Se añadieron interruptores independientes para **Retiro en el local** y **Delivery**.
+- El restaurante puede habilitar solo retiro, solo delivery o ambos; no se permite dejar ambos apagados.
+- Al desactivar Delivery se ocultan sus campos de precio, ubicación y rangos para simplificar la configuración.
+- Se añadió la migración de Supabase `pickup_enabled` / `delivery_enabled` con validación de al menos un método activo.
+- La migración fue aplicada únicamente en **YummyPro Staging**. Producción queda pendiente hasta que el propietario autorice el próximo release.
+
 ## 2026-09-25/26 — 2.5.73 — Pruebas
 
 - Se formalizó el flujo **Pruebas → Release → Producción**.
