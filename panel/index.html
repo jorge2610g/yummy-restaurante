@@ -6624,8 +6624,62 @@ function renderStats(){const valid=orders.filter(o=>o.status!=="cancelado"&&Stri
 function renderAnalytics(valid){const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);days.push(d)}const vals=days.map(d=>valid.filter(o=>{const x=new Date(o.created_at);return x.toDateString()===d.toDateString()}).reduce((a,o)=>a+Number(o.total||0),0));const max=Math.max(...vals,1);const sc=document.getElementById("salesChart");if(sc)sc.innerHTML='<div style="display:flex;align-items:end;gap:10px;height:190px;padding-top:12px">'+vals.map((v,i)=>'<div style="flex:1;text-align:center;min-width:0"><div class="mut" style="font-size:11px">'+money(v)+'</div><div style="height:'+Math.max(5,Math.round(v/max*125))+'px;background:var(--a);border-radius:8px 8px 3px 3px;margin:5px auto;width:70%"></div><small class="mut">'+days[i].toLocaleDateString("es",{weekday:"short"})+'</small></div>').join("")+'</div>';const counts={};orders.forEach(o=>counts[o.status||"nuevo"]=(counts[o.status||"nuevo"]||0)+1);const st=document.getElementById("statusChart");if(st)st.innerHTML=Object.entries(counts).map(([k,v])=>'<div class="item"><div class="row between"><b>'+esc(k)+'</b><span>'+v+'</span></div><div style="height:8px;background:#ffffff12;border-radius:10px;margin-top:8px"><div style="height:100%;width:'+Math.round(v/Math.max(orders.length,1)*100)+'%;background:var(--a);border-radius:10px"></div></div></div>').join("")||'<p class="mut">Sin pedidos.</p>';const names={};valid.forEach(o=>{let raw=o.items||o.order_items||[];if(typeof raw==="string"){try{raw=JSON.parse(raw)}catch{raw=[]}}if(Array.isArray(raw))raw.forEach(it=>{const n=it.name||it.product_name||"Producto";names[n]=(names[n]||0)+Number(it.qty||it.quantity||1)})});const tp=document.getElementById("topProducts");if(tp)tp.innerHTML=Object.entries(names).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,q],i)=>'<div class="item"><div class="row between"><b>'+(i+1)+'. '+esc(n)+'</b><span class="pill">'+q+' vendidos</span></div></div>').join("")||'<p class="mut">Aún no hay datos suficientes de productos vendidos.</p>'}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 
-const rt=sb.channel("admin-live").on("postgres_changes",{event:"*",schema:"public",table:"restaurant_products"},()=>loadProducts()).on("postgres_changes",{event:"*",schema:"public",table:"restaurant_categories"},()=>loadCategories()).on("postgres_changes",{event:"*",schema:"public",table:"restaurants"},()=>loadRestaurants()).subscribe();
-setInterval(()=>{if(!document.getElementById("app").classList.contains("hidden")){if(isRetailBusiness())loadRetailProducts();else{loadProducts();loadCategories();}}},15000);
+let scopedContentRealtimeChannel=null;
+function activeBusinessSection(){return document.querySelector(".section.active")?.id||""}
+function refreshScopedBusinessSection(){
+ if(document.visibilityState!=="visible"||document.getElementById("app").classList.contains("hidden"))return;
+ const active=activeBusinessSection();
+ if(isRetailBusiness()){
+   if(active==="retail_products"&&typeof loadRetailProducts==="function")loadRetailProducts();
+   else if(active==="retail_orders"&&typeof loadRetailOnlineOrders==="function")loadRetailOnlineOrders();
+   return;
+ }
+ if(typeof isProfessionalBusiness==="function"&&isProfessionalBusiness()){
+   if(["appointments","clients","reports"].includes(active)&&typeof loadProfessionalAppointments==="function")loadProfessionalAppointments();
+   else if(active==="services"&&typeof loadProfessionalServices==="function")loadProfessionalServices();
+   else if(active==="professionals"&&typeof loadProfessionalProviders==="function")loadProfessionalProviders();
+   return;
+ }
+ if(typeof isStreamingBusiness==="function"&&isStreamingBusiness()){
+   if(active==="streaming_subscriptions"&&typeof loadStreamingSubscriptions==="function")loadStreamingSubscriptions();
+   else if(active==="streaming_customers"&&typeof loadStreamingCustomers==="function")loadStreamingCustomers();
+   else if(active==="streaming_accounts"&&typeof loadStreamingAccounts==="function")loadStreamingAccounts();
+   else if(active==="streaming_platforms"&&typeof loadStreamingPlatforms==="function")loadStreamingPlatforms();
+   else if(active==="streaming_renewals"&&typeof loadStreamingRenewals==="function")loadStreamingRenewals();
+   return;
+ }
+ if(active==="products")loadProducts();
+ else if(active==="categories")loadCategories();
+}
+function startScopedContentRealtime(){
+ if(scopedContentRealtimeChannel){try{sb.removeChannel(scopedContentRealtimeChannel)}catch(_){} scopedContentRealtimeChannel=null}
+ if(!currentRestaurant)return;
+ const rid=Number(currentRestaurant);
+ let ch=sb.channel("business-content-"+rid);
+ if(isRetailBusiness()){
+   ch=ch.on("postgres_changes",{event:"*",schema:"public",table:"retail_products",filter:"restaurant_id=eq."+rid},()=>{if(activeBusinessSection()==="retail_products"&&typeof loadRetailProducts==="function")loadRetailProducts()});
+ }else if(typeof isProfessionalBusiness==="function"&&isProfessionalBusiness()){
+   ch=ch
+    .on("postgres_changes",{event:"*",schema:"public",table:"professional_appointments",filter:"restaurant_id=eq."+rid},()=>{if(["appointments","clients","reports"].includes(activeBusinessSection())&&typeof loadProfessionalAppointments==="function")loadProfessionalAppointments()})
+    .on("postgres_changes",{event:"*",schema:"public",table:"professional_services",filter:"restaurant_id=eq."+rid},()=>{if(activeBusinessSection()==="services"&&typeof loadProfessionalServices==="function")loadProfessionalServices()})
+    .on("postgres_changes",{event:"*",schema:"public",table:"professional_providers",filter:"restaurant_id=eq."+rid},()=>{if(activeBusinessSection()==="professionals"&&typeof loadProfessionalProviders==="function")loadProfessionalProviders()});
+ }else if(typeof isStreamingBusiness==="function"&&isStreamingBusiness()){
+   ch=ch
+    .on("postgres_changes",{event:"*",schema:"public",table:"streaming_subscriptions",filter:"restaurant_id=eq."+rid},()=>{if(activeBusinessSection()==="streaming_subscriptions"&&typeof loadStreamingSubscriptions==="function")loadStreamingSubscriptions()})
+    .on("postgres_changes",{event:"*",schema:"public",table:"streaming_customers",filter:"restaurant_id=eq."+rid},()=>{if(activeBusinessSection()==="streaming_customers"&&typeof loadStreamingCustomers==="function")loadStreamingCustomers()})
+    .on("postgres_changes",{event:"*",schema:"public",table:"streaming_accounts",filter:"restaurant_id=eq."+rid},()=>{if(activeBusinessSection()==="streaming_accounts"&&typeof loadStreamingAccounts==="function")loadStreamingAccounts()})
+    .on("postgres_changes",{event:"*",schema:"public",table:"streaming_platforms",filter:"restaurant_id=eq."+rid},()=>{if(activeBusinessSection()==="streaming_platforms"&&typeof loadStreamingPlatforms==="function")loadStreamingPlatforms()})
+    .on("postgres_changes",{event:"*",schema:"public",table:"streaming_renewals",filter:"restaurant_id=eq."+rid},()=>{if(activeBusinessSection()==="streaming_renewals"&&typeof loadStreamingRenewals==="function")loadStreamingRenewals()});
+ }else{
+   ch=ch
+    .on("postgres_changes",{event:"*",schema:"public",table:"restaurant_products",filter:"restaurant_id=eq."+rid},()=>{if(activeBusinessSection()==="products")loadProducts()})
+    .on("postgres_changes",{event:"*",schema:"public",table:"restaurant_categories",filter:"restaurant_id=eq."+rid},()=>{if(activeBusinessSection()==="categories")loadCategories()});
+ }
+ ch=ch.on("postgres_changes",{event:"UPDATE",schema:"public",table:"restaurants",filter:"id=eq."+rid},()=>loadRestaurants());
+ scopedContentRealtimeChannel=ch.subscribe();
+}
+startScopedContentRealtime();
+setInterval(refreshScopedBusinessSection,120000);
 </script><div id="accessModal" class="modal" style="display:none;position:fixed;inset:0;background:#0009;z-index:9999;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(520px,100%);max-height:90vh;overflow:auto"><div class="row between"><h2>Editar acceso</h2><button class="ghost" onclick="closeAccessModal()">Cerrar</button></div><input type="hidden" id="editStaffId"><label>Negocio asignado</label><select id="editStaffRestaurant"></select><p class="mut">Puedes mover esta misma cuenta a otro restaurante para probarlo sin crear un usuario nuevo.</p><label>Tipo de acceso</label><select id="editStaffRole"><option value="restaurant">Solo restaurante</option><option value="editor">Editor</option><option value="manager">Administrador</option></select><p class="mut" id="roleHelp"></p><label>Permisos</label><div class="item"><label><input id="editPermProducts" type="checkbox"> Productos</label><label><input id="editPermCategories" type="checkbox"> Categorías</label><label><input id="editPermOrders" type="checkbox"> Pedidos</label><label><input id="editPermBusiness" type="checkbox"> Datos del negocio</label></div><button class="primary" style="margin-top:15px" onclick="saveAccessModal()">Guardar cambios</button></div></div><div id="orderEditModal" class="modal" style="display:none;position:fixed;inset:0;background:#0009;z-index:999;padding:16px;overflow:auto">
 <div class="card" style="width:min(760px,100%);margin:auto">
 <div class="row between"><h2>Detalle del pedido</h2><button onclick="closeOrderDetail()">✕</button></div>
@@ -6655,7 +6709,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Restaurante · Versión v2.5.75</footer></main></div><script>
+<footer class="admin-version">Restaurante · Versión v2.5.76</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
