@@ -2747,7 +2747,8 @@ body.retail-scanner-open{overflow:hidden!important}
       <div class="grid">
         <div class="span4"><label class="item" style="display:flex;gap:10px;align-items:flex-start"><input id="sacceptCash" type="checkbox" style="width:auto;margin-top:3px" onchange="syncPaymentVisibilitySettings()"><span><b>💵 Efectivo</b><small class="mut" style="display:block;margin-top:4px">Muestra Efectivo como opción de pago al cliente.</small></span></label></div>
         <div class="span4"><label class="item" style="display:flex;gap:10px;align-items:flex-start"><input id="sacceptTransfer" type="checkbox" style="width:auto;margin-top:3px" onchange="syncPaymentVisibilitySettings()"><span><b>🏦 Transferencia bancaria</b><small class="mut" style="display:block;margin-top:4px">Muestra las transferencias bancarias que hayas configurado en Pagos alternativos.</small></span></label></div>
-        <div class="span4"><label class="item" style="display:flex;gap:10px;align-items:flex-start"><input id="sacceptMercadoPago" type="checkbox" style="width:auto;margin-top:3px" onchange="syncPaymentVisibilitySettings()"><span><b>💳 Mercado Pago</b><small id="sacceptMercadoPagoHint" class="mut" style="display:block;margin-top:4px">Aparece solo si el país y las credenciales del restaurante lo permiten.</small></span></label></div>
+        <div class="span4" id="paymentVisibilityMercadoPagoCard"><label class="item" style="display:flex;gap:10px;align-items:flex-start"><input id="sacceptMercadoPago" type="checkbox" style="width:auto;margin-top:3px" onchange="syncPaymentVisibilitySettings()"><span><b>💳 Mercado Pago</b><small id="sacceptMercadoPagoHint" class="mut" style="display:block;margin-top:4px">Aparece solo si el país y las credenciales del restaurante lo permiten.</small></span></label></div>
+        <div class="span4" id="paymentVisibilityVeripagosCard" hidden><label class="item" style="display:flex;gap:10px;align-items:flex-start"><input id="sacceptVeripagos" type="checkbox" style="width:auto;margin-top:3px" onchange="syncVeripagosPaymentVisibilitySettings(this.checked)"><span><b>▣ QR Bolivia</b><small id="sacceptVeripagosHint" class="mut" style="display:block;margin-top:4px">Disponible para negocios configurados en Bolivia.</small></span></label></div>
       </div>
       <div id="paymentVisibilitySummary" class="item" style="margin-top:12px"></div>
       <button class="primary" type="button" style="margin-top:12px" onclick="savePaymentMethodVisibility()">Guardar métodos de pago</button>
@@ -2875,7 +2876,7 @@ function panelBusinessTypeAllowed(type){return PANEL_ALLOWED_BUSINESS_TYPES.incl
 function applyAdminTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem("admin_theme",theme);const b=document.getElementById("themeBtn");if(b){const next=theme==="dark"?"claro":"oscuro",icon=theme==="dark"?"☀️":"🌙";b.innerHTML='<span class="header-action-icon" aria-hidden="true">'+icon+'</span><span class="action-label">Modo '+next+'</span>';b.setAttribute("aria-label","Activar modo "+next);b.title="Activar modo "+next}}
 function toggleAdminTheme(){applyAdminTheme(document.documentElement.dataset.theme==="light"?"dark":"light")}
 applyAdminTheme(localStorage.getItem("admin_theme")||"dark");setTimeout(bindRestaurantMpButtons,0);
-let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",veripagosSubscriptionConfigured=false,veripagosRestaurantConfigured=false,currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[],retailProducts=[],retailSuppliers=[],retailSales=[],retailPurchases=[],retailPosCart={},retailPurchaseCart=[],retailCashSession=null,retailOnlineOrders=[],retailOrderFilter="active",retailOnlineOrdersChannel=null,retailOnlineOrdersChannelRestaurant=null,retailScannerStream=null,retailScannerDetector=null,retailHtml5Scanner=null,retailScannerActive=false,retailScannerLastCode="",retailScannerLastAt=0,retailScannerMode="pos",retailScannerCheckoutOpen=false,retailReturnContext=null,restaurantProductPage=1,restaurantProductTotal=0,restaurantProductSearchTimer=null,restaurantProductMetrics={available_count:0},restaurantInventoryPage=1,restaurantInventoryTotal=0,restaurantInventorySearchTimer=null,restaurantInventoryMetrics={active_count:0,low_count:0,inventory_value:0},restaurantDashboardSummary={products_available:0,today_orders:0,today_sales:0,today_average:0,sales_days:[],status_counts:[],top_products:[]};
+let categories=[],products=[],orders=[],restaurants=[],subscriptionPlans=[],inventoryItems=[],inventoryMovements=[],cashMovements=[],cashSessions=[],cashSession=null,staffMembers=[],staffDirectory=[],productOptionGroups=[],productOptions=[],platformCountries=[],alternativePaymentMethods=[],restaurantTables=[],tableQrCashOrders=[],counterQrReadyOrders=[],cashPaidOrders=[],restaurantPromotions=[],restaurantReviews=[],subscriptionPayments=[],flowPaymentConfigured=false,flowPaymentEnvironment="sandbox",veripagosSubscriptionConfigured=false,veripagosRestaurantConfigured=false,veripagosRestaurantCredentialsReady=false,currentRestaurant=null,currentRestaurantConfig=null,currentRole="restaurant",currentUserId=null,posCart={},posCashOpen=false,subscriptionFxRates={},posOrders=[],posCategories=[],posTables=[],qrReadyOrders=[],paidQrOrders=[],posCategoryFilter="",posEditCategoryFilter="",posOrderDateFilter="today",posOrderView="active",paidQrView="pending",cashDateFilter="today",cashPaidOrderDateFilter="today",cashPaidWaiterFilter="all",inventoryDateFilter="today",cashSaleProducts=[],cashSaleCart={},cashierOrders=[],retailProducts=[],retailSuppliers=[],retailSales=[],retailPurchases=[],retailPosCart={},retailPurchaseCart=[],retailCashSession=null,retailOnlineOrders=[],retailOrderFilter="active",retailOnlineOrdersChannel=null,retailOnlineOrdersChannelRestaurant=null,retailScannerStream=null,retailScannerDetector=null,retailHtml5Scanner=null,retailScannerActive=false,retailScannerLastCode="",retailScannerLastAt=0,retailScannerMode="pos",retailScannerCheckoutOpen=false,retailReturnContext=null,restaurantProductPage=1,restaurantProductTotal=0,restaurantProductSearchTimer=null,restaurantProductMetrics={available_count:0},restaurantInventoryPage=1,restaurantInventoryTotal=0,restaurantInventorySearchTimer=null,restaurantInventoryMetrics={active_count:0,low_count:0,inventory_value:0},restaurantDashboardSummary={products_available:0,today_orders:0,today_sales:0,today_average:0,sales_days:[],status_counts:[],top_products:[]};
 const REST_TELEMETRY_KEY="yummy_restaurant_telemetry_session_v1";
 function restaurantTelemetrySession(){try{let v=localStorage.getItem(REST_TELEMETRY_KEY);if(!v){v=(crypto.randomUUID?.()||Date.now()+"-"+Math.random().toString(16).slice(2));localStorage.setItem(REST_TELEMETRY_KEY,v)}return v}catch(_){return "restaurant-"+Date.now()}}
 async function trackRestaurantEvent(eventName,module=null,metadata={},planId=null){try{await sb.rpc("log_app_event",{p_app_context:"restaurant",p_event_name:eventName,p_module:module,p_restaurant_id:currentRestaurant||null,p_plan_id:planId||null,p_session_id:restaurantTelemetrySession(),p_route:location.pathname+location.search,p_metadata:metadata||{}})}catch(_){}}
@@ -2912,18 +2913,82 @@ window.togglePassword=function(id,btn){const el=document.getElementById(id);if(!
 function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2500)}
 async function loadPlatformCountries(){const {data,error}=await sb.from("platform_countries").select("*").eq("active",true).order("sort_order");if(error)return toast(error.message);platformCountries=data||[];if(window.scountry)scountry.innerHTML=platformCountries.map(c=>`<option value="${c.code}">${esc(c.name)} · ${c.currency_code}</option>`).join("")}
 function applyCountrySelection(code){const c=countryByCode(code);if(window.scurrency)scurrency.value=c.currency_code;if(window.stimezone)stimezone.value=c.timezone;const mp=document.getElementById("restaurantMpSettings"),mpTab=document.querySelector('.settings-tab[data-settings-tab="mercadopago"]'),vp=document.getElementById("restaurantVeripagosSettings"),vpTab=document.querySelector('.settings-tab[data-settings-tab="veripagos"]'),isBolivia=String(c.code||"")==="BO";if(mp)mp.hidden=!c.mercadopago_enabled;if(mpTab)mpTab.hidden=!c.mercadopago_enabled;if(vp)vp.hidden=!isBolivia;if(vpTab)vpTab.hidden=!isBolivia;if(!c.mercadopago_enabled&&currentSettingsPanel==="mercadopago")showSettingsPanel("country");if(!isBolivia&&currentSettingsPanel==="veripagos")showSettingsPanel("country");if(window.altMethodType&&Array.isArray(c.alternative_payments)&&c.alternative_payments.length)altMethodType.value=c.alternative_payments[0];if(window.altMethodType)updateAlternativePaymentForm();syncPaymentVisibilitySettings()}
+function syncVeripagosPaymentVisibilitySettings(checked){
+ const main=document.getElementById("restaurantVeripagosEnabled");
+ if(main)main.checked=!!checked;
+ syncPaymentVisibilitySettings()
+}
+async function saveVeripagosPaymentVisibilityFromMethods(enabled){
+ const country=countryByCode(document.getElementById("scountry")?.value||currentRestaurantConfig?.country_code||"CL");
+ if(String(country.code||"")!=="BO")return;
+ if(enabled&&!veripagosRestaurantCredentialsReady)throw new Error("Primero configura y guarda las credenciales de QR Bolivia.");
+ const {data:{session}}=await sb.auth.getSession();
+ if(!session?.access_token)throw new Error("Tu sesión venció.");
+ const body={
+  restaurant_id:currentRestaurant,
+  basic_username:document.getElementById("restaurantVeripagosUser")?.value.trim()||"",
+  basic_password:"",
+  secret_key:"",
+  vigencia:document.getElementById("restaurantVeripagosVigencia")?.value.trim()||"0/00:15",
+  enabled:!!enabled
+ };
+ const res=await fetch(SB_URL+"/functions/v1/restaurant-veripagos-settings",{method:"POST",headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+session.access_token},body:JSON.stringify(body)});
+ const d=await res.json();
+ if(!res.ok)throw new Error(d.error||"No se pudo actualizar QR Bolivia");
+ veripagosRestaurantConfigured=!!d.configured;veripagosRestaurantCredentialsReady=!!d.basic_username&&!!d.has_basic_password&&!!d.has_secret_key;
+ await loadRestaurantVeripagosSettings();
+}
 function syncPaymentVisibilitySettings(){
- const country=countryByCode(document.getElementById("scountry")?.value||currentRestaurantConfig?.country_code||"CL"),cash=document.getElementById("sacceptCash"),transfer=document.getElementById("sacceptTransfer"),mp=document.getElementById("sacceptMercadoPago"),hint=document.getElementById("sacceptMercadoPagoHint"),summary=document.getElementById("paymentVisibilitySummary");
+ const country=countryByCode(document.getElementById("scountry")?.value||currentRestaurantConfig?.country_code||"CL"),
+  isBolivia=String(country.code||"")==="BO",
+  cash=document.getElementById("sacceptCash"),
+  transfer=document.getElementById("sacceptTransfer"),
+  mp=document.getElementById("sacceptMercadoPago"),
+  mpCard=document.getElementById("paymentVisibilityMercadoPagoCard"),
+  hint=document.getElementById("sacceptMercadoPagoHint"),
+  vp=document.getElementById("sacceptVeripagos"),
+  vpCard=document.getElementById("paymentVisibilityVeripagosCard"),
+  vpHint=document.getElementById("sacceptVeripagosHint"),
+  summary=document.getElementById("paymentVisibilitySummary");
+ if(mpCard)mpCard.hidden=!country.mercadopago_enabled;
  if(mp){mp.disabled=!country.mercadopago_enabled;if(!country.mercadopago_enabled)mp.checked=false}
  if(hint)hint.textContent=country.mercadopago_enabled?"Aparece solo si las credenciales de Mercado Pago están validadas.":"Mercado Pago no está disponible para el país seleccionado.";
- if(summary){const enabled=[];if(cash?.checked)enabled.push("Efectivo");if(transfer?.checked)enabled.push("Transferencia");if(mp?.checked&&!mp.disabled)enabled.push("Mercado Pago");summary.innerHTML=enabled.length?"<b>Visibles al cliente:</b> "+enabled.map(esc).join(" · "):"<b>Sin métodos base activos.</b> Los clientes solo verán otros métodos alternativos o QR que tengas configurados."}
+ if(vpCard)vpCard.hidden=!isBolivia;
+ if(vp){
+  if(!isBolivia){vp.checked=false;vp.disabled=true}
+  else{
+   const main=document.getElementById("restaurantVeripagosEnabled");
+   if(main)vp.checked=!!main.checked;
+   vp.disabled=!veripagosRestaurantCredentialsReady;
+  }
+ }
+ if(vpHint)vpHint.textContent=!isBolivia?"QR Bolivia solo está disponible para negocios de Bolivia.":(veripagosRestaurantCredentialsReady?"Activa o desactiva QR Bolivia para tus clientes.":"Configura primero las credenciales en la sección QR Bolivia.");
+ if(summary){
+  const enabled=[];
+  if(cash?.checked)enabled.push("Efectivo");
+  if(transfer?.checked)enabled.push("Transferencia");
+  if(mp?.checked&&!mp.disabled)enabled.push("Mercado Pago");
+  if(vp?.checked&&!vp.disabled)enabled.push("QR Bolivia");
+  summary.innerHTML=enabled.length?"<b>Visibles al cliente:</b> "+enabled.map(esc).join(" · "):"<b>Sin métodos base activos.</b> Los clientes solo verán otros métodos alternativos o QR que tengas configurados."
+ }
 }
 async function savePaymentMethodVisibility(){
  if(!currentRestaurant)return toast("No hay negocio seleccionado");
- const cash=!!document.getElementById("sacceptCash")?.checked,transfer=!!document.getElementById("sacceptTransfer")?.checked,mpEl=document.getElementById("sacceptMercadoPago"),mp=!!mpEl?.checked&&!mpEl?.disabled;
+ const country=countryByCode(document.getElementById("scountry")?.value||currentRestaurantConfig?.country_code||"CL"),
+  isBolivia=String(country.code||"")==="BO",
+  cash=!!document.getElementById("sacceptCash")?.checked,
+  transfer=!!document.getElementById("sacceptTransfer")?.checked,
+  mpEl=document.getElementById("sacceptMercadoPago"),
+  mp=!!mpEl?.checked&&!mpEl?.disabled,
+  vpEl=document.getElementById("sacceptVeripagos"),
+  qrBolivia=isBolivia&&!!vpEl?.checked;
+ if(qrBolivia&&!veripagosRestaurantCredentialsReady){syncPaymentVisibilitySettings();return toast("Configura primero las credenciales de QR Bolivia para poder activarlo.")}
  const {error}=await sb.from("restaurants").update({accept_cash:cash,accept_bank_transfer:transfer,accept_mercadopago:mp,updated_at:new Date().toISOString()}).eq("id",currentRestaurant);
  if(error)return toast(error.message);
- currentRestaurantConfig={...(currentRestaurantConfig||{}),accept_cash:cash,accept_bank_transfer:transfer,accept_mercadopago:mp};syncPaymentVisibilitySettings();toast("Métodos de pago actualizados")
+ try{if(isBolivia)await saveVeripagosPaymentVisibilityFromMethods(qrBolivia)}catch(e){return toast(e.message||"No se pudo actualizar QR Bolivia")}
+ currentRestaurantConfig={...(currentRestaurantConfig||{}),accept_cash:cash,accept_bank_transfer:transfer,accept_mercadopago:mp};
+ syncPaymentVisibilitySettings();
+ toast("Métodos de pago actualizados")
 }
 const qrPaymentTypes=new Set(["qr_bank","yape","plin","pix","yappy","mobile_payment"]);
 function updateAlternativePaymentForm(){const isQr=qrPaymentTypes.has(altMethodType.value);document.querySelectorAll(".alt-qr-field").forEach(x=>x.hidden=!isQr);document.querySelectorAll(".alt-transfer-field").forEach(x=>x.hidden=isQr);document.querySelectorAll(".alt-account-field").forEach(x=>x.hidden=false);if(!altMethodLabel.value)altMethodLabel.placeholder=isQr?"Ej: Pago QR Banco Nacional":"Ej: Transferencia Banco Nacional"}
@@ -2968,7 +3033,7 @@ async function loadRestaurantVeripagosSettings(){
   if(user)user.value=d.basic_username||"";if(enabled)enabled.checked=d.enabled!==false;if(vig)vig.value=d.vigencia||"0/00:15";
   if(ph)ph.textContent=d.has_basic_password?"Contraseña guardada. Déjala vacía para conservarla.":"Falta la contraseña Basic Auth.";
   if(sh)sh.textContent=d.has_secret_key?"Secret Key guardada. Déjala vacía para conservarla.":"Falta la Secret Key.";
-  if(status)status.textContent=d.configured?"✅ QR Bolivia conectado y disponible para este restaurante.":(d.available===false?"QR Bolivia solo se habilita cuando el país es Bolivia.":"VeriPagos todavía no está completamente configurado.");
+  if(status)status.textContent=d.configured?"✅ QR Bolivia conectado y disponible para este restaurante.":(d.available===false?"QR Bolivia solo se habilita cuando el país es Bolivia.":"VeriPagos todavía no está completamente configurado.");const visibilityToggle=document.getElementById("sacceptVeripagos");if(visibilityToggle)visibilityToggle.checked=!!d.enabled;syncPaymentVisibilitySettings();
  }catch(e){if(status)status.textContent="❌ No se pudo cargar QR Bolivia."}
 }
 async function saveRestaurantVeripagosSettings(){
