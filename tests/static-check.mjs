@@ -90,3 +90,5 @@ if(landing.includes('landingBusinessLabel('))throw new Error('index.html: refere
 for(const marker of ['LANDING_IS_PRUEBAS','yummy-restaurante-pruebas','yummy-retail-pruebas','yummy-profesionales-pruebas','yummy-streaming-pruebas','yummy-cliente-pruebas','landingEnvironmentDomain'])if(!landing.includes(marker))throw new Error('index.html: falta enrutamiento seguro de Pruebas '+marker);
 
 for(const marker of ['spickupEnabled','sdeliveryEnabled','syncFulfillmentSettings','pickup_enabled','delivery_enabled'])if(!panel.includes(marker))throw new Error('panel/index.html: falta configuración Retiro/Delivery '+marker);
+
+for(const marker of ['id="swhiteLabel"','white_label_enabled','Marca blanca','PLUS'])if(!panel.includes(marker))throw new Error('panel/index.html: falta Marca blanca '+marker);
