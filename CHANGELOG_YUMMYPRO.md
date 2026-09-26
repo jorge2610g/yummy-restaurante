@@ -1,5 +1,13 @@
 # Changelog YummyPro — Restaurante
 
+## 2026-09-26 — 2.5.75 — Pruebas
+
+- Se añadió el switch **Marca blanca / White Label** dentro de Marca/Apariencia.
+- Al activarlo, la web pública oculta referencias visibles a YummyPro y conserva únicamente nombre, logo y colores del negocio.
+- La opción queda marcada como **PLUS** para poder ofrecerla como adicional comercial.
+- La configuración se guarda por negocio en `white_label_enabled`.
+- Producción no fue modificada.
+
 ## 2026-09-25/26 — 2.5.74 — Pruebas
 
 - Se añadieron interruptores independientes para **Retiro en el local** y **Delivery**.
