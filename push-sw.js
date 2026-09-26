@@ -1,4 +1,4 @@
-const YUMMYPRO_CACHE="yummypro-pwa-v2508-singleapp";
+const YUMMYPRO_CACHE="yummypro-pwa-v2509-fulfillment";
 const YUMMYPRO_OFFLINE_URL="/offline.html";
 const YUMMYPRO_LANDING_OFFLINE="/restaurant-offline.html";
 const YUMMYPRO_CORE=[YUMMYPRO_OFFLINE_URL,YUMMYPRO_LANDING_OFFLINE,"/manifest.webmanifest","/pwa-icon.svg","/icon-192.png","/icon-512.png","/apple-touch-icon.png"];
