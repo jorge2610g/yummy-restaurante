@@ -19,6 +19,33 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test tests/github-pages.spec.js
+      - name: Esperar a que GitHub Pages publique este commit exacto
+        shell: bash
         env:
           PAGES_TEST_URL: https://jorge2610g.github.io/yummy-restaurante-pruebas/
+        run: |
+          set -euo pipefail
+          expected="$GITHUB_SHA"
+          marker="${PAGES_TEST_URL%/}/.staging-source-sha"
+          for attempt in $(seq 1 30); do
+            published="$(curl -fsSL --max-time 15 "$marker?cache=$RANDOM" 2>/dev/null | tr -d '\r\n ' || true)"
+            echo "Intento $attempt: publicado=${published:-<sin marcador>} esperado=$expected"
+            if [ "$published" = "$expected" ]; then
+              echo "OK: GitHub Pages corresponde exactamente al commit bajo prueba."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "ERROR: GitHub Pages no publicó el commit exacto $expected dentro de la ventana del gate."
+          exit 1
+      - name: Playwright smoke de Restaurante Pruebas
+        run: npx playwright test tests/github-pages.spec.js
+        env:
+          PAGES_TEST_URL: https://jorge2610g.github.io/yummy-restaurante-pruebas/
+      - name: Guardar evidencia si falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: restaurante-smoke-report
+          path: playwright-report
+          if-no-files-found: ignore
