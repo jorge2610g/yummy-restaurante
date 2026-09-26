@@ -3011,7 +3011,7 @@ async function enter(user){
     if(previewId){
       const {data:previewRole}=await sb.rpc("current_account_role");
       if(previewRole==="admin"){
-        adminPreviewMode=true;adminPreviewTab=new URLSearchParams(location.search).get("tab")||"dashboard";currentRestaurant=previewId;currentRole="restaurant";document.body.classList.remove("waiter-mobile-shell");document.body.classList.add("admin-preview");
+        adminPreviewMode=true;adminPreviewTab=new URLSearchParams(location.search).get("tab")||"dashboard";currentRestaurant=previewId;startScopedContentRealtime();currentRole="restaurant";document.body.classList.remove("waiter-mobile-shell");document.body.classList.add("admin-preview");
         document.getElementById("login").classList.add("hidden");document.getElementById("who").textContent="Vista administrador · Negocio #"+previewId;
         const backBtn=document.getElementById("adminPreviewBackBtn");if(backBtn)backBtn.style.removeProperty("display");const logoutBtn=document.getElementById("panelLogoutBtn");if(logoutBtn){logoutBtn.hidden=true;logoutBtn.style.setProperty("display","none","important");logoutBtn.setAttribute("aria-hidden","true")}
         // El superadministrador usa el panel real del negocio, pero sin filtros de plan ni de rol.
@@ -3064,7 +3064,7 @@ async function enter(user){
     const allowedBusinessIds=new Set((membershipBusinesses||[]).filter(x=>panelBusinessTypeAllowed(x.business_type)).map(x=>Number(x.id)));
     const verticalMembership=membership.find(x=>allowedBusinessIds.has(Number(x.restaurant_id)));
     if(!verticalMembership){const actual=(membershipBusinesses||[])[0]?.business_type||"";await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent="Esta cuenta pertenece a "+panelBusinessTypeLabel(actual)+", no al panel "+PANEL_VERTICAL_LABEL+".";window.location.replace(YUMMY_LANDING_BASE+"/");return}
-    currentRestaurant=Number(verticalMembership.restaurant_id);
+    currentRestaurant=Number(verticalMembership.restaurant_id);startScopedContentRealtime();
     currentRole=verticalMembership.role||"restaurant";
     trackRestaurantEvent("session_started","dashboard",{role:currentRole});
     document.body.classList.toggle("waiter-mobile-shell",currentRole==="waiter");
