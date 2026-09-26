@@ -88,3 +88,5 @@ for(const forbidden of ['else if(payload?.access_token&&payload?.refresh_token)'
 if(landing.includes('landingBusinessLabel('))throw new Error('index.html: referencia obsoleta landingBusinessLabel');
 
 for(const marker of ['LANDING_IS_PRUEBAS','yummy-restaurante-pruebas','yummy-retail-pruebas','yummy-profesionales-pruebas','yummy-streaming-pruebas','yummy-cliente-pruebas','landingEnvironmentDomain'])if(!landing.includes(marker))throw new Error('index.html: falta enrutamiento seguro de Pruebas '+marker);
+
+for(const marker of ['spickupEnabled','sdeliveryEnabled','syncFulfillmentSettings','pickup_enabled','delivery_enabled'])if(!panel.includes(marker))throw new Error('panel/index.html: falta configuración Retiro/Delivery '+marker);
