@@ -2703,7 +2703,7 @@ body.retail-scanner-open{overflow:hidden!important}
     <button class="settings-tab" type="button" data-settings-tab="country" onclick="showSettingsPanel('country',this)"><span>3</span><b>País y moneda</b></button>
     <button class="settings-tab" type="button" data-settings-tab="payments" onclick="showSettingsPanel('payments',this)"><span>4</span><b>Métodos de pago</b></button>
     <button class="settings-tab" type="button" data-settings-tab="brand" onclick="showSettingsPanel('brand',this)"><span>5</span><b>Marca</b></button>
-    <button class="settings-tab" type="button" data-settings-tab="delivery" onclick="showSettingsPanel('delivery',this)"><span>6</span><b>Delivery</b></button>
+    <button class="settings-tab" type="button" data-settings-tab="delivery" onclick="showSettingsPanel('delivery',this)"><span>6</span><b>Entrega / retiro</b></button>
     <button class="settings-tab" type="button" data-settings-tab="alternative" onclick="showSettingsPanel('alternative',this)"><span>7</span><b>Pagos alternativos</b></button>
     <button class="settings-tab" type="button" data-settings-tab="store" onclick="showSettingsPanel('store',this)"><span>8</span><b>Estado del local</b></button>
     <button class="settings-tab" type="button" data-settings-tab="mercadopago" onclick="showSettingsPanel('mercadopago',this)"><span>9</span><b>Mercado Pago</b></button>
@@ -2853,6 +2853,8 @@ body.retail-scanner-open{overflow:hidden!important}
 <script src="/panel/professional.js?v=2532"></script>
 <script>
 const YUMMY_IS_PRODUCTION=location.hostname==="web.yummypro.online";
+const YUMMY_LANDING_BASE=YUMMY_IS_PRODUCTION?"https://web.yummypro.online":"https://jorge2610g.github.io/yummy-restaurante-pruebas";
+const YUMMY_CLIENT_BASE=YUMMY_IS_PRODUCTION?"https://menu.yummypro.online":"https://jorge2610g.github.io/yummy-cliente-pruebas";
 const SB_URL=YUMMY_IS_PRODUCTION?"https://gulctljitzlwokqydigx.supabase.co":"https://wodqqheeesrelsbacmgx.supabase.co";
 const SB_KEY=YUMMY_IS_PRODUCTION?"sb_publishable__moppTxObowifx6rJbW_tw_3GiCkqhG":"sb_publishable_yiuYVYAAwVLtzlTdEM1kUg_s1Z7BiyE";
 document.querySelectorAll("[data-supabase-function]").forEach(el=>{el.textContent=SB_URL+"/functions/v1/"+el.dataset.supabaseFunction});
@@ -2993,7 +2995,7 @@ async function logout(){
  const previewRequested=adminPreviewMode||document.body.classList.contains("admin-preview")||new URLSearchParams(location.search).has("admin_preview");
  if(previewRequested){return returnFromAdminPreview()}
  try{await sb.auth.signOut()}catch(e){console.warn("No se pudo cerrar la sesión remota",e)}
- window.location.replace("https://web.yummypro.online/?logout=1")
+ window.location.replace(YUMMY_LANDING_BASE+"/?logout=1")
 }
 async function enter(user){
   currentUserId=user?.id||null;
@@ -3025,8 +3027,8 @@ async function enter(user){
     }
     msg.textContent="Cargando restaurante...";
     const {data:accountRole,error:roleError}=await sb.rpc("current_account_role");
-    if(roleError){await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent="No se pudo verificar el tipo de cuenta.";window.location.replace("https://web.yummypro.online/");return}
-    if(accountRole!=="restaurant"){await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent=accountRole==="admin"?"Esta cuenta es de administrador. Ingresa desde el panel de administración.":accountRole==="customer"?"Esta cuenta es de cliente y no tiene acceso al panel de negocio.":"Esta cuenta no está clasificada como negocio.";window.location.replace("https://web.yummypro.online/");return}
+    if(roleError){await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent="No se pudo verificar el tipo de cuenta.";window.location.replace(YUMMY_LANDING_BASE+"/");return}
+    if(accountRole!=="restaurant"){await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent=accountRole==="admin"?"Esta cuenta es de administrador. Ingresa desde el panel de administración.":accountRole==="customer"?"Esta cuenta es de cliente y no tiene acceso al panel de negocio.":"Esta cuenta no está clasificada como negocio.";window.location.replace(YUMMY_LANDING_BASE+"/");return}
     let {data:membership,error:membershipError}=await sb.from("restaurant_staff")
       .select("restaurant_id,role,permissions")
       .eq("user_id",user.id).eq("active",true);
@@ -3034,7 +3036,7 @@ async function enter(user){
     membership=membership||[];
     if(!membership.length && user.user_metadata?.trial_restaurant_name){
       const requestedTrialType=String(user.user_metadata.trial_business_type||PANEL_DEFAULT_BUSINESS_TYPE).toLowerCase();
-      if(!panelBusinessTypeAllowed(requestedTrialType)){await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent="Esta solicitud de prueba corresponde a "+panelBusinessTypeLabel(requestedTrialType)+". Ábrela desde su dominio correspondiente.";window.location.replace("https://web.yummypro.online/");return}
+      if(!panelBusinessTypeAllowed(requestedTrialType)){await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent="Esta solicitud de prueba corresponde a "+panelBusinessTypeLabel(requestedTrialType)+". Ábrela desde su dominio correspondiente.";window.location.replace(YUMMY_LANDING_BASE+"/");return}
       const cr=await sb.rpc("create_my_trial_restaurant_v3",{
         p_name:user.user_metadata.trial_restaurant_name,
         p_whatsapp:user.user_metadata.trial_whatsapp||"",
@@ -3049,13 +3051,13 @@ async function enter(user){
         membership=retry.data||[];
       }
     }
-    if(!membership.length){await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent="Esta cuenta no tiene un negocio asignado.";window.location.replace("https://web.yummypro.online/");return}
+    if(!membership.length){await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent="Esta cuenta no tiene un negocio asignado.";window.location.replace(YUMMY_LANDING_BASE+"/");return}
     const membershipIds=membership.map(x=>Number(x.restaurant_id)).filter(Number.isFinite);
     const {data:membershipBusinesses,error:membershipBusinessError}=await sb.from("restaurants").select("id,business_type").in("id",membershipIds);
     if(membershipBusinessError)throw membershipBusinessError;
     const allowedBusinessIds=new Set((membershipBusinesses||[]).filter(x=>panelBusinessTypeAllowed(x.business_type)).map(x=>Number(x.id)));
     const verticalMembership=membership.find(x=>allowedBusinessIds.has(Number(x.restaurant_id)));
-    if(!verticalMembership){const actual=(membershipBusinesses||[])[0]?.business_type||"";await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent="Esta cuenta pertenece a "+panelBusinessTypeLabel(actual)+", no al panel "+PANEL_VERTICAL_LABEL+".";window.location.replace("https://web.yummypro.online/");return}
+    if(!verticalMembership){const actual=(membershipBusinesses||[])[0]?.business_type||"";await sb.auth.signOut();document.body.classList.remove("auth-loading");msg.textContent="Esta cuenta pertenece a "+panelBusinessTypeLabel(actual)+", no al panel "+PANEL_VERTICAL_LABEL+".";window.location.replace(YUMMY_LANDING_BASE+"/");return}
     currentRestaurant=Number(verticalMembership.restaurant_id);
     currentRole=verticalMembership.role||"restaurant";
     trackRestaurantEvent("session_started","dashboard",{role:currentRole});
@@ -3067,7 +3069,7 @@ async function enter(user){
     applyRoleAccess();
     const {data:menuRestaurant}=await sb.from("restaurants").select("slug").eq("id",currentRestaurant).single();
     const menuLink=document.getElementById("viewMenuLink");
-    if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(menuRestaurant?.slug||currentRestaurant);menuLink.style.display=currentRole==="restaurant"?"":"none"}
+    if(menuLink){menuLink.href=YUMMY_CLIENT_BASE+"/?r="+encodeURIComponent(menuRestaurant?.slug||currentRestaurant);menuLink.style.display=currentRole==="restaurant"?"":"none"}
     syncRestaurantPushIfGranted();restoreAutoPrintOrders();setTimeout(startRestaurantOrderRealtime,0);setTimeout(startWaiterReadyReminderLoop,0);setTimeout(startWaiterPosRefreshLoop,0);setTimeout(startKitchenNewOrderReminderLoop,0);setTimeout(startSubscriptionAccessRealtime,0);
     const restaurantLoadGuard=new Promise((_,reject)=>setTimeout(()=>reject(new Error("La carga inicial del negocio tardó demasiado.")),15000));
     await Promise.race([loadRestaurants(),restaurantLoadGuard]);
@@ -3102,7 +3104,7 @@ async function enter(user){
     if(adminPreviewMode||new URLSearchParams(location.search).has("admin_preview")){
       showAdminPreviewFailure(e.message||"No se pudo cargar la información del negocio.");
     }else{
-      window.location.replace("https://web.yummypro.online/");
+      window.location.replace(YUMMY_LANDING_BASE+"/");
     }
   }
 }
@@ -3350,7 +3352,7 @@ async function bootAdminPreview(payload){
  }finally{adminPreviewBootPromise=null}})();
  return adminPreviewBootPromise;
 }
-const ADMIN_PREVIEW_ORIGINS=new Set(["https://yummy-admin-xi.vercel.app","https://admin.yummypro.online","https://www.admin.yummypro.online","https://admin.yummy.online"]);
+const ADMIN_PREVIEW_ORIGINS=new Set(["https://yummy-admin-xi.vercel.app","https://admin.yummypro.online","https://www.admin.yummypro.online","https://admin.yummy.online","https://jorge2610g.github.io"]);
 function isTrustedAdminPreviewOrigin(origin){return ADMIN_PREVIEW_ORIGINS.has(String(origin||""))}
 window.addEventListener("message",e=>{if(!isTrustedAdminPreviewOrigin(e.origin)||e.data?.type!=="YUMMY_ADMIN_PREVIEW")return;bootAdminPreview(e.data)});
 function notifyAdminPreviewReady(){try{ADMIN_PREVIEW_ORIGINS.forEach(origin=>window.opener?.postMessage({type:"YUMMY_ADMIN_PREVIEW_READY"},origin))}catch(e){}}
@@ -3433,7 +3435,7 @@ async function restoreSession(){
     }
     return
    }
-   window.location.replace("https://web.yummypro.online/");return
+   window.location.replace(YUMMY_LANDING_BASE+"/");return
   }
  }catch(e){
   document.body.classList.remove("auth-loading");document.body.classList.add("auth-ready");
@@ -3441,7 +3443,7 @@ async function restoreSession(){
   if(preview){
    showAdminPreviewFailure(e.message||"No se pudo validar la sesión administrativa.");
   }else{
-   window.location.replace("https://web.yummypro.online/");
+   window.location.replace(YUMMY_LANDING_BASE+"/");
    return
   }
  }finally{
@@ -3758,7 +3760,7 @@ function syncRestaurantHeader(r){
  const name=String(r.name||("Negocio #"+currentRestaurant)).trim(),type=String(r.business_type||"restaurant"),retail=["supermarket","minimarket"].includes(type);
  const slug=String(r.slug||currentRestaurant),menuLink=document.getElementById("viewMenuLink");
  if(menuLink){menuLink.dataset.restaurantId=String(currentRestaurant||r.id||"");menuLink.dataset.isDemo=r.is_demo?"1":"0"}
- if(menuLink){menuLink.href="https://menu.yummypro.online/?r="+encodeURIComponent(slug);menuLink.title=retail?"Ver tienda online":"Ver menú";menuLink.style.removeProperty("display")}
+ if(menuLink){menuLink.href=YUMMY_CLIENT_BASE+"/?r="+encodeURIComponent(slug);menuLink.title=retail?"Ver tienda online":"Ver menú";menuLink.style.removeProperty("display")}
  const who=document.getElementById("who"),sessionEmail=String(who?.dataset.email||who?.textContent||"").trim();if(who&&!who.dataset.email)who.dataset.email=sessionEmail;
  const panelTitle=document.getElementById("panelMainTitle");if(panelTitle)panelTitle.textContent=PANEL_BRAND_NAME;
  document.title=PANEL_BRAND_NAME;
@@ -4183,7 +4185,7 @@ async function openRetailBarcodeCamera(mode="pos"){
   console.error("Cámara código de barra",e);
   stopRetailBarcodeCameraStream();
   if(e?.name==="NotAllowedError"||e?.name==="PermissionDeniedError"){
-   if(status)status.textContent="No se concedió permiso para la cámara. En Chrome, permite Cámara para web.yummypro.online y vuelve a intentar.";
+   if(status)status.textContent="No se concedió permiso para la cámara. En Chrome, permite Cámara para "+location.hostname+" y vuelve a intentar.";
    return false
   }
   try{await startRetailFallbackScanner(status);return true}
@@ -4466,7 +4468,7 @@ function closeInventoryMovementModal(){inventoryMovementModal.classList.remove("
 document.getElementById("inventoryMovementType")?.addEventListener("change",()=>{const type=document.getElementById("inventoryMovementType"),label=document.getElementById("inventoryMovementQuantityLabel");if(type&&label)label.textContent=type.value==="ajuste"?"Nuevo stock final":"Cantidad"});
 async function saveInventoryMovement(){const item=inventoryItems.find(i=>Number(i.id)===Number(inventoryMovementItemId.value)),type=inventoryMovementType.value,value=Number(inventoryMovementQuantity.value);if(!item||!Number.isFinite(value)||value<0)return toast("Ingresa una cantidad válida");let delta=type==="ajuste"?value-Number(item.current_stock):(type==="entrada"?value:-value);if(delta===0)return toast("El movimiento no cambia el stock");if(Number(item.current_stock)+delta<0)return toast("La salida supera el stock disponible");const {error}=await sb.from("restaurant_inventory_movements").insert({restaurant_id:currentRestaurant,inventory_item_id:item.id,movement_type:type,quantity_delta:delta,note:inventoryMovementNote.value.trim()||null});if(error)return toast(error.message);closeInventoryMovementModal();await loadInventory();toast("Stock actualizado")}
 let bulkCatalogTarget="restaurant_menu",bulkCatalogRows=[],bulkCatalogSource="file";
-const BULK_DEMO_IMAGE="https://web.yummypro.online/demo-product.svg";
+const BULK_DEMO_IMAGE=YUMMY_LANDING_BASE+"/demo-product.svg";
 function bulkNorm(v){return String(v==null?"":v).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"").trim()}
 function bulkVal(row,names){for(const k of Object.keys(row||{})){if(names.includes(bulkNorm(k)))return row[k]}return ""}
 function bulkNum(v){if(typeof v==="number")return Number.isFinite(v)?v:0;let s=String(v==null?"":v).trim().replace(/\s/g,"").replace(/\$/g,"");if(!s)return 0;if(s.includes(",")&&s.includes(".")){s=s.lastIndexOf(",")>s.lastIndexOf(".")?s.replace(/\./g,"").replace(",","."):s.replace(/,/g,"")}else if(s.includes(",")){const p=s.split(",");s=p.length===2&&p[1].length<=2?s.replace(",","."):s.replace(/,/g,"")}return Math.max(0,Number(s)||0)}
@@ -6246,7 +6248,7 @@ async function loadRestaurantTables(){
 function tableQrMenuUrl(row){
  const r=restaurants.find(x=>Number(x.id)===Number(currentRestaurant));
  if(!r)return "";
- return "https://menu.yummypro.online/?r="+encodeURIComponent(r.slug||r.id)+"&table="+encodeURIComponent(row.token);
+ return YUMMY_CLIENT_BASE+"/?r="+encodeURIComponent(r.slug||r.id)+"&table="+encodeURIComponent(row.token);
 }
 function tableQrImageUrl(row,size=220){return "https://api.qrserver.com/v1/create-qr-code/?size="+size+"x"+size+"&data="+encodeURIComponent(tableQrMenuUrl(row))}
 function renderRestaurantTables(){
@@ -6287,7 +6289,7 @@ function printRestaurantTableQr(id){
 function businessPublicPageInfo(r){
  const type=String(r?.business_type||"restaurant").toLowerCase();
  const label=type==="professional"?"página de reservas":(["supermarket","minimarket"].includes(type)?"tienda online":"menú online");
- return {label,url:"https://menu.yummypro.online/?r="+encodeURIComponent(r?.slug||r?.id||"")};
+ return {label,url:YUMMY_CLIENT_BASE+"/?r="+encodeURIComponent(r?.slug||r?.id||"")};
 }
 function businessQrFileName(r){
  return String(r?.name||"negocio").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")+"-qr.png";
