@@ -7,6 +7,7 @@
 - Al desactivar Delivery se ocultan sus campos de precio, ubicación y rangos para simplificar la configuración.
 - Se añadió la migración de Supabase `pickup_enabled` / `delivery_enabled` con validación de al menos un método activo.
 - La migración fue aplicada únicamente en **YummyPro Staging**. Producción queda pendiente hasta que el propietario autorice el próximo release.
+- Los enlaces del panel Restaurante ahora respetan el ambiente: Pruebas abre landing/cliente de Pruebas y Producción abre los dominios de Producción.
 
 ## 2026-09-25/26 — 2.5.73 — Pruebas
 
