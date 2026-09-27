@@ -1983,7 +1983,13 @@ body.retail-scanner-open{overflow:hidden!important}
     overflow-x:hidden!important;
   }
 }
-</style></head>
+</style><style id="yummypro-auditor-overlap-fix-v2679">
+@media(min-width:801px){
+  #app:not(.sidebar-collapsed) #restaurantIssueButton{left:260px!important;right:auto!important}
+  #app.sidebar-collapsed #restaurantIssueButton{left:82px!important;right:auto!important}
+}
+</style>
+</head>
 <body class="auth-loading">
 <style>
 #app{display:none!important}.auth-ready #app:not(.hidden){display:block!important}.auth-loading #login,.auth-loading #app{display:none!important}
@@ -6737,7 +6743,7 @@ window.saveOrderDetail=async function(){const old=orders.find(x=>Number(x.id)===
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" type="button" onclick="restaurantIssueDialog.close()">Cancelar</button><button class="primary" type="button" onclick="submitRestaurantIssueReport()">Enviar reporte</button></div>
   </div>
 </dialog>
-<footer class="admin-version">Restaurante · Versión v2.6.78</footer></main></div><script>
+<footer class="admin-version">Restaurante · Versión v2.6.79</footer></main></div><script>
 async function verifySubscriptionMercadoPago(){
  const box=document.getElementById("subscriptionMpStatus");
  if(!box)return;
