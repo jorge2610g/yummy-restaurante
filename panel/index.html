@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="YummyPro Restaurante">
-<link rel="manifest" href="/manifest.webmanifest?v=2508">
-<link rel="icon" href="/pwa-icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.webmanifest?v=2508">
+<link rel="icon" href="../pwa-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <title>YummyPro Restaurante</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -2120,6 +2120,7 @@ body.retail-scanner-open{overflow:hidden!important}
 <script id="boot-connectivity-diagnostic-v2525">
 (function(){
  const BACKEND_HEALTH=(location.hostname==="web.yummypro.online"?"https://gulctljitzlwokqydigx.supabase.co":"https://wodqqheeesrelsbacmgx.supabase.co")+"/auth/v1/health";
+ const BACKEND_HEALTH_KEY=location.hostname==="web.yummypro.online"?"sb_publishable__moppTxObowifx6rJbW_tw_3GiCkqhG":"sb_publishable_yiuYVYAAwVLtzlTdEM1kUg_s1Z7BiyE";
  const startedAt=Date.now();
  let lastProbe={online:navigator.onLine,backend:null,checkedAt:0};
  function el(id){return document.getElementById(id)}
@@ -2129,7 +2130,7 @@ body.retail-scanner-open{overflow:hidden!important}
  async function probeBackend(timeoutMs=4500){
   if(!navigator.onLine)return false;
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
-  try{await fetch(BACKEND_HEALTH+"?t="+Date.now(),{method:"GET",cache:"no-store",signal:controller.signal,credentials:"omit"});return true}catch(_){return false}finally{clearTimeout(timer)}
+  try{const res=await fetch(BACKEND_HEALTH+"?t="+Date.now(),{method:"GET",cache:"no-store",signal:controller.signal,credentials:"omit",headers:{apikey:BACKEND_HEALTH_KEY}});return res.ok}catch(_){return false}finally{clearTimeout(timer)}
  }
  window.yummyCheckConnection=async function(manual=false){
   const online=navigator.onLine;
@@ -4932,7 +4933,7 @@ function pushKeyBytes(value){const padding="=".repeat((4-value.length%4)%4),base
 async function registerRestaurantPush(){
  if(!("serviceWorker" in navigator)||!("PushManager" in window)||Notification.permission!=="granted"||!currentRestaurant)return;
  const {data:{user}}=await sb.auth.getUser();if(!user)return;
- const registration=await navigator.serviceWorker.register("/push-sw.js");
+ const registration=await navigator.serviceWorker.register("../push-sw.js");
  let subscription=await registration.pushManager.getSubscription();
  if(subscription){
   try{
@@ -6883,7 +6884,7 @@ window.addEventListener("DOMContentLoaded",async()=>{
  setupYummyProNetworkStatus();
  try{
   if("serviceWorker" in navigator){
-   const registration=await navigator.serviceWorker.register("/push-sw.js");
+   const registration=await navigator.serviceWorker.register("../push-sw.js");
    watchYummyProServiceWorker(registration);
   }
  }catch(e){console.error("No se pudo preparar YummyPro para instalación",e)}
