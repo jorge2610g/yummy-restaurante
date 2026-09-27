@@ -1,3 +1,8 @@
+## 2.6.79 — 2026-09-27 — Pruebas
+- Se reposicionó el botón flotante “Reportar problema” en escritorio para que no tape accesos del menú lateral, incluido QR de Mesa.
+- En menú expandido y contraído el botón queda fuera de la barra lateral.
+- Producción no fue modificada.
+
 # Changelog YummyPro — Restaurante
 
 ## 2026-09-26 — 2.5.75 — Pruebas
