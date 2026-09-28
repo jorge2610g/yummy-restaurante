@@ -201,3 +201,137 @@ function renderProfessionalReports(){const metrics=document.getElementById("prof
 async function refreshProfessionalDashboard(){
  await loadProfessionalAppointments();const today=professionalDateKey(),todayRows=professionalAppointments.filter(x=>professionalDateKey(x.starts_at)===today&&!['cancelled'].includes(x.status)),completed=professionalAppointments.filter(x=>x.status==="completed"),revenue=completed.reduce((a,x)=>a+Number(x.total_amount||0),0),upcoming=professionalAppointments.filter(x=>new Date(x.starts_at)>new Date()&&["pending","confirmed","in_service"].includes(x.status));const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};set("statOrdersToday",todayRows.length);set("statProducts",professionalServices.filter(x=>x.active).length);set("statSalesToday",money(revenue));set("statAverage",money(completed.length?revenue/completed.length:0));const labels=document.querySelectorAll("#dashboard .restaurant-metric span");if(labels[0])labels[0].textContent="Ingresos completados";if(labels[1])labels[1].textContent="Citas de hoy";if(labels[2])labels[2].textContent="Servicios activos";if(labels[3])labels[3].textContent="Promedio por cita";const hero=document.querySelector("#dashboard .restaurant-dashboard-hero p");if(hero)hero.textContent="Agenda, clientes, profesionales y servicios sin mezclar información de otros rubros.";const quick=document.querySelector("#dashboard .dashboard-quick-actions");if(quick)quick.innerHTML='<button type="button" class="dashboard-quick-action" onclick="document.querySelector(\'.tab[data-tab=&quot;appointments&quot;]\')?.click()"><span>📅</span><div><b>Agenda</b><small>'+todayRows.length+' citas de hoy · '+upcoming.length+' próximas</small></div><i>›</i></button><button type="button" class="dashboard-quick-action" onclick="document.querySelector(\'.tab[data-tab=&quot;services&quot;]\')?.click()"><span>✦</span><div><b>Servicios</b><small>Precios y duración</small></div><i>›</i></button><button type="button" class="dashboard-quick-action" onclick="document.querySelector(\'.tab[data-tab=&quot;professionals&quot;]\')?.click()"><span>👤</span><div><b>Profesionales</b><small>Equipo y horarios</small></div><i>›</i></button>';const status=document.getElementById("statusChart");if(status){const by={};professionalAppointments.forEach(x=>by[x.status]=(by[x.status]||0)+1);status.innerHTML=Object.entries(by).map(([key,value])=>'<div class="item row between"><b>'+esc(PROFESSIONAL_STATUS_LABELS[key]||key)+'</b><span class="pill">'+value+'</span></div>').join("")||'<p class="mut">Sin citas todavía.</p>'}const top=document.getElementById("topProducts"),title=top?.closest("article")?.querySelector("h2");if(title)title.textContent="Servicios más reservados";if(top){const counts={};professionalAppointments.forEach(x=>counts[x.service_id]=(counts[x.service_id]||0)+1);top.innerHTML=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([id,count],i)=>'<div class="item row between"><b>'+(i+1)+'. '+esc(professionalService(id)?.name||"Servicio")+'</b><span class="pill">'+count+' reservas</span></div>').join("")||'<p class="mut">Aún no hay reservas.</p>'}
 }
+
+/* YummyPro Custom Domains v1 */
+(function(){
+  const DOMAIN_FN="verify-business-domain";
+
+  function escDomainText(value){
+    return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+  }
+  function normalizeDomainInput(value){
+    return String(value||"").trim().toLowerCase().replace(/^https?:\/\//i,"").replace(/\/.*$/,"").replace(/\.$/,"");
+  }
+  function customDomainPanel(){
+    return document.querySelector('[data-settings-panel="domain"]');
+  }
+  function customDomainStatusCopy(status){
+    const map={
+      pending_dns:"Esperando DNS",
+      dns_verified:"DNS verificado · falta activar HTTPS",
+      provisioning:"Configurando HTTPS",
+      active:"Activo",
+      failed:"Requiere revisión",
+      disabled:"Desactivado"
+    };
+    return map[status]||"Sin configurar";
+  }
+  async function loadBusinessCustomDomain(){
+    const panel=customDomainPanel();
+    if(!panel||!window.sb||!window.currentRestaurant)return;
+    const status=document.getElementById("customDomainStatus");
+    if(status)status.innerHTML='<span class="mut">Cargando estado del dominio…</span>';
+    const {data,error}=await sb.rpc("get_business_custom_domain",{p_restaurant_id:Number(currentRestaurant)});
+    if(error){
+      if(status)status.innerHTML='<span class="mut">No se pudo cargar el dominio: '+escDomainText(error.message)+'</span>';
+      return;
+    }
+    const active=data?.active||null,pending=data?.pending||null;
+    const input=document.getElementById("customDomainHost");
+    if(input&&!document.activeElement?.isSameNode(input))input.value=String(active?.hostname||pending?.hostname||"");
+    const verifyBtn=document.getElementById("customDomainVerifyBtn");
+    const removeBtn=document.getElementById("customDomainRemoveBtn");
+    if(verifyBtn)verifyBtn.hidden=!pending;
+    if(removeBtn)removeBtn.hidden=!(active||pending);
+    if(!status)return;
+    if(active){
+      status.innerHTML='<div class="item"><div class="row between" style="gap:12px;flex-wrap:wrap"><div><b>🟢 '+escDomainText(active.hostname)+'</b><div class="mut">Dominio activo · HTTPS '+escDomainText(active.ssl_status||"active")+'</div></div><a class="ghost" href="https://'+encodeURI(active.hostname)+'" target="_blank" rel="noopener noreferrer" style="text-decoration:none">Abrir ↗</a></div></div>';
+      return;
+    }
+    if(pending){
+      const txtName=escDomainText(pending.verification_record_name||("_yummypro."+pending.hostname));
+      const txtValue=escDomainText(pending.verification_record_value||"");
+      const cname=escDomainText(pending.cname_target||"domains.yummypro.online");
+      status.innerHTML='<div class="item"><b>🟡 '+escDomainText(customDomainStatusCopy(pending.status))+'</b><div class="mut" style="margin-top:6px">Configura estos registros DNS en el proveedor de tu dominio:</div><div style="display:grid;gap:10px;margin-top:12px"><div><small class="mut">TXT · Nombre</small><div><code>'+txtName+'</code></div></div><div><small class="mut">TXT · Valor</small><div><code style="word-break:break-all">'+txtValue+'</code></div></div><div><small class="mut">CNAME · Nombre</small><div><code>'+escDomainText(pending.hostname)+'</code></div></div><div><small class="mut">CNAME · Destino</small><div><code>'+cname+'</code></div></div></div>'+(pending.last_error?'<div class="mut" style="margin-top:10px">'+escDomainText(pending.last_error)+'</div>':'')+'</div>';
+      return;
+    }
+    status.innerHTML='<div class="mut">Todavía no conectaste un dominio. Puedes usar, por ejemplo, <b>www.minegocio.com</b> o <b>menu.minegocio.com</b>.</div>';
+  }
+  async function requestBusinessCustomDomain(){
+    if(!window.sb||!window.currentRestaurant)return;
+    const input=document.getElementById("customDomainHost");
+    const hostname=normalizeDomainInput(input?.value);
+    if(!hostname){window.toast?.("Escribe un dominio válido");return}
+    const btn=document.getElementById("customDomainRequestBtn");
+    if(btn)btn.disabled=true;
+    try{
+      const {error}=await sb.rpc("request_business_custom_domain",{p_restaurant_id:Number(currentRestaurant),p_hostname:hostname});
+      if(error)throw error;
+      window.toast?.("Dominio guardado. Ahora configura los DNS.");
+      await loadBusinessCustomDomain();
+    }catch(error){
+      console.error("custom domain request",error);
+      window.toast?.(error?.message||"No se pudo registrar el dominio");
+    }finally{if(btn)btn.disabled=false}
+  }
+  async function verifyBusinessCustomDomain(){
+    if(!window.sb||!window.currentRestaurant)return;
+    const btn=document.getElementById("customDomainVerifyBtn");
+    if(btn){btn.disabled=true;btn.textContent="Verificando…"}
+    try{
+      const {data,error}=await sb.functions.invoke(DOMAIN_FN,{body:{restaurant_id:Number(currentRestaurant)}});
+      if(error)throw error;
+      window.toast?.(data?.verified?"DNS verificado correctamente":"Los DNS todavía no coinciden");
+      await loadBusinessCustomDomain();
+    }catch(error){
+      console.error("custom domain verify",error);
+      window.toast?.(error?.message||"No se pudo verificar el dominio");
+    }finally{if(btn){btn.disabled=false;btn.textContent="Verificar DNS"}}
+  }
+  async function removeBusinessCustomDomain(){
+    if(!window.sb||!window.currentRestaurant)return;
+    if(!confirm("¿Quitar el dominio personalizado de este negocio?"))return;
+    try{
+      const {error}=await sb.rpc("remove_business_custom_domain",{p_restaurant_id:Number(currentRestaurant),p_hostname:null});
+      if(error)throw error;
+      const input=document.getElementById("customDomainHost");if(input)input.value="";
+      window.toast?.("Dominio desvinculado");
+      await loadBusinessCustomDomain();
+    }catch(error){
+      console.error("custom domain remove",error);
+      window.toast?.(error?.message||"No se pudo quitar el dominio");
+    }
+  }
+  function installCustomDomainSettings(){
+    const tabs=document.querySelector("#settings .settings-tabs");
+    const wrap=document.getElementById("settingsPanelWrap");
+    if(!tabs||!wrap||tabs.querySelector('[data-settings-tab="domain"]'))return;
+    const tab=document.createElement("button");
+    tab.className="settings-tab";
+    tab.type="button";
+    tab.dataset.settingsTab="domain";
+    tab.innerHTML='<span>🌐</span><b>Dominio</b>';
+    tab.addEventListener("click",()=>{
+      if(typeof window.showSettingsPanel==="function")window.showSettingsPanel("domain",tab);
+      loadBusinessCustomDomain();
+    });
+    tabs.appendChild(tab);
+
+    const panel=document.createElement("div");
+    panel.className="card settings-panel";
+    panel.dataset.settingsPanel="domain";
+    panel.innerHTML='<div class="settings-panel-head"><span class="settings-step">🌐</span><div><h2>Dominio personalizado</h2><p class="mut">Usa tu propio dominio público sin cambiar el panel de administración.</p></div></div><div class="grid"><div class="span8"><label>Dominio</label><input id="customDomainHost" placeholder="www.minegocio.com" inputmode="url" autocomplete="off"></div><div class="span4" style="display:flex;align-items:end"><button id="customDomainRequestBtn" class="primary full" type="button">Conectar dominio</button></div></div><div id="customDomainStatus" style="margin-top:16px"><span class="mut">Cargando…</span></div><div class="actions" style="margin-top:14px"><button id="customDomainVerifyBtn" class="primary" type="button" hidden>Verificar DNS</button><button id="customDomainRemoveBtn" class="ghost" type="button" hidden>Quitar dominio</button></div><p class="mut" style="margin-top:14px">YummyPro nunca te pedirá transferir la propiedad del dominio. Solo debes crear los registros DNS indicados.</p>';
+    wrap.appendChild(panel);
+    panel.querySelector("#customDomainRequestBtn")?.addEventListener("click",requestBusinessCustomDomain);
+    panel.querySelector("#customDomainVerifyBtn")?.addEventListener("click",verifyBusinessCustomDomain);
+    panel.querySelector("#customDomainRemoveBtn")?.addEventListener("click",removeBusinessCustomDomain);
+  }
+  window.loadBusinessCustomDomain=loadBusinessCustomDomain;
+  window.requestBusinessCustomDomain=requestBusinessCustomDomain;
+  window.verifyBusinessCustomDomain=verifyBusinessCustomDomain;
+  window.removeBusinessCustomDomain=removeBusinessCustomDomain;
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",installCustomDomainSettings);
+  else installCustomDomainSettings();
+  setTimeout(installCustomDomainSettings,400);
+})();
+
