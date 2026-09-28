@@ -1,4 +1,12 @@
 ## 2.6.83 — 2026-09-28 — Pruebas
+- Se completó la activación end-to-end de dominios personalizados en Staging.
+- Se corrigió el permiso interno de `service_activate_business_custom_domain` usando `SECURITY DEFINER` sin abrir el esquema `private` a roles públicos.
+- Se corrigió la activación para actualizar únicamente la fila vigente del hostname y no filas históricas deshabilitadas.
+- Se confirmó `prueba.expressdelivery.pro` con estado `active`, SSL `active` y respuesta HTTPS 200.
+- Se documentó el requisito del CNAME target proxied `domains-pruebas.yummypro.online`.
+- Producción no fue modificada.
+
+## 2.6.83 — 2026-09-28 — Pruebas
 - Se corrigió la validación SSL de dominios personalizados en Cloudflare for SaaS.
 - Se creó el CNAME target de Staging `domains-pruebas.yummypro.online` apuntando al fallback origin proxied `domains.yummypro.online`.
 - El reconciliador ahora crea rutas Worker de exclusión para `/.well-known/acme-challenge/*` y `/.well-known/pki-validation/*`, evitando que el Worker intercepte los desafíos DCV.
