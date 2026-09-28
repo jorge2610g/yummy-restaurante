@@ -236,7 +236,7 @@ async function refreshProfessionalDashboard(){
   }
   async function loadBusinessCustomDomain(){
     const panel=customDomainPanel();
-    if(!panel||!window.sb||!window.currentRestaurant)return;
+    if(!panel||!sb||!currentRestaurant)return;
     const status=document.getElementById("customDomainStatus");
     if(status)status.innerHTML='<span class="mut">Cargando estado del dominio…</span>';
     let data,error;
@@ -270,7 +270,7 @@ async function refreshProfessionalDashboard(){
     status.innerHTML='<div class="mut">Todavía no conectaste un dominio. Puedes usar, por ejemplo, <b>www.minegocio.com</b> o <b>menu.minegocio.com</b>.</div>';
   }
   async function requestBusinessCustomDomain(){
-    if(!window.sb||!window.currentRestaurant)return;
+    if(!sb||!currentRestaurant)return;
     const input=document.getElementById("customDomainHost");
     const hostname=normalizeDomainInput(input?.value);
     if(!hostname){window.toast?.("Escribe un dominio válido");return}
@@ -287,7 +287,7 @@ async function refreshProfessionalDashboard(){
     }finally{if(btn)btn.disabled=false}
   }
   async function verifyBusinessCustomDomain(){
-    if(!window.sb||!window.currentRestaurant)return;
+    if(!sb||!currentRestaurant)return;
     const btn=document.getElementById("customDomainVerifyBtn");
     if(btn){btn.disabled=true;btn.textContent="Verificando…"}
     try{
@@ -305,7 +305,7 @@ async function refreshProfessionalDashboard(){
     }finally{if(btn){btn.disabled=false;btn.textContent="Verificar DNS"}}
   }
   async function removeBusinessCustomDomain(){
-    if(!window.sb||!window.currentRestaurant)return;
+    if(!sb||!currentRestaurant)return;
     if(!confirm("¿Quitar el dominio personalizado de este negocio?"))return;
     try{
       const {error}=await withCustomDomainTimeout(sb.rpc("remove_business_custom_domain",{p_restaurant_id:Number(currentRestaurant),p_hostname:null}),"No se pudo quitar el dominio. Intenta nuevamente.");
