@@ -1,3 +1,11 @@
+## 2.6.83 — 2026-09-28 — Pruebas
+- Se corrigió la validación SSL de dominios personalizados en Cloudflare for SaaS.
+- Se creó el CNAME target de Staging `domains-pruebas.yummypro.online` apuntando al fallback origin proxied `domains.yummypro.online`.
+- El reconciliador ahora crea rutas Worker de exclusión para `/.well-known/acme-challenge/*` y `/.well-known/pki-validation/*`, evitando que el Worker intercepte los desafíos DCV.
+- Cuando se corrigen esas rutas, el reconciliador reinicia la validación DCV del Custom Hostname.
+- Se amplió el diagnóstico del reconciliador para registrar estado del hostname, SSL, CA y validation records.
+- Producción no fue modificada.
+
 ## 2.6.82 — 2026-09-28 — Pruebas
 - Se corrigió el estado “Recuperando tu dominio…” que podía quedar fijo si el módulo cargaba antes de que el panel terminara de identificar el negocio.
 - El módulo ahora espera a Supabase/currentRestaurant y reintenta automáticamente hasta poder recuperar el dominio guardado.
