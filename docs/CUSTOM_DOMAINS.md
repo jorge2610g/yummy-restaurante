@@ -89,3 +89,18 @@ Cron de Staging:
 La función procesa dominios en `pending_dns`, `dns_verified`, `provisioning` o `failed`, verifica TXT/CNAME, recupera o crea el Custom Hostname de Cloudflare, asegura la Worker Route de Staging y activa el dominio cuando hostname + SSL están `active`.
 
 El token interno del cron nunca debe documentarse ni exponerse; se guarda como `custom_domain_reconcile_token` en Supabase Vault.
+
+
+## Corrección SSL/DCV — 2.6.83
+
+Cloudflare for SaaS usa HTTP DCV para los certificados de Staging. El CNAME target de pruebas debe existir públicamente y estar proxied:
+
+`domains-pruebas.yummypro.online -> domains.yummypro.online`
+
+Además, las Worker Routes de cada Custom Hostname deben excluir estas rutas de validación:
+
+- `<hostname>/.well-known/acme-challenge/*` → sin Worker
+- `<hostname>/.well-known/pki-validation/*` → sin Worker
+- `<hostname>/*` → `yummypro-custom-domain-staging`
+
+Las exclusiones específicas tienen prioridad sobre la ruta general y permiten que Cloudflare sirva los tokens DCV desde el edge. El reconciliador asegura estas rutas y refresca la validación cuando las corrige.
