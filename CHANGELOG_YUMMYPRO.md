@@ -1,3 +1,13 @@
+## 2.6.81 — 2026-09-28 — Pruebas
+- El dominio personalizado conserva hostname y estado al recargar el panel.
+- Se añadió una barra de progreso con etapas: dominio guardado, DNS verificado, HTTPS listo y activo.
+- El botón de conexión queda bloqueado mientras existe un dominio en proceso para evitar solicitudes duplicadas.
+- El panel consulta automáticamente el estado del dominio y mantiene un botón manual “Comprobar ahora” como respaldo.
+- Se añadió la Edge Function `reconcile-business-domains` y un cron de Staging cada 2 minutos para verificar DNS/Cloudflare/SSL incluso con el panel cerrado.
+- Se corrigió la validación de hostnames y la reconexión del mismo dominio ahora conserva el token TXT.
+- Se documentó el flujo completo en `docs/CUSTOM_DOMAINS.md`.
+- Producción no fue modificada.
+
 ## 2.6.80 — 2026-09-28 — Pruebas
 - Tras verificar DNS, el panel inicia el aprovisionamiento seguro del hostname y SSL en backend.
 - Producción no fue modificada.
