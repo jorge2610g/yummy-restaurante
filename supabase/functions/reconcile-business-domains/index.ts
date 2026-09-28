@@ -113,8 +113,14 @@ Deno.serve(async (req: Request) => {
 
     let cfToken = Deno.env.get("CLOUDFLARE_API_TOKEN") || "";
     let cfZone = Deno.env.get("CLOUDFLARE_ZONE_ID") || "";
-    const cnameTarget = String(Deno.env.get("CLOUDFLARE_CUSTOM_DOMAIN_ORIGIN") || "domains.yummypro.online")
-      .replace(/\.$/, "").toLowerCase();
+    const { data: runtimeTarget } = await admin.rpc("service_get_runtime_config", {
+      p_key: "custom_domain_cname_target",
+    });
+    const cnameTarget = String(
+      Deno.env.get("CLOUDFLARE_CUSTOM_DOMAIN_ORIGIN")
+        || runtimeTarget
+        || "domains.yummypro.online"
+    ).replace(/\.$/, "").toLowerCase();
     const workerName = String(Deno.env.get("CLOUDFLARE_CUSTOM_DOMAIN_WORKER") || "").trim()
       || (cnameTarget === "domains-pruebas.yummypro.online"
         ? "yummypro-custom-domain-staging"
