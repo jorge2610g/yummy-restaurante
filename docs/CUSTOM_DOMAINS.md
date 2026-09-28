@@ -104,3 +104,24 @@ Además, las Worker Routes de cada Custom Hostname deben excluir estas rutas de 
 - `<hostname>/*` → `yummypro-custom-domain-staging`
 
 Las exclusiones específicas tienen prioridad sobre la ruta general y permiten que Cloudflare sirva los tokens DCV desde el edge. El reconciliador asegura estas rutas y refresca la validación cuando las corrige.
+
+
+## Cierre de validación end-to-end — 2026-09-28
+
+La prueba con `prueba.expressdelivery.pro` permitió detectar y corregir dos fallos finales de activación:
+
+1. `service_activate_business_custom_domain` necesitaba `SECURITY DEFINER` para poder usar de forma controlada `private.normalize_custom_hostname` sin conceder acceso directo al esquema `private` a `service_role`.
+2. La activación actualizaba todas las filas históricas del mismo hostname, incluidas las `disabled`; ahora solo activa la fila vigente en estado `dns_verified`, `provisioning` o `active`.
+
+También se confirmó que el CNAME target de Staging debe existir públicamente y estar proxied. Se configuró:
+
+`domains-pruebas.yummypro.online` → fallback/origen de Cloudflare
+
+Resultado final de la prueba:
+
+- `prueba.expressdelivery.pro`: `active`
+- SSL: `active`
+- HTTPS responde 200
+- El Worker de Staging entrega el cliente público
+- `restaurants.custom_domain` queda sincronizado para que el cliente resuelva el negocio correcto por hostname
+- Producción no fue modificada
