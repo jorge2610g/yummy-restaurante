@@ -348,5 +348,5 @@ panel.innerHTML='<div class="settings-panel-head"><span class="settings-step">ðŸ
   window.removeBusinessCustomDomain=removeBusinessCustomDomain;
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",installCustomDomainSettings);
   else installCustomDomainSettings();
-  setTimeout(installCustomDomainSettings,400);
+  setTimeout(()=>{installCustomDomainSettings();if(customDomainPanel()?.classList.contains("active"))loadBusinessCustomDomain();},400);
 })();
