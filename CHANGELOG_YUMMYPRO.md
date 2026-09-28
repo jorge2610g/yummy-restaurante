@@ -1,3 +1,10 @@
+## 2.6.82 — 2026-09-28 — Pruebas
+- Se corrigió el estado “Recuperando tu dominio…” que podía quedar fijo si el módulo cargaba antes de que el panel terminara de identificar el negocio.
+- El módulo ahora espera a Supabase/currentRestaurant y reintenta automáticamente hasta poder recuperar el dominio guardado.
+- Mientras termina de cargar muestra “Preparando tu información…” en lugar de aparentar que el proceso quedó congelado.
+- Se mantiene la verificación automática y la persistencia introducidas en 2.6.81.
+- Producción no fue modificada.
+
 ## 2.6.81 — 2026-09-28 — Pruebas
 - El dominio personalizado conserva hostname y estado al recargar el panel.
 - Se añadió una barra de progreso con etapas: dominio guardado, DNS verificado, HTTPS listo y activo.
