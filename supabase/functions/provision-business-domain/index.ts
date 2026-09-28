@@ -37,25 +37,39 @@ async function findCustomHostname(zoneId:string,hostname:string,token:string){
   return rows.find((row:any)=>String(row?.hostname||"").toLowerCase()===hostname.toLowerCase())||null;
 }
 
-async function ensureStagingWorkerRoute(zoneId:string,hostname:string,token:string){
-  const workerName="yummypro-custom-domain-staging";
-  const pattern=hostname+"/*";
+async function ensureWorkerRoutes(zoneId:string,hostname:string,workerName:string,token:string){
   const listed=await cfFetch("/zones/"+encodeURIComponent(zoneId)+"/workers/routes",{method:"GET"},token);
   const routes=Array.isArray(listed?.result)?listed.result:[];
-  const existing=routes.find((row:any)=>String(row?.pattern||"").toLowerCase()===pattern.toLowerCase());
+  let changed=false;
 
-  if(existing){
-    if(String(existing?.script||"")!==workerName){
-      throw new Error("El dominio de prueba ya tiene una ruta Worker distinta en Cloudflare");
+  async function ensureRoute(pattern:string,script?:string){
+    const existing=routes.find((row:any)=>String(row?.pattern||"").toLowerCase()===pattern.toLowerCase());
+    if(existing){
+      const currentScript=String(existing?.script||"");
+      const desiredScript=String(script||"");
+      if(currentScript===desiredScript)return existing;
+      const updated=await cfFetch(
+        "/zones/"+encodeURIComponent(zoneId)+"/workers/routes/"+encodeURIComponent(String(existing.id)),
+        {method:"PUT",body:JSON.stringify(script?{pattern,script}:{pattern})},
+        token,
+      );
+      changed=true;
+      return updated?.result||existing;
     }
-    return existing;
+    const created=await cfFetch(
+      "/zones/"+encodeURIComponent(zoneId)+"/workers/routes",
+      {method:"POST",body:JSON.stringify(script?{pattern,script}:{pattern})},
+      token,
+    );
+    changed=true;
+    return created?.result||null;
   }
 
-  const created=await cfFetch("/zones/"+encodeURIComponent(zoneId)+"/workers/routes",{
-    method:"POST",
-    body:JSON.stringify({pattern,script:workerName}),
-  },token);
-  return created?.result||null;
+  // Deja los desafíos DCV fuera del Worker para que Cloudflare pueda emitir SSL.
+  await ensureRoute(hostname+"/.well-known/acme-challenge/*");
+  await ensureRoute(hostname+"/.well-known/pki-validation/*");
+  const appRoute=await ensureRoute(hostname+"/*",workerName);
+  return {appRoute,changed};
 }
 
 Deno.serve(async(req:Request)=>{
@@ -73,6 +87,8 @@ Deno.serve(async(req:Request)=>{
     let cfToken=Deno.env.get("CLOUDFLARE_API_TOKEN")||"";
     let cfZone=Deno.env.get("CLOUDFLARE_ZONE_ID")||"";
     const cfZoneName=Deno.env.get("CLOUDFLARE_ZONE_NAME")||"yummypro.online";
+    const configuredOrigin=String(Deno.env.get("CLOUDFLARE_CUSTOM_DOMAIN_ORIGIN")||"").trim().toLowerCase();
+    const configuredWorker=String(Deno.env.get("CLOUDFLARE_CUSTOM_DOMAIN_WORKER")||"").trim();
 
     const userClient=createClient(supabaseUrl,anonKey,{
       global:{headers:{Authorization:authHeader}},
@@ -87,7 +103,7 @@ Deno.serve(async(req:Request)=>{
     }
 
     if(!cfToken){
-      return json({error:"Cloudflare todavía no está configurado en Staging",code:"cloudflare_not_configured"},503);
+      return json({error:"Cloudflare todavía no está configurado para dominios personalizados",code:"cloudflare_not_configured"},503);
     }
 
     const {data:userData,error:userError}=await userClient.auth.getUser(token);
@@ -102,7 +118,10 @@ Deno.serve(async(req:Request)=>{
 
     const pending=state?.pending||null;
     if(!pending?.hostname)return json({error:"No hay dominio pendiente"},400);
-    const originHost=String(pending?.cname_target||Deno.env.get("CLOUDFLARE_CUSTOM_DOMAIN_ORIGIN")||"domains.yummypro.online").toLowerCase();
+    const originHost=String(pending?.cname_target||configuredOrigin||"domains.yummypro.online").toLowerCase();
+    const workerName=configuredWorker||(originHost==="domains-pruebas.yummypro.online"
+      ?"yummypro-custom-domain-staging"
+      :"yummypro-custom-domain-gateway");
     if(!["dns_verified","provisioning"].includes(String(pending.status))){
       return json({error:"Primero debes verificar los registros DNS",status:pending.status},409);
     }
@@ -161,24 +180,31 @@ Deno.serve(async(req:Request)=>{
       cfResult=checked?.result;
     }
 
-    if(originHost==="domains-pruebas.yummypro.online"){
-      try{
-        await ensureStagingWorkerRoute(cfZone,hostname,cfToken);
-      }catch(routeError){
-        const message=String((routeError as Error)?.message||routeError);
-        await adminClient.from("business_custom_domains").update({
-          status:"provisioning",
-          last_checked_at:new Date().toISOString(),
-          last_error:message,
-        }).eq("id",domainRow.id);
-        return json({
-          error:"El dominio ya está verificado y creado en Cloudflare, pero falta desplegar el Worker de Staging.",
-          code:"staging_worker_missing",
-          hostname,
-          provider_hostname_id:providerId,
-          detail:message,
-        },503);
+    try{
+      const routeState=await ensureWorkerRoutes(cfZone,hostname,workerName,cfToken);
+      if(routeState?.changed&&providerId){
+        const refreshed=await cfFetch(
+          "/zones/"+encodeURIComponent(cfZone)+"/custom_hostnames/"+encodeURIComponent(providerId),
+          {method:"PATCH",body:JSON.stringify({ssl:{method:"http",type:"dv"}})},
+          cfToken,
+        );
+        cfResult=refreshed?.result||cfResult;
       }
+    }catch(routeError){
+      const message=String((routeError as Error)?.message||routeError);
+      await adminClient.from("business_custom_domains").update({
+        status:"provisioning",
+        last_checked_at:new Date().toISOString(),
+        last_error:message,
+      }).eq("id",domainRow.id);
+      return json({
+        error:"El dominio ya está verificado en Cloudflare, pero no se pudo configurar su ruta.",
+        code:"worker_route_failed",
+        hostname,
+        provider_hostname_id:providerId,
+        worker:workerName,
+        detail:message,
+      },503);
     }
 
     const hostnameStatus=String(cfResult?.status||"pending");
