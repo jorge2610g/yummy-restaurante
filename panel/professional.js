@@ -205,6 +205,7 @@ async function refreshProfessionalDashboard(){
 /* YummyPro Custom Domains v1 */
 (function(){
   const DOMAIN_FN="verify-business-domain";
+  const PROVISION_DOMAIN_FN="provision-business-domain";
 
   function escDomainText(value){
     return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
@@ -281,7 +282,11 @@ async function refreshProfessionalDashboard(){
     try{
       const {data,error}=await sb.functions.invoke(DOMAIN_FN,{body:{restaurant_id:Number(currentRestaurant)}});
       if(error)throw error;
-      window.toast?.(data?.verified?"DNS verificado correctamente":"Los DNS todavía no coinciden");
+      if(data?.verified){
+        const {data:provision,error:provisionError}=await sb.functions.invoke(PROVISION_DOMAIN_FN,{body:{restaurant_id:Number(currentRestaurant)}});
+        if(provisionError)throw provisionError;
+        window.toast?.(provision?.active?"DNS y HTTPS activos":"DNS verificado. Preparando HTTPS…");
+      }else window.toast?.("Los DNS todavía no coinciden");
       await loadBusinessCustomDomain();
     }catch(error){
       console.error("custom domain verify",error);
@@ -334,4 +339,3 @@ async function refreshProfessionalDashboard(){
   else installCustomDomainSettings();
   setTimeout(installCustomDomainSettings,400);
 })();
-
