@@ -67,3 +67,25 @@ Estado al cierre de esta actualización:
 ## Regla de seguridad
 
 No editar ni reutilizar el Worker de Producción `yummypro-custom-domain-gateway` para pruebas de Staging.
+
+
+## Verificación automática y persistencia del panel
+
+Desde 2026-09-28 Staging ya no depende del botón manual para completar el dominio:
+
+- El panel recupera el hostname y el estado desde Supabase al cargar o recargar.
+- También conserva localmente el último hostname para evitar que el campo aparezca vacío mientras carga.
+- Si existe un dominio pendiente, el botón de conectar queda bloqueado y cambia a **Esperando DNS** o **Dominio en proceso**; esto evita crear solicitudes duplicadas.
+- El panel muestra una barra de progreso y cuatro etapas: Dominio guardado → DNS verificado → HTTPS listo → Activo.
+- Mientras el panel está abierto, consulta el estado aproximadamente cada 12 segundos y ejecuta comprobaciones automáticas con throttling.
+- El botón manual se mantiene como **Comprobar ahora** solo como respaldo.
+
+Además existe la Edge Function `reconcile-business-domains`, protegida por un secreto interno de Vault y ejecutada por `pg_cron` cada 2 minutos en Staging. Esto permite que DNS/Cloudflare/SSL continúen reconciliándose aunque el usuario cierre el panel.
+
+Cron de Staging:
+
+`reconcile-business-domains-staging` → `*/2 * * * *`
+
+La función procesa dominios en `pending_dns`, `dns_verified`, `provisioning` o `failed`, verifica TXT/CNAME, recupera o crea el Custom Hostname de Cloudflare, asegura la Worker Route de Staging y activa el dominio cuando hostname + SSL están `active`.
+
+El token interno del cron nunca debe documentarse ni exponerse; se guarda como `custom_domain_reconcile_token` en Supabase Vault.
