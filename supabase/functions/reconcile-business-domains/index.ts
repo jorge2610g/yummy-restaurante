@@ -46,31 +46,55 @@ async function findCustomHostname(zoneId: string, hostname: string, token: strin
 }
 
 async function ensureStagingWorkerRoute(zoneId: string, hostname: string, token: string) {
-  const pattern = hostname + "/*";
   const listed = await cfFetch(
     "/zones/" + encodeURIComponent(zoneId) + "/workers/routes",
     { method: "GET" },
     token,
   );
   const routes = Array.isArray(listed?.result) ? listed.result : [];
-  const existing = routes.find((row: any) => String(row?.pattern || "").toLowerCase() === pattern.toLowerCase());
+  let changed = false;
 
-  if (existing) {
-    if (String(existing?.script || "") !== STAGING_WORKER) {
-      throw new Error("El dominio ya tiene una ruta Worker distinta en Cloudflare");
+  async function ensureRoute(pattern: string, script?: string) {
+    const existing = routes.find((row: any) =>
+      String(row?.pattern || "").toLowerCase() === pattern.toLowerCase()
+    );
+
+    if (existing) {
+      const currentScript = String(existing?.script || "");
+      const desiredScript = String(script || "");
+      if (currentScript === desiredScript) return existing;
+
+      const updated = await cfFetch(
+        "/zones/" + encodeURIComponent(zoneId) + "/workers/routes/" + encodeURIComponent(String(existing.id)),
+        {
+          method: "PUT",
+          body: JSON.stringify(script ? { pattern, script } : { pattern }),
+        },
+        token,
+      );
+      changed = true;
+      return updated?.result || existing;
     }
-    return existing;
+
+    const created = await cfFetch(
+      "/zones/" + encodeURIComponent(zoneId) + "/workers/routes",
+      {
+        method: "POST",
+        body: JSON.stringify(script ? { pattern, script } : { pattern }),
+      },
+      token,
+    );
+    changed = true;
+    return created?.result || null;
   }
 
-  const created = await cfFetch(
-    "/zones/" + encodeURIComponent(zoneId) + "/workers/routes",
-    {
-      method: "POST",
-      body: JSON.stringify({ pattern, script: STAGING_WORKER }),
-    },
-    token,
-  );
-  return created?.result || null;
+  // Rutas más específicas sin Worker: Cloudflare debe servir los tokens DCV
+  // directamente desde el edge para validar el certificado del Custom Hostname.
+  await ensureRoute(hostname + "/.well-known/acme-challenge/*");
+  await ensureRoute(hostname + "/.well-known/pki-validation/*");
+
+  const appRoute = await ensureRoute(hostname + "/*", STAGING_WORKER);
+  return { appRoute, changed };
 }
 
 Deno.serve(async (req: Request) => {
@@ -109,6 +133,18 @@ Deno.serve(async (req: Request) => {
       .order("last_checked_at", { ascending: true, nullsFirst: true })
       .limit(20);
     if (rowsError) throw rowsError;
+
+    let fallbackOrigin: any = null;
+    try {
+      const fallback = await cfFetch(
+        "/zones/" + encodeURIComponent(cfZone) + "/custom_hostnames/fallback_origin",
+        { method: "GET" },
+        cfToken,
+      );
+      fallbackOrigin = fallback?.result || null;
+    } catch (fallbackError) {
+      fallbackOrigin = { error: String((fallbackError as Error)?.message || fallbackError) };
+    }
 
     const result: any[] = [];
 
@@ -211,7 +247,20 @@ Deno.serve(async (req: Request) => {
             cfResult = checked?.result;
           }
 
-          await ensureStagingWorkerRoute(cfZone, hostname, cfToken);
+          const routeState = await ensureStagingWorkerRoute(cfZone, hostname, cfToken);
+
+          if (routeState?.changed && providerId) {
+            // Reinicia DCV una sola vez cuando acabamos de corregir las rutas.
+            const refreshed = await cfFetch(
+              "/zones/" + encodeURIComponent(cfZone) + "/custom_hostnames/" + encodeURIComponent(providerId),
+              {
+                method: "PATCH",
+                body: JSON.stringify({ ssl: { method: "http", type: "dv" } }),
+              },
+              cfToken,
+            );
+            cfResult = refreshed?.result || cfResult;
+          }
 
           if (!cfResult) {
             const checked = await cfFetch(
@@ -241,7 +290,17 @@ Deno.serve(async (req: Request) => {
               last_checked_at: new Date().toISOString(),
               last_error: null,
             }).eq("id", row.id);
-            result.push({ hostname, status: "provisioning", hostname_status: hostnameStatus, ssl_status: sslStatus });
+            result.push({
+              hostname,
+              status: "provisioning",
+              hostname_status: hostnameStatus,
+              ssl_status: sslStatus,
+              ssl_method: String(cfResult?.ssl?.method || ""),
+              ssl_type: String(cfResult?.ssl?.type || ""),
+              certificate_authority: String(cfResult?.ssl?.certificate_authority || ""),
+              validation_records: Array.isArray(cfResult?.ssl?.validation_records) ? cfResult.ssl.validation_records : [],
+              validation_errors: Array.isArray(cfResult?.ssl?.validation_errors) ? cfResult.ssl.validation_errors : [],
+            });
           }
         }
       } catch (error) {
@@ -254,7 +313,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    return json({ ok: true, processed: result.length, result });
+    return json({ ok: true, fallback_origin: fallbackOrigin, processed: result.length, result });
   } catch (error) {
     console.error("reconcile-business-domains", error);
     return json({ error: String((error as Error)?.message || error) }, 500);
