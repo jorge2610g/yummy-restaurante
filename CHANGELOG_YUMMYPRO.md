@@ -1,3 +1,11 @@
+## 2.6.85 — 2026-09-28 — Pruebas
+- Se aplicó una capa visual centralizada al landing y al panel: azul profundo, fondos claros, mayor legibilidad, botones consistentes y jerarquía editorial sobria.
+- Se mantuvieron las funciones, rutas, IDs y flujos existentes; el cambio es exclusivamente visual.
+- Se eliminó un cierre `</style>` duplicado del panel.
+- La referencia es la guía visual pública de La Iglesia de Jesucristo de los Santos de los Últimos Días: paleta azul de alto contraste, serif sobria en títulos y sans legible en interfaz. No se usaron logos, símbolos ni tipografías propietarias.
+- Auditoría inicial: `npm run check` en verde. Las pruebas Playwright quedan bloqueadas por una descarga de navegador dañada del entorno, no por un fallo detectado de la aplicación.
+- Producción no fue modificada.
+
 ## 2.6.84 — 2026-09-28 — Pruebas
 - Preparación de release de dominios personalizados.
 - Se eliminó la copia temporal `professional-domain-fix.js` y el módulo volvió a `professional.js`.
