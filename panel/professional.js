@@ -206,6 +206,13 @@ async function refreshProfessionalDashboard(){
 (function(){
   const DOMAIN_FN="verify-business-domain";
   const PROVISION_DOMAIN_FN="provision-business-domain";
+  const CUSTOM_DOMAIN_TIMEOUT_MS=15000;
+
+  function withCustomDomainTimeout(promise,message){
+    let timeoutId;
+    const timeout=new Promise((_,reject)=>{timeoutId=setTimeout(()=>reject(new Error(message||"La conexión tardó demasiado. Intenta nuevamente.")),CUSTOM_DOMAIN_TIMEOUT_MS)});
+    return Promise.race([promise,timeout]).finally(()=>clearTimeout(timeoutId));
+  }
 
   function escDomainText(value){
     return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
@@ -232,9 +239,13 @@ async function refreshProfessionalDashboard(){
     if(!panel||!window.sb||!window.currentRestaurant)return;
     const status=document.getElementById("customDomainStatus");
     if(status)status.innerHTML='<span class="mut">Cargando estado del dominio…</span>';
-    const {data,error}=await sb.rpc("get_business_custom_domain",{p_restaurant_id:Number(currentRestaurant)});
+    let data,error;
+    try{({data,error}=await withCustomDomainTimeout(sb.rpc("get_business_custom_domain",{p_restaurant_id:Number(currentRestaurant)}),"No se pudo cargar el estado del dominio. Revisa tu conexión e intenta nuevamente."))}catch(loadError){
+      if(status)status.innerHTML='<div class="item"><b>No se pudo cargar el dominio</b><div class="mut" style="margin-top:6px">'+escDomainText(loadError.message||"Intenta nuevamente.")+'</div><button class="ghost" style="margin-top:10px" type="button" onclick="loadBusinessCustomDomain()">Reintentar</button></div>';
+      return;
+    }
     if(error){
-      if(status)status.innerHTML='<span class="mut">No se pudo cargar el dominio: '+escDomainText(error.message)+'</span>';
+      if(status)status.innerHTML='<div class="item"><b>No se pudo cargar el dominio</b><div class="mut" style="margin-top:6px">'+escDomainText(error.message)+'</div><button class="ghost" style="margin-top:10px" type="button" onclick="loadBusinessCustomDomain()">Reintentar</button></div>';
       return;
     }
     const active=data?.active||null,pending=data?.pending||null;
@@ -266,7 +277,7 @@ async function refreshProfessionalDashboard(){
     const btn=document.getElementById("customDomainRequestBtn");
     if(btn)btn.disabled=true;
     try{
-      const {error}=await sb.rpc("request_business_custom_domain",{p_restaurant_id:Number(currentRestaurant),p_hostname:hostname});
+      const {error}=await withCustomDomainTimeout(sb.rpc("request_business_custom_domain",{p_restaurant_id:Number(currentRestaurant),p_hostname:hostname}),"No se pudo guardar el dominio. Intenta nuevamente.");
       if(error)throw error;
       window.toast?.("Dominio guardado. Ahora configura los DNS.");
       await loadBusinessCustomDomain();
@@ -280,10 +291,10 @@ async function refreshProfessionalDashboard(){
     const btn=document.getElementById("customDomainVerifyBtn");
     if(btn){btn.disabled=true;btn.textContent="Verificando…"}
     try{
-      const {data,error}=await sb.functions.invoke(DOMAIN_FN,{body:{restaurant_id:Number(currentRestaurant)}});
+      const {data,error}=await withCustomDomainTimeout(sb.functions.invoke(DOMAIN_FN,{body:{restaurant_id:Number(currentRestaurant)}}),"La verificación DNS tardó demasiado. Intenta nuevamente.");
       if(error)throw error;
       if(data?.verified){
-        const {data:provision,error:provisionError}=await sb.functions.invoke(PROVISION_DOMAIN_FN,{body:{restaurant_id:Number(currentRestaurant)}});
+        const {data:provision,error:provisionError}=await withCustomDomainTimeout(sb.functions.invoke(PROVISION_DOMAIN_FN,{body:{restaurant_id:Number(currentRestaurant)}}),"La preparación de HTTPS tardó demasiado. Intenta nuevamente.");
         if(provisionError)throw provisionError;
         window.toast?.(provision?.active?"DNS y HTTPS activos":"DNS verificado. Preparando HTTPS…");
       }else window.toast?.("Los DNS todavía no coinciden");
@@ -297,7 +308,7 @@ async function refreshProfessionalDashboard(){
     if(!window.sb||!window.currentRestaurant)return;
     if(!confirm("¿Quitar el dominio personalizado de este negocio?"))return;
     try{
-      const {error}=await sb.rpc("remove_business_custom_domain",{p_restaurant_id:Number(currentRestaurant),p_hostname:null});
+      const {error}=await withCustomDomainTimeout(sb.rpc("remove_business_custom_domain",{p_restaurant_id:Number(currentRestaurant),p_hostname:null}),"No se pudo quitar el dominio. Intenta nuevamente.");
       if(error)throw error;
       const input=document.getElementById("customDomainHost");if(input)input.value="";
       window.toast?.("Dominio desvinculado");
