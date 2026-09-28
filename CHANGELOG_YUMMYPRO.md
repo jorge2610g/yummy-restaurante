@@ -1,3 +1,7 @@
+## 2.6.80 — 2026-09-28 — Pruebas
+- Tras verificar DNS, el panel inicia el aprovisionamiento seguro del hostname y SSL en backend.
+- Producción no fue modificada.
+
 ## 2.6.79 — 2026-09-27 — Pruebas
 - Se reposicionó el botón flotante “Reportar problema” en escritorio para que no tape accesos del menú lateral, incluido QR de Mesa.
 - En menú expandido y contraído el botón queda fuera de la barra lateral.
