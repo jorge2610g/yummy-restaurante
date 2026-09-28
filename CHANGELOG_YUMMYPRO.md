@@ -1,3 +1,12 @@
+## 2.6.84 — 2026-09-28 — Pruebas
+- Preparación de release de dominios personalizados.
+- Se eliminó la copia temporal `professional-domain-fix.js` y el módulo volvió a `professional.js`.
+- Se versionó el baseline reproducible de `business_custom_domains` y la función `verify-business-domain`.
+- El scheduler inicial dejó de contener una URL hardcodeada de Staging; el cron definitivo se configura desde `private.runtime_config.edge_functions_base_url`.
+- Se corrigió la normalización de hostnames con punto final.
+- Calidad y separación de ambientes quedan como gates obligatorios antes de Producción.
+- Producción no fue modificada.
+
 ## 2.6.83 — 2026-09-28 — Pruebas
 - Se completó la activación end-to-end de dominios personalizados en Staging.
 - Se corrigió el permiso interno de `service_activate_business_custom_domain` usando `SECURITY DEFINER` sin abrir el esquema `private` a roles públicos.
