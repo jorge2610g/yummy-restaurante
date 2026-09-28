@@ -1,4 +1,4 @@
-/* YummyPro Profesionales v2.6.81
+/* YummyPro Profesionales v2.6.82
    CRUD, agenda, horarios y reportes aislados del rubro restaurante/retail. */
 let professionalServices=[];
 let professionalProviders=[];
@@ -213,6 +213,18 @@ async function refreshProfessionalDashboard(){
   let customDomainAutoBusy=false;
   let customDomainLastAutoAction=0;
   let customDomainLastState=null;
+  let customDomainBootstrapTimer=null;
+
+  function customDomainRuntimeReady(){
+    try{return !!sb&&!!currentRestaurant}catch(_){return false}
+  }
+  function scheduleCustomDomainBootstrap(){
+    if(customDomainBootstrapTimer)clearTimeout(customDomainBootstrapTimer);
+    customDomainBootstrapTimer=setTimeout(()=>{
+      customDomainBootstrapTimer=null;
+      loadBusinessCustomDomain({silent:false,auto:true});
+    },800);
+  }
 
   function withCustomDomainTimeout(promise,message){
     let timeoutId;
@@ -353,9 +365,15 @@ async function refreshProfessionalDashboard(){
   }
   async function loadBusinessCustomDomain(options={}){
     const panel=customDomainPanel();
-    if(!panel||!sb||!currentRestaurant)return;
+    if(!panel)return;
     const silent=!!options.silent,auto=!!options.auto;
     const status=document.getElementById("customDomainStatus");
+    if(!customDomainRuntimeReady()){
+      if(status&&!silent)status.innerHTML='<div class="item"><b>Preparando tu información…</b><div class="mut" style="margin-top:6px">Estamos cargando tu negocio y el estado del dominio. Esto se actualizará automáticamente.</div></div>';
+      scheduleCustomDomainBootstrap();
+      return;
+    }
+    if(customDomainBootstrapTimer){clearTimeout(customDomainBootstrapTimer);customDomainBootstrapTimer=null}
     if(status&&!silent)status.innerHTML='<span class="mut">Recuperando tu dominio…</span>';
     let data,error;
     try{
@@ -431,7 +449,7 @@ async function refreshProfessionalDashboard(){
     scheduleCustomDomainPoll();
   }
   async function requestBusinessCustomDomain(){
-    if(!sb||!currentRestaurant)return;
+    if(!customDomainRuntimeReady()){window.toast?.("Espera un momento mientras termina de cargar tu negocio");scheduleCustomDomainBootstrap();return}
     const input=document.getElementById("customDomainHost");
     const hostname=normalizeDomainInput(input?.value);
     if(!hostname){window.toast?.("Escribe un dominio válido");return}
@@ -454,7 +472,7 @@ async function refreshProfessionalDashboard(){
     }
   }
   async function verifyBusinessCustomDomain(){
-    if(!sb||!currentRestaurant)return;
+    if(!customDomainRuntimeReady()){window.toast?.("Espera un momento mientras termina de cargar tu negocio");scheduleCustomDomainBootstrap();return}
     const btn=document.getElementById("customDomainVerifyBtn");
     if(btn){btn.disabled=true;btn.textContent="Comprobando…"}
     try{
@@ -491,7 +509,7 @@ async function refreshProfessionalDashboard(){
     }
   }
   async function removeBusinessCustomDomain(){
-    if(!sb||!currentRestaurant)return;
+    if(!customDomainRuntimeReady()){window.toast?.("Espera un momento mientras termina de cargar tu negocio");scheduleCustomDomainBootstrap();return}
     if(!confirm("¿Quitar el dominio personalizado de este negocio?"))return;
     try{
       const {error}=await withCustomDomainTimeout(
@@ -558,6 +576,11 @@ async function refreshProfessionalDashboard(){
       loadBusinessCustomDomain({silent:true,auto:true});
     }
   });
+
+  // El panel puede montar este módulo antes de que currentRestaurant esté listo.
+  // Este bootstrap reintenta hasta que la sesión/negocio estén disponibles.
+  setTimeout(()=>loadBusinessCustomDomain({silent:false,auto:true}),900);
+  setTimeout(()=>loadBusinessCustomDomain({silent:true,auto:true}),1800);
 
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",installCustomDomainSettings);
   else installCustomDomainSettings();
