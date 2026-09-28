@@ -1,4 +1,4 @@
-/* YummyPro Profesionales v2.5.32
+/* YummyPro Profesionales v2.6.81
    CRUD, agenda, horarios y reportes aislados del rubro restaurante/retail. */
 let professionalServices=[];
 let professionalProviders=[];
