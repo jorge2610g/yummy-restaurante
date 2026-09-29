@@ -1,3 +1,10 @@
+## 2.6.86 — 2026-09-28 — Pruebas
+- Hardening preproducción de Supabase aplicado de forma segura en Staging y Producción: `normalize_module_array` fija `search_path`, se retiraron grants innecesarios de tablas service-only y se restringieron RPC privilegiadas que no deben ejecutarse como `anon`.
+- `provision-business-domain` y `reconcile-business-domains` ahora priorizan `cloudflare_api_token` desde Supabase Vault y usan la variable de entorno solo como fallback, evitando quedar atados a una credencial revocada.
+- Se versionó la herramienta interna `platform-dns-repair` para asegurar `retail.yummypro.online` y `pro.yummypro.online` una vez rotada la credencial Cloudflare.
+- Se confirmó que el bloqueo restante de release es operativo: el token actual de Cloudflare está inválido y los hosts `retail.yummypro.online` / `pro.yummypro.online` todavía no resuelven.
+- La documentación de dominios incluye el procedimiento de rotación y los gates que deben quedar verdes antes de Producción.
+
 ## 2.6.85 — 2026-09-28 — Pruebas
 - Se aplicó una capa visual centralizada al landing y al panel: azul profundo, fondos claros, mayor legibilidad, botones consistentes y jerarquía editorial sobria.
 - Se mantuvieron las funciones, rutas, IDs y flujos existentes; el cambio es exclusivamente visual.
