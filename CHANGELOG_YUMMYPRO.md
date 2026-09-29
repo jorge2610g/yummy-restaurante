@@ -1,3 +1,64 @@
+## 2.6.86 — 2026-09-28 — Pruebas
+- Hardening preproducción de Supabase aplicado de forma segura en Staging y Producción: `normalize_module_array` fija `search_path`, se retiraron grants innecesarios de tablas service-only y se restringieron RPC privilegiadas que no deben ejecutarse como `anon`.
+- `provision-business-domain` y `reconcile-business-domains` ahora priorizan `cloudflare_api_token` desde Supabase Vault y usan la variable de entorno solo como fallback, evitando quedar atados a una credencial revocada.
+- Se versionó la herramienta interna `platform-dns-repair` para asegurar `retail.yummypro.online` y `pro.yummypro.online` una vez rotada la credencial Cloudflare.
+- Se confirmó que el bloqueo restante de release es operativo: el token actual de Cloudflare está inválido y los hosts `retail.yummypro.online` / `pro.yummypro.online` todavía no resuelven.
+- La documentación de dominios incluye el procedimiento de rotación y los gates que deben quedar verdes antes de Producción.
+
+## 2.6.85 — 2026-09-28 — Pruebas
+- Se aplicó una capa visual centralizada al landing y al panel: azul profundo, fondos claros, mayor legibilidad, botones consistentes y jerarquía editorial sobria.
+- Se mantuvieron las funciones, rutas, IDs y flujos existentes; el cambio es exclusivamente visual.
+- Se eliminó un cierre `</style>` duplicado del panel.
+- La referencia es la guía visual pública de La Iglesia de Jesucristo de los Santos de los Últimos Días: paleta azul de alto contraste, serif sobria en títulos y sans legible en interfaz. No se usaron logos, símbolos ni tipografías propietarias.
+- Auditoría inicial: `npm run check` en verde. Las pruebas Playwright quedan bloqueadas por una descarga de navegador dañada del entorno, no por un fallo detectado de la aplicación.
+- Producción no fue modificada.
+
+## 2.6.84 — 2026-09-28 — Pruebas
+- Preparación de release de dominios personalizados.
+- Se eliminó la copia temporal `professional-domain-fix.js` y el módulo volvió a `professional.js`.
+- Se versionó el baseline reproducible de `business_custom_domains` y la función `verify-business-domain`.
+- El scheduler inicial dejó de contener una URL hardcodeada de Staging; el cron definitivo se configura desde `private.runtime_config.edge_functions_base_url`.
+- Se corrigió la normalización de hostnames con punto final.
+- Calidad y separación de ambientes quedan como gates obligatorios antes de Producción.
+- Producción no fue modificada.
+
+## 2.6.83 — 2026-09-28 — Pruebas
+- Se completó la activación end-to-end de dominios personalizados en Staging.
+- Se corrigió el permiso interno de `service_activate_business_custom_domain` usando `SECURITY DEFINER` sin abrir el esquema `private` a roles públicos.
+- Se corrigió la activación para actualizar únicamente la fila vigente del hostname y no filas históricas deshabilitadas.
+- Se confirmó `prueba.expressdelivery.pro` con estado `active`, SSL `active` y respuesta HTTPS 200.
+- Se documentó el requisito del CNAME target proxied `domains-pruebas.yummypro.online`.
+- Producción no fue modificada.
+
+## 2.6.83 — 2026-09-28 — Pruebas
+- Se corrigió la validación SSL de dominios personalizados en Cloudflare for SaaS.
+- Se creó el CNAME target de Staging `domains-pruebas.yummypro.online` apuntando al fallback origin proxied `domains.yummypro.online`.
+- El reconciliador ahora crea rutas Worker de exclusión para `/.well-known/acme-challenge/*` y `/.well-known/pki-validation/*`, evitando que el Worker intercepte los desafíos DCV.
+- Cuando se corrigen esas rutas, el reconciliador reinicia la validación DCV del Custom Hostname.
+- Se amplió el diagnóstico del reconciliador para registrar estado del hostname, SSL, CA y validation records.
+- Producción no fue modificada.
+
+## 2.6.82 — 2026-09-28 — Pruebas
+- Se corrigió el estado “Recuperando tu dominio…” que podía quedar fijo si el módulo cargaba antes de que el panel terminara de identificar el negocio.
+- El módulo ahora espera a Supabase/currentRestaurant y reintenta automáticamente hasta poder recuperar el dominio guardado.
+- Mientras termina de cargar muestra “Preparando tu información…” en lugar de aparentar que el proceso quedó congelado.
+- Se mantiene la verificación automática y la persistencia introducidas en 2.6.81.
+- Producción no fue modificada.
+
+## 2.6.81 — 2026-09-28 — Pruebas
+- El dominio personalizado conserva hostname y estado al recargar el panel.
+- Se añadió una barra de progreso con etapas: dominio guardado, DNS verificado, HTTPS listo y activo.
+- El botón de conexión queda bloqueado mientras existe un dominio en proceso para evitar solicitudes duplicadas.
+- El panel consulta automáticamente el estado del dominio y mantiene un botón manual “Comprobar ahora” como respaldo.
+- Se añadió la Edge Function `reconcile-business-domains` y un cron de Staging cada 2 minutos para verificar DNS/Cloudflare/SSL incluso con el panel cerrado.
+- Se corrigió la validación de hostnames y la reconexión del mismo dominio ahora conserva el token TXT.
+- Se documentó el flujo completo en `docs/CUSTOM_DOMAINS.md`.
+- Producción no fue modificada.
+
+## 2.6.80 — 2026-09-28 — Pruebas
+- Tras verificar DNS, el panel inicia el aprovisionamiento seguro del hostname y SSL en backend.
+- Producción no fue modificada.
+
 ## 2.6.79 — 2026-09-27 — Pruebas
 - Se reposicionó el botón flotante “Reportar problema” en escritorio para que no tape accesos del menú lateral, incluido QR de Mesa.
 - En menú expandido y contraído el botón queda fuera de la barra lateral.
