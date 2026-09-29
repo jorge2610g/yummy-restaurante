@@ -111,7 +111,7 @@ Deno.serve(async (req: Request) => {
     if (secretError) throw secretError;
     if (!expected || provided !== String(expected)) return json({ error: "No autorizado" }, 401);
 
-    let cfToken = Deno.env.get("CLOUDFLARE_API_TOKEN") || "";
+    let cfToken = "";
     let cfZone = Deno.env.get("CLOUDFLARE_ZONE_ID") || "";
     const { data: runtimeTarget } = await admin.rpc("service_get_runtime_config", {
       p_key: "custom_domain_cname_target",
@@ -126,13 +126,11 @@ Deno.serve(async (req: Request) => {
         ? "yummypro-custom-domain-staging"
         : "yummypro-custom-domain-gateway");
 
-    if (!cfToken) {
-      const { data: vaultToken, error: vaultError } = await admin.rpc("service_get_runtime_secret", {
-        p_name: "cloudflare_api_token",
-      });
-      if (vaultError) throw vaultError;
-      cfToken = String(vaultToken || "").trim();
-    }
+    const { data: vaultToken, error: vaultError } = await admin.rpc("service_get_runtime_secret", {
+      p_name: "cloudflare_api_token",
+    });
+    if (vaultError) console.error("No se pudo leer Cloudflare API token desde Vault", vaultError);
+    cfToken = String(vaultToken || "").trim() || String(Deno.env.get("CLOUDFLARE_API_TOKEN") || "").trim();
     if (!cfToken || !cfZone) throw new Error("Cloudflare no está configurado para el reconciliador");
 
     const { data: rows, error: rowsError } = await admin
