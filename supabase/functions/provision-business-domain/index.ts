@@ -84,7 +84,7 @@ Deno.serve(async(req:Request)=>{
     const supabaseUrl=Deno.env.get("SUPABASE_URL")||"";
     const anonKey=Deno.env.get("SUPABASE_ANON_KEY")||Deno.env.get("SUPABASE_PUBLISHABLE_KEY")||"";
     const serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
-    let cfToken=Deno.env.get("CLOUDFLARE_API_TOKEN")||"";
+    let cfToken="";
     let cfZone=Deno.env.get("CLOUDFLARE_ZONE_ID")||"";
     const cfZoneName=Deno.env.get("CLOUDFLARE_ZONE_NAME")||"yummypro.online";
     const configuredOrigin=String(Deno.env.get("CLOUDFLARE_CUSTOM_DOMAIN_ORIGIN")||"").trim().toLowerCase();
@@ -96,11 +96,9 @@ Deno.serve(async(req:Request)=>{
     });
     const adminClient=createClient(supabaseUrl,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
 
-    if(!cfToken){
-      const {data:vaultToken,error:vaultError}=await adminClient.rpc("service_get_runtime_secret",{p_name:"cloudflare_api_token"});
-      if(vaultError)console.error("No se pudo leer Cloudflare API token desde Vault",vaultError);
-      cfToken=String(vaultToken||"").trim();
-    }
+    const {data:vaultToken,error:vaultError}=await adminClient.rpc("service_get_runtime_secret",{p_name:"cloudflare_api_token"});
+    if(vaultError)console.error("No se pudo leer Cloudflare API token desde Vault",vaultError);
+    cfToken=String(vaultToken||"").trim()||String(Deno.env.get("CLOUDFLARE_API_TOKEN")||"").trim();
 
     if(!cfToken){
       return json({error:"Cloudflare todavía no está configurado para dominios personalizados",code:"cloudflare_not_configured"},503);
