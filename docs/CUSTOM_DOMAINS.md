@@ -125,3 +125,28 @@ Resultado final de la prueba:
 - El Worker de Staging entrega el cliente público
 - `restaurants.custom_domain` queda sincronizado para que el cliente resuelva el negocio correcto por hostname
 - Producción no fue modificada
+
+## Hardening preproducción — 2.6.86
+
+Después de la validación end-to-end se detectó una condición de rotación de credenciales: las Edge Functions priorizaban la variable de entorno `CLOUDFLARE_API_TOKEN` aunque el token estuviera revocado. Desde 2.6.86:
+
+- `provision-business-domain` y `reconcile-business-domains` consultan primero `cloudflare_api_token` en Supabase Vault.
+- La variable de entorno queda solo como fallback.
+- El workflow de Cloudflare continúa siendo el punto de entrada para una credencial nueva y la sincroniza cifrada a Vault.
+- No documentar ni copiar el valor del token en archivos, issues, commits o logs.
+
+También quedó versionada la Edge Function interna `platform-dns-repair`. Está protegida por el secreto interno del reconciliador y solo puede inspeccionar/asegurar los registros de plataforma `retail.yummypro.online` y `pro.yummypro.online`; no acepta hostnames arbitrarios.
+
+Bloqueo operativo detectado al preparar Producción:
+
+- El token Cloudflare existente está revocado/no válido.
+- `retail.yummypro.online` y `pro.yummypro.online` no resuelven en DNS.
+- Para cerrar el release se debe rotar `CLOUDFLARE_API_TOKEN` en los secretos de Actions de `yummy-admin`, ejecutar el workflow y luego correr `platform-dns-repair`.
+- Una vez reparado DNS deben repetirse Smoke + Quality + Environment Guard y confirmar HTTPS 200 en todos los hosts públicos.
+
+Hardening de base aplicado de forma segura a Staging y Producción:
+
+- `normalize_module_array(jsonb)` ya fija `search_path`.
+- Se retiraron grants directos innecesarios de tablas service-only.
+- RPC administrativas/operativas que requieren sesión dejaron de ser ejecutables por `anon`.
+- Funciones internas de cron/trigger dejaron de ser invocables directamente por clientes.
